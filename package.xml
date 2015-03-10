@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package
+ packagerversion="1.4.11"
+ version="2.0"
+ xmlns="http://pear.php.net/dtd/package-2.0"
+ xmlns:tasks="http://pear.php.net/dtd/tasks-1.0"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
+http://pear.php.net/dtd/tasks-1.0.xsd
+http://pear.php.net/dtd/package-2.0
+http://pear.php.net/dtd/package-2.0.xsd">
+	<name>hprose</name>
+	<channel>pecl.php.net</channel>
+	<summary>Hprose for PHP.</summary>
+	<description>Hprose extension for PHP.
+        Hprose is a High Performance Remote Object Service Engine.
+
+        It is a modern, lightweight, cross-language, cross-platform, object-oriented, high performance, remote dynamic communication middleware. It is not only easy to use, but powerful. You just need a little time to learn, then you can use it to easily construct cross language cross platform distributed application system.
+
+        Hprose supports many programming languages, for example:
+
+        AAuto Quicker
+        ActionScript
+        ASP
+        C++
+        Dart
+        Delphi/Free Pascal
+        dotNET(C#, Visual Basic...)
+        Golang
+        Java
+        JavaScript
+        Node.js
+        Objective-C
+        Perl
+        PHP
+        Python
+        Ruby
+        ...
+        Through Hprose, You can conveniently and efficiently intercommunicate between those programming languages.
+
+        This project is the implementation of Hprose for PHP.
+	</description>
+	<lead>
+		<name>Ma Bingyao</name>
+		<user>andot</user>
+		<email>mabingyao@gmail.com</email>
+		<active>yes</active>
+	</lead>
+	<date>2015-03-10</date>
+	<time>17:47:51</time>
+	<version>
+		<release>1.0.0 alpha</release>
+		<api>1.0.0 alpha</api>
+	</version>
+	<stability>
+		<release>unstable</release>
+		<api>unstable</api>
+	</stability>
+	<license uri="http://mit-license.org/">MIT</license>
+	<notes>Initial Hprose for pecl</notes>
+	<contents>
+		<dir name="/">
+			<file role="doc" name="CREDITS" />
+			<file role="doc" name="LICENSE.md" />
+			<file role="doc" name="README.md" />
+			<file role="doc" name="README_zh_CN.md" />
+			<file role="src" name="config.m4" />
+			<file role="src" name="config.w32" />
+			<file role="src" name="php_hprose.h" />
+			<file role="src" name="php_hprose.c" />
+			<dir name="include">
+				<file role="src" name="hprose_config.h" />
+				<file role="src" name="hprose_tags.h" />
+        			<file role="src" name="hprose.h" />
+			</dir>
+			<dir name="src">
+        			<file role="src" name="hprose_tags.c" />
+			</dir>
+			<dir name="test">
+				<file role="test" name="tags.phpt" />
+			</dir>
+		</dir>
+	</contents>
+	<dependencies>
+		<required>
+			<php>
+				<min>5.3</min>
+			</php>
+			<pearinstaller>
+				<min>1.4.0</min>
+			</pearinstaller>
+		</required>
+	</dependencies>
+	<providesextension>hprose</providesextension>
+	<extsrcrelease>
+		<configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
+	</extsrcrelease>
+</package>
