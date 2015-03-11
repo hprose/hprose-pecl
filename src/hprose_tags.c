@@ -18,7 +18,7 @@
  *                                                        *
 \**********************************************************/
 
-#include "../include/hprose.h"
+#include "hprose.h"
 
 static zend_function_entry hprose_tags_methods[] = {
     {NULL, NULL, NULL}
@@ -27,10 +27,9 @@ static zend_function_entry hprose_tags_methods[] = {
 #define DECLARE_TAG(name, value) \
     zend_declare_class_constant_stringl(hprose_tags_ce, ZEND_STRL(name), ZEND_STRL(value) TSRMLS_DC);
 
-void register_hprose_tags() {
+HPROSE_STARTUP_FUNCTION(tags) {
     zend_class_entry ce;
     zend_class_entry *hprose_tags_ce;
-    TSRMLS_FETCH();
     INIT_NS_CLASS_ENTRY(ce, "Hprose", "Tags", hprose_tags_methods)
     hprose_tags_ce = zend_register_internal_class(&ce TSRMLS_CC);
     zend_register_class_alias("HproseTags", hprose_tags_ce);
@@ -71,4 +70,5 @@ void register_hprose_tags() {
     DECLARE_TAG("TagArgument",      "A")
     DECLARE_TAG("TagError",         "E")
     DECLARE_TAG("TagEnd",           "z")
+    return SUCCESS;
 }

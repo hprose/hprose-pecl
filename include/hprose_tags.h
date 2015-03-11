@@ -21,9 +21,7 @@
 #ifndef HPROSE_TAGS_H
 #define	HPROSE_TAGS_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
+BEGIN_EXTERN_C()
 
 /* Serialize Tags */
 #define HPROSE_TAG_INTEGER      'i'
@@ -65,11 +63,9 @@ extern "C" {
 #define HPROSE_TAG_ERROR        'E'
 #define HPROSE_TAG_END          'z'
 
-void register_hprose_tags();
+HPROSE_STARTUP_FUNCTION(tags);
 
-#ifdef	__cplusplus
-}
-#endif
+END_EXTERN_C()
 
 #endif	/* HPROSE_TAGS_H */
 

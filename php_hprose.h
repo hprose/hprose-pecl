@@ -26,10 +26,12 @@
 #endif
 
 #include "include/hprose.h"
+#include "include/hprose_tags.h"
+#include "include/hprose_bytes_io.h"
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
+#include "ext/standard/info.h" /* for phpinfo() functions */
+
+BEGIN_EXTERN_C()
 
 zend_module_entry hprose_module_entry;
 #define phpext_hprose_ptr &hprose_module_entry
@@ -49,8 +51,6 @@ ZEND_FUNCTION(hprose_serialize);
 ZEND_FUNCTION(hprose_unserialize);
 ZEND_FUNCTION(hprose_info);
 
-#ifdef	__cplusplus
-}
-#endif
+END_EXTERN_C()
 
 #endif /* ifndef PHP_HPROSE_H */

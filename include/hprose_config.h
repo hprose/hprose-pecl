@@ -21,9 +21,7 @@
 #ifndef HPROSE_CONFIG_H
 #define	HPROSE_CONFIG_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
+BEGIN_EXTERN_C()
 
 #if defined(_MSC_VER) && _MSC_VER < 1600
 typedef __int8 int8_t;
@@ -94,9 +92,7 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif
 
-#ifdef	__cplusplus
-}
-#endif
+END_EXTERN_C()
 
 #endif	/* HPROSE_CONFIG_H */
 

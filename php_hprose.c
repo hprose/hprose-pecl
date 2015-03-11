@@ -48,7 +48,8 @@ ZEND_GET_MODULE(hprose)
 #endif
 
 ZEND_MINIT_FUNCTION(hprose) {
-    register_hprose_tags();
+    HPROSE_STARTUP(tags);
+    HPROSE_STARTUP(bytes_io);
     return SUCCESS;
 }
 
