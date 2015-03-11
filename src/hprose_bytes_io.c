@@ -108,7 +108,7 @@ ZEND_METHOD(hprose_bytes_io, readString) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &n) == FAILURE) {
         RETURN_NULL();
     }
-    s = hprose_bytes_io_read_string(bytes, n);
+    s = hprose_bytes_io_read_string(bytes, n TSRMLS_CC);
     RETURN_STRINGL(s.c, s.len, 0);
 }
 
