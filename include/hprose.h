@@ -83,7 +83,7 @@ static inline void php_str_replace(char from, char to, char *s, int len) {
 #define ZEND_ACC_TRAIT 0
 #endif
 
-static inline zend_bool php_class_exists(const char *class_name, size_t len, bool autoload TSRMLS_DC) {
+static inline zend_bool php_class_exists(const char *class_name, size_t len, zend_bool autoload TSRMLS_DC) {
     char *lc_name;
     zend_class_entry **ce = NULL;
     if (!autoload) {
