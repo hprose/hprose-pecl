@@ -145,7 +145,7 @@ static inline smart_str hprose_bytes_io_read_string(hprose_bytes_io_t *_this, in
                 if (i < n) break;
                 /* fall through */
             default:
-                zend_throw_exception(zend_exception_get_default(), "bad utf-8 encoding", 0 TSRMLS_CC);
+                zend_throw_exception(zend_exception_get_default(TSRMLS_C), "bad utf-8 encoding", 0 TSRMLS_CC);
                 break;
         }
     }
