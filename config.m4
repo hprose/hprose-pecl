@@ -1,7 +1,7 @@
 dnl $Id$
 dnl config.m4 for extension hprose
 PHP_ARG_ENABLE(hprose, hprose support,
-[  --enabled-hprose       Enable hprose support], [enabled_hprose="yes"])
+[  --enable-hprose         Enable hprose support])
 
 dnl Check whether the extension is enabled at all
 if test "$PHP_HPROSE" != "no"; then

@@ -46,8 +46,8 @@ http://pear.php.net/dtd/package-2.0.xsd">
 		<email>mabingyao@gmail.com</email>
 		<active>yes</active>
 	</lead>
-	<date>2015-03-10</date>
-	<time>17:47:51</time>
+	<date>2015-03-12</date>
+	<time>14:22:21</time>
 	<version>
 		<release>1.0.0 alpha</release>
 		<api>1.0.0 alpha</api>
@@ -69,15 +69,21 @@ http://pear.php.net/dtd/package-2.0.xsd">
 			<file role="src" name="php_hprose.h" />
 			<file role="src" name="php_hprose.c" />
 			<dir name="include">
+        			<file role="src" name="hprose.h" />
 				<file role="src" name="hprose_config.h" />
 				<file role="src" name="hprose_tags.h" />
-        			<file role="src" name="hprose.h" />
+				<file role="src" name="hprose_bytes_io.h" />
+				<file role="src" name="hprose_class_manager.h" />
 			</dir>
 			<dir name="src">
         			<file role="src" name="hprose_tags.c" />
+        			<file role="src" name="hprose_bytes_io.c" />
+        			<file role="src" name="hprose_class_manager.c" />
 			</dir>
 			<dir name="test">
 				<file role="test" name="tags.phpt" />
+				<file role="test" name="bytes_io.phpt" />
+				<file role="test" name="class_manager.phpt" />
 			</dir>
 		</dir>
 	</contents>
