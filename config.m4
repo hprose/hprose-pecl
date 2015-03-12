@@ -1,12 +1,13 @@
 dnl $Id$
 dnl config.m4 for extension hprose
 PHP_ARG_ENABLE(hprose, hprose support,
-[  --enable-hprose         Enable hprose support])
+[  --enable-hprose         Enable hprose support], [enable_swoole="yes"])
 
 dnl Check whether the extension is enabled at all
 if test "$PHP_HPROSE" != "no"; then
   dnl Finally, tell the build system about the extension and what files are needed
   HPROSE_SOURCES="src/hprose_tags.c"
   PHP_NEW_EXTENSION(hprose, php_hprose.c $HPROSE_SOURCES, $ext_shared)
+  PHP_ADD_INCLUDE([$ext_srcdir/include])
   PHP_SUBST(HPROSE_SHARED_LIBADD)
 fi

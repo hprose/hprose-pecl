@@ -13,7 +13,7 @@
  *                                                        *
  * hprose common for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 10, 2015                             *
+ * LastModified: Mar 12, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -177,22 +177,23 @@ static inline void hprose_str_replace(char from, char to, char *s, int len) {
 #define ZEND_ACC_TRAIT 0
 #endif
 
-static inline zend_bool php_class_exists(const char *class_name, size_t len, zend_bool autoload TSRMLS_DC) {
+static inline zend_bool hprose_class_exists(const char *classname, size_t len, zend_bool autoload TSRMLS_DC) {
+#if PHP_MAJOR_VERSION < 7
     char *lc_name;
     zend_class_entry **ce = NULL;
     if (!autoload) {
-        if (class_name[0] == '\\') {
+        if (classname[0] == '\\') {
             /* Ignore leading "\" */
-            lc_name = zend_str_tolower_dup(class_name + 1, len - 1);
+            lc_name = zend_str_tolower_dup(classname + 1, len - 1);
         }
         else {
-            lc_name = zend_str_tolower_dup(class_name, len);
+            lc_name = zend_str_tolower_dup(classname, len);
         }
         zend_hash_find(EG(class_table), lc_name, len + 1, (void **)&ce);
         efree(lc_name);
     }
     else {
-        zend_lookup_class(class_name, len, &ce TSRMLS_CC);
+        zend_lookup_class(classname, len, &ce TSRMLS_CC);
     }
     if (ce) {
         return (((*ce)->ce_flags & (ZEND_ACC_INTERFACE | ZEND_ACC_TRAIT)) == 0);
@@ -200,6 +201,34 @@ static inline zend_bool php_class_exists(const char *class_name, size_t len, zen
     else {
         return 0;
     }
+#else
+    zend_string *class_name = zend_string_init(classname, len, 0);
+    zend_string *lc_name;
+    zend_class_entry *ce;
+
+    if (!autoload) {
+        if (class_name->val[0] == '\\') {
+            /* Ignore leading "\" */
+            lc_name = zend_string_alloc(len - 1, 0);
+            zend_str_tolower_copy(lc_name->val, classname + 1, len - 1);
+        }
+        else {
+            lc_name = zend_string_tolower(class_name);
+        }
+        ce = zend_hash_find_ptr(EG(class_table), lc_name);
+        zend_string_release(lc_name);
+    }
+    else {
+        ce = zend_lookup_class(class_name);
+    }
+
+    if (ce) {
+        return ((ce->ce_flags & (ZEND_ACC_INTERFACE | ZEND_ACC_TRAIT)) == 0);
+    }
+    else {
+        return 0;
+    }
+#endif
 }
 
 /**********************************************************/

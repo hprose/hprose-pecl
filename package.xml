@@ -69,8 +69,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
 			<file role="src" name="php_hprose.h" />
 			<file role="src" name="php_hprose.c" />
 			<dir name="include">
-        			<file role="src" name="hprose.h" />
-				<file role="src" name="hprose_config.h" />
+				<file role="src" name="hprose_common.h" />
 				<file role="src" name="hprose_tags.h" />
 				<file role="src" name="hprose_bytes_io.h" />
 				<file role="src" name="hprose_class_manager.h" />
