@@ -4,4 +4,5 @@ if (PHP_HPROSE != "no") {
     EXTENSION("hprose", "php_hprose.c");
     ADD_SOURCE("src/hprose_tags.c");
     ADD_SOURCE("src/hprose_bytes_io.c");
+    ADD_SOURCE("src/hprose_class_manager.c");
 }

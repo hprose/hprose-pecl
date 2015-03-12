@@ -73,6 +73,41 @@ static zend_object_value php_hprose_##name##_new(zend_class_entry *ce TSRMLS_DC)
     return retval;                                                                  \
 }                                                                                   \
 
+static inline void php_str_replace(char from, char to, char *s, int len) {
+    register int i;
+    for (i = 0; i < len; i++) if (s[i] == from) s[i] = to;
+}
+
+
+#ifndef ZEND_ACC_TRAIT
+#define ZEND_ACC_TRAIT 0
+#endif
+
+static inline zend_bool php_class_exists(const char *class_name, size_t len, bool autoload TSRMLS_DC) {
+    char *lc_name;
+    zend_class_entry **ce = NULL;
+    if (!autoload) {
+        if (class_name[0] == '\\') {
+            /* Ignore leading "\" */
+            lc_name = zend_str_tolower_dup(class_name + 1, len - 1);
+        }
+        else {
+            lc_name = zend_str_tolower_dup(class_name, len);
+        }
+        zend_hash_find(EG(class_table), lc_name, len + 1, (void **)&ce);
+        efree(lc_name);
+    }
+    else {
+        zend_lookup_class(class_name, len, &ce TSRMLS_CC);
+    }
+    if (ce) {
+        return (((*ce)->ce_flags & (ZEND_ACC_INTERFACE | ZEND_ACC_TRAIT)) == 0);
+    }
+    else {
+        return 0;
+    }
+}
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_void_arginfo, 0, 0, 0)
 ZEND_END_ARG_INFO()
 

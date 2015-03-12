@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl header file.                  *
  *                                                        *
- * LastModified: Mar 10, 2015                             *
+ * LastModified: Mar 12, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -41,7 +41,7 @@ typedef struct _hprose_bytes_io {
     int32_t mark;
 } hprose_bytes_io_t;
 
-static inline hprose_bytes_io_t * hprose_bytes_io_create(char *buf, int32_t len) {
+static inline hprose_bytes_io_t * hprose_bytes_io_create(const char *buf, int32_t len) {
     hprose_bytes_io_t * bytes = ecalloc(1, sizeof(hprose_bytes_io_t));
     bytes->buffer.c = NULL;
     bytes->buffer.len = 0;
@@ -49,6 +49,7 @@ static inline hprose_bytes_io_t * hprose_bytes_io_create(char *buf, int32_t len)
     bytes->pos = 0;
     bytes->mark = -1;
     if (buf) {
+        // maybe here has a bomb, using smart_str_append is more safe, but now it fast.
         if (len == -1) {
             smart_str_sets(&bytes->buffer, buf);
         }
@@ -81,6 +82,7 @@ static inline char hprose_bytes_io_getc(hprose_bytes_io_t *_this) {
 static inline smart_str hprose_bytes_io_read(hprose_bytes_io_t *_this, int32_t n) {
     smart_str s = {0};
     smart_str_appendl(&s, _this->buffer.c + _this->pos, n);
+    smart_str_0(&s);
     _this->pos += n;
     return s;
 }
@@ -88,6 +90,7 @@ static inline smart_str hprose_bytes_io_read(hprose_bytes_io_t *_this, int32_t n
 static inline smart_str hprose_bytes_io_readfull(hprose_bytes_io_t *_this) {
     smart_str s = {0};
     smart_str_appendl(&s, _this->buffer.c + _this->pos, _this->buffer.len - _this->pos);
+    smart_str_0(&s);
     _this->pos = _this->buffer.len;
     return s;
 }
@@ -102,6 +105,7 @@ static inline smart_str hprose_bytes_io_readuntil(hprose_bytes_io_t *_this, char
         }
     }
     smart_str_appendl(&s, _this->buffer.c + _this->pos, p - _this->pos);
+    smart_str_0(&s);
     _this->pos = p;
     if (_this->pos < _this->buffer.len && skiptag) {
         _this->pos++;
@@ -171,6 +175,7 @@ static inline zend_bool hprose_bytes_io_eof(hprose_bytes_io_t *_this) {
 static inline void hprose_bytes_io_write(hprose_bytes_io_t *_this, const char *str, int n) {
     if (n < 0) n = strlen(str);
     smart_str_appendl(&(_this->buffer), str, n);
+    smart_str_0(&(_this->buffer));
 }
 
 END_EXTERN_C()
