@@ -46,12 +46,11 @@ static inline hprose_bytes_io_t * hprose_bytes_io_create(const char *buf, int32_
     memset(bytes, 0, sizeof(hprose_bytes_io_t));
     bytes->mark = -1;
     if (buf) {
-        // maybe here has a bomb, using smart_str_append is more safe, but now it fast.
         if (len == -1) {
-            smart_str_sets(&bytes->buffer, buf);
+            smart_str_appends(&bytes->buffer, buf);
         }
         else {
-            smart_str_setl(&bytes->buffer, buf, len);
+            smart_str_appendl(&bytes->buffer, buf, len);
         }
     }
     return bytes;
