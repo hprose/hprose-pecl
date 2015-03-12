@@ -49,8 +49,8 @@ ZEND_GET_MODULE(hprose)
 
 ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(tags);
-    HPROSE_STARTUP(bytes_io);
-    HPROSE_STARTUP(class_manager);
+//    HPROSE_STARTUP(bytes_io);
+//    HPROSE_STARTUP(class_manager);
     return SUCCESS;
 }
 
