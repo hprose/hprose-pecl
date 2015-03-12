@@ -1,5 +1,5 @@
 --TEST--
-Test that the Hprose\Tags class works.
+Test that the Hprose\ClassManager class works.
 --SKIPIF--
 <?php if (!extension_loaded("hprose")) print "skip"; ?>
 --FILE--

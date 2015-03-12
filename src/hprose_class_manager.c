@@ -22,8 +22,8 @@
 #include "hprose_class_manager.h"
 
 ZEND_BEGIN_MODULE_GLOBALS(hprose_class_manager)
-HashTable classCache1;
-HashTable classCache2;
+HashTable *classCache1;
+HashTable *classCache2;
 ZEND_END_MODULE_GLOBALS(hprose_class_manager)
 
 #ifdef ZTS
@@ -42,13 +42,23 @@ void smart_str_dtor(void *s) {
 }
 
 static void hprose_class_manager_ctor(zend_hprose_class_manager_globals * _globals) {
-    zend_hash_init(&_globals->classCache1, 64, NULL, &smart_str_dtor, 1);
-    zend_hash_init(&_globals->classCache2, 64, NULL, &smart_str_dtor, 1);
+    ALLOC_HASHTABLE(_globals->classCache1);
+    ALLOC_HASHTABLE(_globals->classCache2);
+    zend_hash_init(_globals->classCache1, 64, NULL, &smart_str_dtor, 1);
+    zend_hash_init(_globals->classCache2, 64, NULL, &smart_str_dtor, 1);
 }
 
 static void hprose_class_manager_dtor(zend_hprose_class_manager_globals * _globals) {
-    zend_hash_destroy(&_globals->classCache1);
-    zend_hash_destroy(&_globals->classCache2);
+    if (_globals->classCache1) {
+        zend_hash_destroy(_globals->classCache1);
+        FREE_HASHTABLE(_globals->classCache1);
+        _globals->classCache1 = NULL;
+    }
+    if (_globals->classCache2) {
+        zend_hash_destroy(_globals->classCache2);
+        FREE_HASHTABLE(_globals->classCache2);
+        _globals->classCache2 = NULL;
+    }
 }
 
 void hprose_class_manager_register(const char *classname, int namelen, const char *alias, int aliaslen TSRMLS_DC) {
@@ -60,13 +70,13 @@ void hprose_class_manager_register(const char *classname, int namelen, const cha
     smart_str_appendl_ex(_alias, alias, aliaslen, 1);
     smart_str_0(_classname);
     smart_str_0(_alias);
-    zend_hash_update(&HPROSE_CLASS_MANAGER_G(classCache1), classname, namelen + 1, &_alias, sizeof(_alias), NULL);
-    zend_hash_update(&HPROSE_CLASS_MANAGER_G(classCache2), alias, aliaslen + 1, &_classname, sizeof(_classname), NULL);
+    zend_hash_update(HPROSE_CLASS_MANAGER_G(classCache1), classname, namelen + 1, &_alias, sizeof(_alias), NULL);
+    zend_hash_update(HPROSE_CLASS_MANAGER_G(classCache2), alias, aliaslen + 1, &_classname, sizeof(_classname), NULL);
 }
 
 smart_str hprose_class_manager_get_alias(const char *classname, int len TSRMLS_DC) {
     smart_str alias = {0}, **_alias;
-    if (zend_hash_find(&HPROSE_CLASS_MANAGER_G(classCache1), classname, len + 1, (void **)&_alias) == FAILURE) {
+    if (zend_hash_find(HPROSE_CLASS_MANAGER_G(classCache1), classname, len + 1, (void **)&_alias) == FAILURE) {
         smart_str_appendl(&alias, classname, len);
         smart_str_0(&alias);
         php_str_replace('\\', '_', alias.c, alias.len);
@@ -82,7 +92,7 @@ smart_str hprose_class_manager_get_alias(const char *classname, int len TSRMLS_D
 
 smart_str hprose_class_manager_get_class(const char *alias, int len TSRMLS_DC) {
     smart_str classname = {0}, **_classname;
-    if (zend_hash_find(&HPROSE_CLASS_MANAGER_G(classCache2), alias, len + 1, (void **)&_classname) == FAILURE) {
+    if (zend_hash_find(HPROSE_CLASS_MANAGER_G(classCache2), alias, len + 1, (void **)&_classname) == FAILURE) {
         smart_str_appendl(&classname, alias, len);
         smart_str_0(&classname);
         if (!php_class_exists(alias, len, 0 TSRMLS_CC) &&
