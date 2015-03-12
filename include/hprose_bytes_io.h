@@ -21,13 +21,7 @@
 #ifndef HPROSE_BYTES_IO_H
 #define	HPROSE_BYTES_IO_H
 
-#include "php.h"
-#include "zend_exceptions.h"
-#if PHP_MAJOR_VERSION < 7
-#include "ext/standard/php_smart_str.h"
-#else
-#include "ext/standard/php_smart_string.h"
-#endif
+#include "hprose_common.h"
 
 BEGIN_EXTERN_C()
 
@@ -177,4 +171,3 @@ static inline void hprose_bytes_io_write(hprose_bytes_io_t *_this, const char *s
 END_EXTERN_C()
 
 #endif	/* HPROSE_BYTES_IO_H */
-

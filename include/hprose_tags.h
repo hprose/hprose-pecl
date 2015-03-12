@@ -21,6 +21,8 @@
 #ifndef HPROSE_TAGS_H
 #define	HPROSE_TAGS_H
 
+#include "hprose_common.h"
+
 BEGIN_EXTERN_C()
 
 /* Serialize Tags */
@@ -68,4 +70,3 @@ HPROSE_STARTUP_FUNCTION(tags);
 END_EXTERN_C()
 
 #endif	/* HPROSE_TAGS_H */
-

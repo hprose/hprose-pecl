@@ -25,7 +25,6 @@
 #include "config.h"
 #endif
 
-#include "hprose.h"
 #include "hprose_tags.h"
 /*
 #include "hprose_bytes_io.h"

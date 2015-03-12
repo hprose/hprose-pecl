@@ -18,7 +18,6 @@
  *                                                        *
 \**********************************************************/
 
-#include "hprose.h"
 #include "hprose_bytes_io.h"
 
 HPROSE_CLASS_EX(bytes_io, bytes);

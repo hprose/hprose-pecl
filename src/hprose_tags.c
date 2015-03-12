@@ -18,7 +18,7 @@
  *                                                        *
 \**********************************************************/
 
-#include "hprose.h"
+#include "hprose_tags.h"
 
 static zend_function_entry hprose_tags_methods[] = {
     {NULL, NULL, NULL}
@@ -55,7 +55,7 @@ HPROSE_STARTUP_FUNCTION(tags) {
     DECLARE_TAG("TagClass",         "c")
     DECLARE_TAG("TagObject",        "o")
     DECLARE_TAG("TagRef",           "r")
-    /* Serialize Marks */            
+    /* Serialize Marks */
     DECLARE_TAG("TagPos",           "+")
     DECLARE_TAG("TagNeg",           "-")
     DECLARE_TAG("TagSemicolon",     ";")

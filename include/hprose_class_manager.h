@@ -21,12 +21,7 @@
 #ifndef HPROSE_CLASS_MANAGER_H
 #define	HPROSE_CLASS_MANAGER_H
 
-#include "php.h"
-#if PHP_MAJOR_VERSION < 7
-#include "ext/standard/php_smart_str.h"
-#else
-#include "ext/standard/php_smart_string.h"
-#endif
+#include "hprose_common.h"
 
 BEGIN_EXTERN_C()
 
@@ -41,4 +36,3 @@ extern smart_str hprose_class_manager_get_class(const char *alias, int len TSRML
 END_EXTERN_C()
 
 #endif	/* HPROSE_CLASS_MANAGER_H */
-

@@ -18,7 +18,6 @@
  *                                                        *
 \**********************************************************/
 
-#include "hprose.h"
 #include "hprose_class_manager.h"
 
 ZEND_BEGIN_MODULE_GLOBALS(hprose_class_manager)
@@ -143,7 +142,7 @@ ZEND_FUNCTION(get_class) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &alias, &len) == FAILURE) {
         RETURN_NULL();
     }
-    classname = hprose_class_manager_get_class(alias, len TSRMLS_CC);    
+    classname = hprose_class_manager_get_class(alias, len TSRMLS_CC);
     RETVAL_STRINGL(classname.c, classname.len, 0);
 }
 
@@ -163,7 +162,7 @@ ZEND_END_ARG_INFO()
 static zend_function_entry hprose_class_manager_methods[] = {
     ZEND_ME_MAPPING(register, register, hprose_class_manager_register_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
     ZEND_ME_MAPPING(getAlias, get_alias, hprose_class_manager_get_alias_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
-    ZEND_ME_MAPPING(getClass, get_class, hprose_class_manager_get_class_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)    
+    ZEND_ME_MAPPING(getClass, get_class, hprose_class_manager_get_class_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
     {NULL, NULL, NULL}
 };
 
