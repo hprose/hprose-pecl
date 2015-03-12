@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl source file.                  *
  *                                                        *
- * LastModified: Mar 11, 2015                             *
+ * LastModified: Mar 12, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -39,7 +39,10 @@ ZEND_METHOD(hprose_bytes_io, __construct) {
 
 ZEND_METHOD(hprose_bytes_io, __destruct) {
     HPROSE_OBJECT(bytes_io);
-    hprose_bytes_io_free(bytes_io->bytes);
+    if (bytes_io->bytes) {
+        hprose_bytes_io_free(bytes_io->bytes);
+        bytes_io->bytes = NULL;
+    }
 }
 
 ZEND_METHOD(hprose_bytes_io, close) {
