@@ -127,13 +127,15 @@ ZEND_END_ARG_INFO()
 /**********************************************************\
 | Class & Object Macro definition                          |
 \**********************************************************/
-#define HPROSE_CLASS_EX(name, fieldname)    \
-typedef struct {                            \
-    zend_object object;                     \
-    hprose_##name##_t *fieldname;           \
-} php_hprose_##name##_t;
+#define HPROSE_CLASS_BEGIN_EX(name, fieldname) \
+typedef struct {                               \
+    zend_object object;                        \
+    hprose_##name##_t *fieldname;              \
 
-#define HPROSE_CLASS(name) HPROSE_CLASS_EX(name, name)
+#define HPROSE_CLASS_BEGIN(name) HPROSE_CLASS_BEGIN_EX(name, name)
+
+#define HPROSE_CLASS_END(name) \
+} php_hprose_##name##_t;
 
 #define HPROSE_OBJECT(name)       \
     php_hprose_##name##_t *name;  \
