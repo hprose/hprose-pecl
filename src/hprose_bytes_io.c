@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl source file.                  *
  *                                                        *
- * LastModified: Mar 12, 2015                             *
+ * LastModified: Mar 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -171,7 +171,7 @@ ZEND_METHOD(hprose_bytes_io, write) {
 
 ZEND_METHOD(hprose_bytes_io, toString) {
     HPROSE_OBJECT(bytes_io, bytes);
-    RETURN_STRINGL_1(bytes->buf, bytes->len);
+    RETURN_STRINGL_0(hprose_bytes_io_to_string(bytes), bytes->len);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_bytes_io_construct_arginfo, 0, 0, 0)
@@ -228,5 +228,6 @@ HPROSE_CLASS_ENTRY(bytes_io)
 
 HPROSE_STARTUP_FUNCTION(bytes_io) {
     HPROSE_REGISTER_CLASS("Hprose", "BytesIO", bytes_io);
+    HPROSE_REGISTER_CLASS_HANDLERS(bytes_io);
     return SUCCESS;
 }

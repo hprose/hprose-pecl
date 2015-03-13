@@ -13,7 +13,7 @@
  *                                                        *
  * hprose tags for pecl source file.                      *
  *                                                        *
- * LastModified: Mar 10, 2015                             *
+ * LastModified: Mar 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -27,13 +27,10 @@ static zend_function_entry hprose_tags_methods[] = {
 #define DECLARE_TAG(name, value) \
     zend_declare_class_constant_stringl(hprose_tags_ce, ZEND_STRL(name), ZEND_STRL(value) TSRMLS_CC);
 
-zend_class_entry *hprose_tags_ce;
+HPROSE_CLASS_ENTRY(tags)
 
 HPROSE_STARTUP_FUNCTION(tags) {
-    zend_class_entry ce;
-    INIT_NS_CLASS_ENTRY(ce, "Hprose", "Tags", hprose_tags_methods)
-    hprose_tags_ce = zend_register_internal_class(&ce TSRMLS_CC);
-    zend_register_class_alias("HproseTags", hprose_tags_ce);
+    HPROSE_REGISTER_CLASS("Hprose", "Tags", tags);
     /* Serialize Tags */
     DECLARE_TAG("TagInteger",       "i")
     DECLARE_TAG("TagLong",          "l")

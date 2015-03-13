@@ -25,6 +25,8 @@
 
 BEGIN_EXTERN_C()
 
+zend_class_entry *get_hprose_bytes_io_ce();
+
 HPROSE_STARTUP_FUNCTION(bytes_io);
 
 typedef struct {
@@ -33,7 +35,7 @@ typedef struct {
     int32_t cap;
     int32_t pos;
     zend_bool persistent;
-} hprose_bytes_io_t;
+} hprose_bytes_io;
 
 #ifndef HPROSE_BYTES_IO_PREALLOC
 #define HPROSE_BYTES_IO_PREALLOC 1024
@@ -57,7 +59,7 @@ static zend_always_inline int32_t _hprose_pow2roundup(int32_t x) {
     return x + 1;
 }
 
-static zend_always_inline void _hprose_bytes_io_grow(hprose_bytes_io_t *_this, int32_t n) {
+static zend_always_inline void _hprose_bytes_io_grow(hprose_bytes_io *_this, int32_t n) {
     register int32_t size = _hprose_pow2roundup(_this->len + n + 1);
     if (_this->buf) {
         size *= 2;
@@ -79,8 +81,8 @@ static zend_always_inline void _hprose_bytes_io_grow(hprose_bytes_io_t *_this, i
     }
 }
 
-static zend_always_inline hprose_bytes_io_t *hprose_bytes_io_pnew(zend_bool persistent) {
-    hprose_bytes_io_t *_this = pecalloc(1, sizeof(hprose_bytes_io_t), persistent);
+static zend_always_inline hprose_bytes_io *hprose_bytes_io_pnew(zend_bool persistent) {
+    hprose_bytes_io *_this = pecalloc(1, sizeof(hprose_bytes_io), persistent);
     _this->buf = NULL;
     _this->len = 0;
     _this->cap = 0;
@@ -91,8 +93,8 @@ static zend_always_inline hprose_bytes_io_t *hprose_bytes_io_pnew(zend_bool pers
 
 #define hprose_bytes_io_new() hprose_bytes_io_pnew(0)
 
-static zend_always_inline hprose_bytes_io_t *hprose_bytes_io_pcreate(const char *buf, int32_t len, zend_bool persistent) {
-    hprose_bytes_io_t *_this = pecalloc(1, sizeof(hprose_bytes_io_t), persistent);
+static zend_always_inline hprose_bytes_io *hprose_bytes_io_pcreate(const char *buf, int32_t len, zend_bool persistent) {
+    hprose_bytes_io *_this = pecalloc(1, sizeof(hprose_bytes_io), persistent);
     _this->buf = pestrndup(buf, len, persistent);
     _this->len = len;
     _this->cap = len + 1;
@@ -103,7 +105,7 @@ static zend_always_inline hprose_bytes_io_t *hprose_bytes_io_pcreate(const char 
 
 #define hprose_bytes_io_create(buf, len) hprose_bytes_io_pcreate((buf), (len), 0)
 
-static zend_always_inline void hprose_bytes_io_close(hprose_bytes_io_t *_this) {
+static zend_always_inline void hprose_bytes_io_close(hprose_bytes_io *_this) {
     if (_this->buf) {
         pefree(_this->buf, _this->persistent);
         _this->buf = NULL;
@@ -113,18 +115,18 @@ static zend_always_inline void hprose_bytes_io_close(hprose_bytes_io_t *_this) {
     _this->pos = 0;
 }
 
-static zend_always_inline void hprose_bytes_io_free(hprose_bytes_io_t *_this) {
+static zend_always_inline void hprose_bytes_io_free(hprose_bytes_io *_this) {
     hprose_bytes_io_close(_this);
     pefree(_this, _this->persistent);
 }
 
-static zend_always_inline char hprose_bytes_io_getc(hprose_bytes_io_t *_this) {
+static zend_always_inline char hprose_bytes_io_getc(hprose_bytes_io *_this) {
     assert(_this->buf != NULL);
     assert(_this->pos < _this->len);
     return _this->buf[_this->pos++];
 }
 
-static zend_always_inline char * hprose_bytes_io_pread(hprose_bytes_io_t *_this, int32_t n, zend_bool persistent) {
+static zend_always_inline char * hprose_bytes_io_pread(hprose_bytes_io *_this, int32_t n, zend_bool persistent) {
     char *s;
     assert(_this->buf != NULL);
     assert(_this->pos + n <= _this->len);
@@ -135,20 +137,20 @@ static zend_always_inline char * hprose_bytes_io_pread(hprose_bytes_io_t *_this,
 
 #define hprose_bytes_io_read(_this, n) hprose_bytes_io_pread((_this), (n), 0);
 
-static zend_always_inline char * hprose_bytes_io_preadfull(hprose_bytes_io_t *_this, int32_t *p_len, zend_bool persistent) {
+static zend_always_inline char * hprose_bytes_io_preadfull(hprose_bytes_io *_this, int32_t *len_ptr, zend_bool persistent) {
     char *s;
     assert(_this->buf != NULL);
     assert(_this->pos <= _this->len);
-    assert(p_len);
-    *p_len = _this->len - _this->pos;
-    s = pestrndup(_this->buf + _this->pos, *p_len, persistent);
+    assert(len_ptr);
+    *len_ptr = _this->len - _this->pos;
+    s = pestrndup(_this->buf + _this->pos, *len_ptr, persistent);
     _this->pos = _this->len;
     return s;
 }
 
-#define hprose_bytes_io_readfull(_this, p_len) hprose_bytes_io_preadfull((_this), (p_len), 0);
+#define hprose_bytes_io_readfull(_this, len_ptr) hprose_bytes_io_preadfull((_this), (len_ptr), 0);
 
-static zend_always_inline char * hprose_bytes_io_preaduntil_ex(hprose_bytes_io_t *_this, char tag, int32_t *p_len, zend_bool persistent, zend_bool skiptag) {
+static zend_always_inline char * hprose_bytes_io_preaduntil_ex(hprose_bytes_io *_this, char tag, int32_t *len_ptr, zend_bool persistent, zend_bool skiptag) {
     char *s;
     int32_t i = _this->pos, n = _this->len, p = _this->len;
     assert(_this->buf != NULL);
@@ -158,8 +160,8 @@ static zend_always_inline char * hprose_bytes_io_preaduntil_ex(hprose_bytes_io_t
             break;
         }
     }
-    *p_len = p - _this->pos;
-    s = pestrndup(_this->buf + _this->pos, *p_len, persistent);
+    *len_ptr = p - _this->pos;
+    s = pestrndup(_this->buf + _this->pos, *len_ptr, persistent);
     _this->pos = p;
     if (_this->pos < _this->len && skiptag) {
         _this->pos++;
@@ -167,11 +169,11 @@ static zend_always_inline char * hprose_bytes_io_preaduntil_ex(hprose_bytes_io_t
     return s;
 }
 
-#define hprose_bytes_io_readuntil_ex(_this, tag, p_len, skiptag) hprose_bytes_io_preaduntil_ex((_this), (tag), (p_len), 0, (skiptag))
-#define hprose_bytes_io_preaduntil(_this, tag, p_len, persistent) hprose_bytes_io_preaduntil_ex((_this), (tag), (p_len), (persistent), 1)
-#define hprose_bytes_io_readuntil(_this, tag, p_len) hprose_bytes_io_preaduntil_ex((_this), (tag), (p_len), 0, 1)
+#define hprose_bytes_io_readuntil_ex(_this, tag, len_ptr, skiptag) hprose_bytes_io_preaduntil_ex((_this), (tag), (len_ptr), 0, (skiptag))
+#define hprose_bytes_io_preaduntil(_this, tag, len_ptr, persistent) hprose_bytes_io_preaduntil_ex((_this), (tag), (len_ptr), (persistent), 1)
+#define hprose_bytes_io_readuntil(_this, tag, len_ptr) hprose_bytes_io_preaduntil_ex((_this), (tag), (len_ptr), 0, 1)
 
-static zend_always_inline char * _hprose_bytes_io_read_pstring(hprose_bytes_io_t *_this, int32_t n, int32_t *p_len, zend_bool persistent TSRMLS_DC) {
+static zend_always_inline char * _hprose_bytes_io_read_pstring(hprose_bytes_io *_this, int32_t n, int32_t *len_ptr, zend_bool persistent TSRMLS_DC) {
     int32_t i, p = _this->pos, l = _this->len;
     uint8_t *buf = (uint8_t *)_this->buf;
     assert(_this->buf != NULL);
@@ -208,25 +210,25 @@ static zend_always_inline char * _hprose_bytes_io_read_pstring(hprose_bytes_io_t
                 break;
         }
     }
-    *p_len = p - _this->pos;
-    return hprose_bytes_io_pread(_this, *p_len, persistent);
+    *len_ptr = p - _this->pos;
+    return hprose_bytes_io_pread(_this, *len_ptr, persistent);
 }
 
-#define hprose_bytes_io_read_pstring(_this, n, p_len, persistent) _hprose_bytes_io_read_pstring((_this), (n), (p_len), (persistent) TSRMLS_CC)
-#define hprose_bytes_io_read_string(_this, n, p_len) hprose_bytes_io_read_pstring((_this), (n), (p_len), 0)
+#define hprose_bytes_io_read_pstring(_this, n, len_ptr, persistent) _hprose_bytes_io_read_pstring((_this), (n), (len_ptr), (persistent) TSRMLS_CC)
+#define hprose_bytes_io_read_string(_this, n, len_ptr) hprose_bytes_io_read_pstring((_this), (n), (len_ptr), 0)
 
-static zend_always_inline void hprose_bytes_io_skip(hprose_bytes_io_t *_this, int32_t n) {
+static zend_always_inline void hprose_bytes_io_skip(hprose_bytes_io *_this, int32_t n) {
     assert(_this->buf != NULL);
     assert(n >= 0);
     _this->pos += n;
     assert(_this->pos <= _this->len);
 }
 
-static zend_always_inline zend_bool hprose_bytes_io_eof(hprose_bytes_io_t *_this) {
+static zend_always_inline zend_bool hprose_bytes_io_eof(hprose_bytes_io *_this) {
     return (_this->pos >= _this->len);
 }
 
-static zend_always_inline void hprose_bytes_io_write(hprose_bytes_io_t *_this, const char *str, int32_t n) {
+static zend_always_inline void hprose_bytes_io_write(hprose_bytes_io *_this, const char *str, int32_t n) {
     if (n < 0) n = strlen(str);
     _hprose_bytes_io_grow(_this, n);
     memcpy(_this->buf + _this->len, str, n);
@@ -234,7 +236,7 @@ static zend_always_inline void hprose_bytes_io_write(hprose_bytes_io_t *_this, c
     _this->buf[_this->len] = '\0';
 }
 
-static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io_t *_this, int32_t num) {
+static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io *_this, int32_t num) {
     if (num == INT32_MIN) {
         hprose_bytes_io_write(_this, HPROSE_INT32_MIN_STR, sizeof(HPROSE_INT32_MIN_STR));
     }
@@ -257,7 +259,7 @@ static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io_t *_thi
     }
 }
 
-static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io_t *_this, int64_t num) {
+static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io *_this, int64_t num) {
     if (num == INT64_MIN) {
         hprose_bytes_io_write(_this, HPROSE_INT64_MIN_STR, sizeof(HPROSE_INT64_MIN_STR));
     }
@@ -280,7 +282,7 @@ static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io_t *_th
     }
 }
 
-static zend_always_inline void hprose_bytes_io_write_uint(hprose_bytes_io_t *_this, uint32_t num) {
+static zend_always_inline void hprose_bytes_io_write_uint(hprose_bytes_io *_this, uint32_t num) {
     char nb[32];
     char *p = nb + 31;
     *p = '\0';
@@ -291,7 +293,7 @@ static zend_always_inline void hprose_bytes_io_write_uint(hprose_bytes_io_t *_th
     hprose_bytes_io_write(_this, p, nb + 31 - p);
 }
 
-static zend_always_inline void hprose_bytes_io_write_ulong(hprose_bytes_io_t *_this, uint64_t num) {
+static zend_always_inline void hprose_bytes_io_write_ulong(hprose_bytes_io *_this, uint64_t num) {
     char nb[32];
     char *p = nb + 31;
     *p = '\0';
@@ -302,7 +304,9 @@ static zend_always_inline void hprose_bytes_io_write_ulong(hprose_bytes_io_t *_t
     hprose_bytes_io_write(_this, p, nb + 31 - p);
 }
 
-zend_class_entry *get_hprose_bytes_io_ce();
+static zend_always_inline char * hprose_bytes_io_to_string(hprose_bytes_io *_this) {
+    return pestrndup(_this->buf, _this->len, 0);
+}
 
 END_EXTERN_C()
 

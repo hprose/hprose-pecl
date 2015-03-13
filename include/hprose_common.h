@@ -13,7 +13,7 @@
  *                                                        *
  * hprose common for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 12, 2015                             *
+ * LastModified: Mar 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -130,16 +130,16 @@ ZEND_END_ARG_INFO()
 #define HPROSE_CLASS_BEGIN_EX(type_name, field_name) \
 typedef struct {                                     \
     zend_object std;                                 \
-    hprose_##type_name##_t *field_name;              \
+    hprose_##type_name *field_name;                  \
 
 #define HPROSE_CLASS_END(type_name)                  \
-} php_hprose_##type_name##_t;                        \
+} php_hprose_##type_name;                            \
 
-#define HPROSE_GET_OBJECT_P(type_name, zv) ((php_hprose_##type_name##_t *)zend_object_store_get_object((zv) TSRMLS_CC))
+#define HPROSE_GET_OBJECT_P(type_name, zv) ((php_hprose_##type_name *)zend_object_store_get_object((zv) TSRMLS_CC))
 
 #define HPROSE_OBJECT_FREE_BEGIN(type_name)                                     \
 static void php_hprose_##type_name##_free(void *object TSRMLS_DC) {             \
-    php_hprose_##type_name##_t *intern = (php_hprose_##type_name##_t *)object;  \
+    php_hprose_##type_name *intern = (php_hprose_##type_name *)object;          \
 
 #define HPROSE_OBJECT_FREE_END                      \
     zend_object_std_dtor(&intern->std TSRMLS_CC);   \
@@ -152,10 +152,10 @@ static void php_hprose_##type_name##_free(void *object TSRMLS_DC) {             
 static zend_object_value php_hprose_##type_name##_new(                  \
     zend_class_entry *ce TSRMLS_DC) {                                   \
     zend_object_value retval;                                           \
-    php_hprose_##type_name##_t *intern;                                 \
+    php_hprose_##type_name *intern;                                     \
     zval *tmp;                                                          \
-    intern = emalloc(sizeof(php_hprose_##type_name##_t));               \
-    memset(intern, 0, sizeof(php_hprose_##type_name##_t));              \
+    intern = emalloc(sizeof(php_hprose_##type_name));                   \
+    memset(intern, 0, sizeof(php_hprose_##type_name));                  \
     zend_object_std_init(&intern->std, ce TSRMLS_CC);                   \
     zend_hash_copy(                                                     \
         intern->std.properties, &ce->default_properties,                \
@@ -167,9 +167,9 @@ static zend_object_value php_hprose_##type_name##_new(                  \
 static zend_object_value php_hprose_##type_name##_new(      \
     zend_class_entry *ce TSRMLS_DC) {                       \
     zend_object_value retval;                               \
-    php_hprose_##type_name##_t *intern;                     \
-    intern = emalloc(sizeof(php_hprose_##type_name##_t));   \
-    memset(intern, 0, sizeof(php_hprose_##type_name##_t));  \
+    php_hprose_##type_name *intern;                         \
+    intern = emalloc(sizeof(php_hprose_##type_name));       \
+    memset(intern, 0, sizeof(php_hprose_##type_name));      \
     zend_object_std_init(&intern->std, ce TSRMLS_CC);       \
     object_properties_init(&intern->std, ce);               \
 
@@ -187,10 +187,12 @@ static zend_object_value php_hprose_##type_name##_new(      \
 #define HPROSE_REGISTER_CLASS(ns, name, type_name)                                                          \
     zend_class_entry ce;                                                                                    \
     INIT_NS_CLASS_ENTRY(ce, ns, name, hprose_##type_name##_methods)                                         \
-    ce.create_object = php_hprose_##type_name##_new;                                                        \
     hprose_##type_name##_ce = zend_register_internal_class_ex(&ce, NULL, NULL TSRMLS_CC);                   \
-    memcpy(&hprose_##type_name##_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));   \
     zend_register_class_alias(ns name, hprose_##type_name##_ce);                                            \
+
+#define HPROSE_REGISTER_CLASS_HANDLERS(type_name)                                                           \
+    hprose_##type_name##_ce->create_object = php_hprose_##type_name##_new;                                                        \
+    memcpy(&hprose_##type_name##_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));   \
 
 #else  /* PHP_MAJOR_VERSION < 7 */
 
@@ -199,19 +201,19 @@ static zend_object_value php_hprose_##type_name##_new(      \
 
 #define HPROSE_CLASS_BEGIN_EX(type_name, fieldname) \
 typedef struct {                                    \
-    hprose_##type_name##_t *fieldname;              \
+    hprose_##type_name *fieldname;                  \
 
 #define HPROSE_CLASS_END(type_name)                 \
     zend_object std;                                \
-} php_hprose_##type_name##_t;                       \
+} php_hprose_##type_name;                           \
 
-#define _HPROSE_GET_OBJECT_P(type_name, obj) ((php_hprose_##type_name##_t *)((char*)(obj) - XtOffsetOf(php_hprose_##type_name##_t, std)))
+#define _HPROSE_GET_OBJECT_P(type_name, obj) ((php_hprose_##type_name *)((char*)(obj) - XtOffsetOf(php_hprose_##type_name, std)))
 
 #define HPROSE_GET_OBJECT_P(type_name, zv) _HPROSE_GET_OBJECT_P(type_name, Z_OBJ_P(zv))
 
 #define HPROSE_OBJECT_FREE_BEGIN(type_name)                                         \
 static void php_hprose_##type_name##_free(zend_object *object) {                    \
-    php_hprose_##type_name##_t *intern = _HPROSE_GET_OBJECT_P(type_name, object);   \
+    php_hprose_##type_name *intern = _HPROSE_GET_OBJECT_P(type_name, object);       \
 
 #define HPROSE_OBJECT_FREE_END          \
     zend_object_std_dtor(&intern->std); \
@@ -219,9 +221,9 @@ static void php_hprose_##type_name##_free(zend_object *object) {                
 
 #define HPROSE_OBJECT_NEW_BEGIN(type_name)                                                       \
 static zend_object *php_hprose_##type_name##_new(zend_class_entry *ce) {                         \
-    php_hprose_##type_name##_t *intern;                                                          \
-    intern = ecalloc(1, sizeof(php_hprose_##type_name##_t) + zend_object_properties_size(ce));   \
-    memset(intern, 0, sizeof(php_hprose_##type_name##_t) + zend_object_properties_size(ce));     \
+    php_hprose_##type_name *intern;                                                              \
+    intern = ecalloc(1, sizeof(php_hprose_##type_name) + zend_object_properties_size(ce));       \
+    memset(intern, 0, sizeof(php_hprose_##type_name) + zend_object_properties_size(ce));         \
     zend_object_std_init(&intern->std, ce);                                                      \
     object_properties_init(&intern->std, ce);                                                    \
 
@@ -233,12 +235,14 @@ static zend_object *php_hprose_##type_name##_new(zend_class_entry *ce) {        
 #define HPROSE_REGISTER_CLASS(ns, name, type_name)                                                           \
     zend_class_entry ce;                                                                                     \
     INIT_NS_CLASS_ENTRY(ce, ns, name, hprose_##type_name##_methods)                                          \
-    ce.create_object = php_hprose_##type_name##_new;                                                         \
     hprose_##type_name##_ce = zend_register_internal_class_ex(&ce, NULL);                                    \
-    memcpy(&hprose_##type_name##_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));    \
-    hprose_##type_name##_handlers.offset = XtOffsetOf(php_hprose_##type_name##_t, std);                      \
-    hprose_##type_name##_handlers.free_obj = php_hprose_##type_name##_free;                                  \
     zend_register_class_alias(ns name, hprose_##type_name##_ce);                                             \
+
+#define HPROSE_REGISTER_CLASS_HANDLERS(type_name)                                                            \
+    hprose_##type_name##_ce->create_object = php_hprose_##type_name##_new;                                                         \
+    memcpy(&hprose_##type_name##_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));    \
+    hprose_##type_name##_handlers.offset = XtOffsetOf(php_hprose_##type_name, std);                          \
+    hprose_##type_name##_handlers.free_obj = php_hprose_##type_name##_free;                                  \
 
 
 #endif /* PHP_MAJOR_VERSION < 7 */
@@ -246,10 +250,10 @@ static zend_object *php_hprose_##type_name##_new(zend_class_entry *ce) {        
 #define HPROSE_CLASS_BEGIN(type_name) HPROSE_CLASS_BEGIN_EX(type_name, type_name)
 
 #define HPROSE_OBJECT_INTERN(type_name) \
-    php_hprose_##type_name##_t *intern = HPROSE_GET_OBJECT_P(type_name, getThis());
+    php_hprose_##type_name *intern = HPROSE_GET_OBJECT_P(type_name, getThis());
 
 #define HPROSE_OBJECT(type_name, name) \
-    hprose_##type_name##_t *name = HPROSE_GET_OBJECT_P(type_name, getThis())->name;
+    hprose_##type_name *name = HPROSE_GET_OBJECT_P(type_name, getThis())->name;
 
 #define HPROSE_OBJECT_HANDLERS(type_name)                  \
 static zend_object_handlers hprose_##type_name##_handlers; \
@@ -263,10 +267,12 @@ zend_class_entry *get_hprose_##type_name##_ce() {   \
 /**********************************************************\
 | helper function definition                               |
 \**********************************************************/
-static inline void hprose_str_replace(char from, char to, char *s, int len) {
+static inline void hprose_str_replace(char from, char to, char *s, int len, int start) {
     register int i;
-    for (i = 0; i < len; i++) if (s[i] == from) s[i] = to;
+    for (i = start; i < len; i++) if (s[i] == from) s[i] = to;
 }
+
+#define str_replace(from, to, s, len) hprose_str_replace((from), (to), (s), (len), 0)
 
 #ifndef ZEND_ACC_TRAIT
 #define ZEND_ACC_TRAIT 0
@@ -325,6 +331,8 @@ static inline zend_bool hprose_class_exists(const char *classname, size_t len, z
     }
 #endif
 }
+
+#define class_exists(classname, len, autoload) hprose_class_exists((classname), (len), (autoload) TSRMLS_CC)
 
 /**********************************************************/
 END_EXTERN_C()
