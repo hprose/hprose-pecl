@@ -26,7 +26,7 @@
 #endif
 
 #include "hprose_tags.h"
-//#include "hprose_bytes_io.h"
+#include "hprose_bytes_io.h"
 /*
 #include "hprose_class_manager.h"
  */

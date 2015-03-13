@@ -6,7 +6,8 @@ PHP_ARG_ENABLE(hprose, hprose support,
 dnl Check whether the extension is enabled at all
 if test "$PHP_HPROSE" != "no"; then
   dnl Finally, tell the build system about the extension and what files are needed
-  HPROSE_SOURCES="src/hprose_tags.c"
+  HPROSE_SOURCES="src/hprose_tags.c \
+    src/hprose_bytes_io.c"
   PHP_NEW_EXTENSION(hprose, php_hprose.c $HPROSE_SOURCES, $ext_shared)
   PHP_ADD_INCLUDE([$ext_srcdir/include])
   PHP_SUBST(HPROSE_SHARED_LIBADD)

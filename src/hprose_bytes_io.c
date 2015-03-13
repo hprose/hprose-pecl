@@ -24,9 +24,56 @@ HPROSE_CLASS_BEGIN_EX(bytes_io, bytes)
     int32_t mark;        
 HPROSE_CLASS_END(bytes_io)        
 
-HPROSE_OBJECT_FREE(bytes_io);
+static void php_hprose_bytes_io_free(
+    php_hprose_bytes_io_t *bytes_io TSRMLS_DC)
+{
+#if (PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION > 0)
+    zend_object_std_dtor(&bytes_io->object TSRMLS_CC);
+#else
+    if (bytes_io->object.properties)
+    {
+        zend_hash_destroy(bytes_io->object.properties);
+        FREE_HASHTABLE(bytes_io->object.properties);
+    }
+#endif
+    efree(bytes_io);
+}
 
-HPROSE_OBJECT_NEW(bytes_io);
+static zend_object_value php_hprose_bytes_io_new(
+    zend_class_entry *ce TSRMLS_DC)
+{
+    zend_object_value retval;
+    php_hprose_bytes_io_t *bytes_io;
+#if PHP_API_VERSION < 20100412
+    zval *tmp;
+#endif
+
+    bytes_io = emalloc(sizeof(php_hprose_bytes_io_t));
+
+#if (PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION > 0)
+    zend_object_std_init(&bytes_io->object, ce TSRMLS_CC);
+#else
+    ALLOC_HASHTABLE(bytes_io->object.properties);
+    zend_hash_init(bytes_io->object.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
+    bytes_io->object.ce = ce;
+#endif
+
+#if PHP_API_VERSION < 20100412
+    zend_hash_copy(
+        bytes_io->object.properties, &ce->default_properties,
+        (copy_ctor_func_t)zval_add_ref, (void *)&tmp, sizeof(zval *));
+#else
+    object_properties_init(&bytes_io->object, ce);
+#endif
+
+    retval.handle = zend_objects_store_put(
+        bytes_io, (zend_objects_store_dtor_t)zend_objects_destroy_object,
+        (zend_objects_free_object_storage_t)php_hprose_bytes_io_free,
+        NULL TSRMLS_CC);
+    retval.handlers = zend_get_std_object_handlers();
+
+    return retval;
+}
 
 ZEND_METHOD(hprose_bytes_io, __construct) {
     char *buf = NULL;

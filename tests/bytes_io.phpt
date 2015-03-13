@@ -4,7 +4,6 @@ Test that the Hprose\BytesIO class works.
 <?php if (!extension_loaded("hprose")) print "skip"; ?>
 --FILE--
 <?php
-/*
 $bytes = new HproseBytesIO("Hello World! 你好，中国");
 echo $bytes->length() . "\r\n";
 echo $bytes->getc();
@@ -37,7 +36,7 @@ $bytes = new Hprose\BytesIO();
 $bytes->write("123", 2);
 echo $bytes . "\r\n";
 ?>
--|-EXPECT-|-
+--EXPECT--
 28
 Hello
  Wo
@@ -53,9 +52,3 @@ I'm coming back.
 bool(false)
 bool(true)
 12
- * 
- */
-echo "Hello";
-?>
---EXPECT--
-Hello
