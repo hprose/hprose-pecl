@@ -24,97 +24,126 @@ HPROSE_CLASS_BEGIN_EX(bytes_io, bytes)
     int32_t mark;        
 HPROSE_CLASS_END(bytes_io)        
 
-static void php_hprose_bytes_io_free(
-    php_hprose_bytes_io_t *bytes_io TSRMLS_DC)
-{
-#if (PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION > 0)
-    zend_object_std_dtor(&bytes_io->object TSRMLS_CC);
-#else
-    if (bytes_io->object.properties)
-    {
-        zend_hash_destroy(bytes_io->object.properties);
-        FREE_HASHTABLE(bytes_io->object.properties);
-    }
-#endif
-    efree(bytes_io);
+static zend_object_handlers hprose_bytes_io_handlers;
+
+#if PHP_MAJOR_VERSION < 7
+
+static void php_hprose_bytes_io_free(void *object TSRMLS_DC) {
+    php_hprose_bytes_io_t *intern = (php_hprose_bytes_io_t *)object;
+    /* 插入自己的释放代码 */
+    zend_object_std_dtor(&intern->std TSRMLS_CC);
+    efree(intern);
 }
 
+#if PHP_API_VERSION < 20100412
+
 static zend_object_value php_hprose_bytes_io_new(
-    zend_class_entry *ce TSRMLS_DC)
-{
+    zend_class_entry *ce TSRMLS_DC) {
     zend_object_value retval;
-    php_hprose_bytes_io_t *bytes_io;
-#if PHP_API_VERSION < 20100412
+    php_hprose_bytes_io_t *intern;
     zval *tmp;
-#endif
 
-    bytes_io = emalloc(sizeof(php_hprose_bytes_io_t));
+    intern = emalloc(sizeof(php_hprose_bytes_io_t));
+    memset(intern, 0, sizeof(php_hprose_bytes_io_t));
 
-#if (PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION > 0)
-    zend_object_std_init(&bytes_io->object, ce TSRMLS_CC);
-#else
-    ALLOC_HASHTABLE(bytes_io->object.properties);
-    zend_hash_init(bytes_io->object.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
-    bytes_io->object.ce = ce;
-#endif
+    zend_object_std_init(&intern->std, ce TSRMLS_CC);
 
-#if PHP_API_VERSION < 20100412
     zend_hash_copy(
-        bytes_io->object.properties, &ce->default_properties,
+        intern->std.properties, &ce->default_properties,
         (copy_ctor_func_t)zval_add_ref, (void *)&tmp, sizeof(zval *));
-#else
-    object_properties_init(&bytes_io->object, ce);
-#endif
 
     retval.handle = zend_objects_store_put(
-        bytes_io, (zend_objects_store_dtor_t)zend_objects_destroy_object,
+        intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
         (zend_objects_free_object_storage_t)php_hprose_bytes_io_free,
         NULL TSRMLS_CC);
-    retval.handlers = zend_get_std_object_handlers();
+    retval.handlers = &hprose_bytes_io_handlers;
 
     return retval;
 }
 
+#else
+
+static zend_object_value php_hprose_bytes_io_new(
+    zend_class_entry *ce TSRMLS_DC) {
+    zend_object_value retval;
+    php_hprose_bytes_io_t *intern;
+
+    intern = emalloc(sizeof(php_hprose_bytes_io_t));
+    memset(intern, 0, sizeof(php_hprose_bytes_io_t));
+
+    zend_object_std_init(&intern->std, ce TSRMLS_CC);
+
+    object_properties_init(&intern->std, ce);
+
+    retval.handle = zend_objects_store_put(
+        intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
+        (zend_objects_free_object_storage_t)php_hprose_bytes_io_free,
+        NULL TSRMLS_CC);
+    retval.handlers = &hprose_bytes_io_handlers;
+
+    return retval;
+}
+#endif
+
+#else
+
+static void php_hprose_bytes_io_free(zend_object *object) {
+    php_hprose_bytes_io_t *intern = (php_hprose_bytes_io_t *)((char*)(object) - XtOffsetOf(php_hprose_bytes_io_t, std));
+    /* 插入自己的释放代码 */
+    zend_object_std_dtor(&intern->std);
+}
+
+static zend_object *php_hprose_bytes_io_new(zend_class_entry *ce) {
+    php_hprose_bytes_io_t *intern;
+    intern = ecalloc(1, sizeof(php_hprose_bytes_io_t) + zend_object_properties_size(ce));
+    memset(intern, 0, sizeof(php_hprose_bytes_io_t) + zend_object_properties_size(ce));
+    zend_object_std_init(&intern->std, ce);
+    object_properties_init(&intern->std, ce);
+    intern->std.handlers = &hprose_bytes_io_handlers;
+    return &intern->std;
+}
+#endif
+
 ZEND_METHOD(hprose_bytes_io, __construct) {
     char *buf = NULL;
     int len = 0;
-    HPROSE_OBJECT(bytes_io);
+    HPROSE_OBJECT_INTERN(bytes_io);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &buf, &len) == FAILURE) {
         return;
     }
     if (buf) {
-        bytes_io->bytes = hprose_bytes_io_create(buf, len);
+        intern->bytes = hprose_bytes_io_create(buf, len);
     }
     else {
-        bytes_io->bytes = hprose_bytes_io_new();
+        intern->bytes = hprose_bytes_io_new();
     }
-    bytes_io->mark = -1;
+    intern->mark = -1;
 }
 
 ZEND_METHOD(hprose_bytes_io, __destruct) {
-    HPROSE_OBJECT(bytes_io);
-    if (bytes_io->bytes) {
-        hprose_bytes_io_free(bytes_io->bytes);
-        bytes_io->bytes = NULL;
+    HPROSE_OBJECT_INTERN(bytes_io);
+    if (intern->bytes) {
+        hprose_bytes_io_free(intern->bytes);
+        intern->bytes = NULL;
     }
 }
 
 ZEND_METHOD(hprose_bytes_io, close) {
-    HPROSE_OBJECT(bytes_io);
-    hprose_bytes_io_close(bytes_io->bytes);
-    bytes_io->mark = -1;
+    HPROSE_OBJECT_INTERN(bytes_io);
+    hprose_bytes_io_close(intern->bytes);
+    intern->mark = -1;
 }
 
 ZEND_METHOD(hprose_bytes_io, length) {
-    HPROSE_OBJECT(bytes_io);
-    RETURN_LONG(bytes_io->bytes->len);
+    HPROSE_OBJECT(bytes_io, bytes);
+    RETURN_LONG(bytes->len);
 }
 
 ZEND_METHOD(hprose_bytes_io, getc) {
-    HPROSE_OBJECT_EX(bytes_io, bytes);
+    HPROSE_OBJECT(bytes_io, bytes);
     if (bytes->pos < bytes->len) {
         char *c = hprose_bytes_io_read(bytes, 1);
-        RETURN_STRINGL(c, 1, 0);
+        RETURN_STRINGL_0(c, 1);
     }
     RETURN_EMPTY_STRING();
 }
@@ -122,7 +151,7 @@ ZEND_METHOD(hprose_bytes_io, getc) {
 ZEND_METHOD(hprose_bytes_io, read) {
     char *s;
     long n;
-    HPROSE_OBJECT_EX(bytes_io, bytes);
+    HPROSE_OBJECT(bytes_io, bytes);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &n) == FAILURE) {
         RETURN_NULL();
     }
@@ -130,22 +159,22 @@ ZEND_METHOD(hprose_bytes_io, read) {
         n = bytes->len - bytes->pos;
     }
     s = hprose_bytes_io_read(bytes, n);
-    RETURN_STRINGL(s, n, 0);
+    RETURN_STRINGL_0(s, n);
 }
 
 ZEND_METHOD(hprose_bytes_io, readfull) {
     char *s;
     int32_t l;
-    HPROSE_OBJECT(bytes_io);
-    s = hprose_bytes_io_readfull(bytes_io->bytes, &l);
-    RETURN_STRINGL(s, l, 0);
+    HPROSE_OBJECT(bytes_io, bytes);
+    s = hprose_bytes_io_readfull(bytes, &l);
+    RETURN_STRINGL_0(s, l);
 }
 
 ZEND_METHOD(hprose_bytes_io, readuntil) {
     char *s, *tag;
     int len;
     int32_t l;
-    HPROSE_OBJECT_EX(bytes_io, bytes);
+    HPROSE_OBJECT(bytes_io, bytes);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &tag, &len) == FAILURE) {
         RETURN_NULL();
     }
@@ -155,41 +184,41 @@ ZEND_METHOD(hprose_bytes_io, readuntil) {
     else {
         s = hprose_bytes_io_readfull(bytes, &l);
     }
-    RETURN_STRINGL(s, l, 0);
+    RETURN_STRINGL_0(s, l);
 }
 
 ZEND_METHOD(hprose_bytes_io, readString) {
     char *s;
     long n;
     int32_t l;
-    HPROSE_OBJECT_EX(bytes_io, bytes);
+    HPROSE_OBJECT(bytes_io, bytes);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &n) == FAILURE) {
         RETURN_NULL();
     }
     s = hprose_bytes_io_read_string(bytes, n, &l);
-    RETURN_STRINGL(s, l, 0);
+    RETURN_STRINGL_0(s, l);
 }
 
 ZEND_METHOD(hprose_bytes_io, mark) {
-    HPROSE_OBJECT(bytes_io);
-    bytes_io->mark = bytes_io->bytes->pos;
+    HPROSE_OBJECT_INTERN(bytes_io);
+    intern->mark = intern->bytes->pos;
 }
 
 ZEND_METHOD(hprose_bytes_io, unmark) {
-    HPROSE_OBJECT(bytes_io);
-    bytes_io->mark = -1;
+    HPROSE_OBJECT_INTERN(bytes_io);
+    intern->mark = -1;
 }
 
 ZEND_METHOD(hprose_bytes_io, reset) {
-    HPROSE_OBJECT(bytes_io);
-    if (bytes_io->mark != -1) {
-        bytes_io->bytes->pos = bytes_io->mark;
+    HPROSE_OBJECT_INTERN(bytes_io);
+    if (intern->mark != -1) {
+        intern->bytes->pos = intern->mark;
     }
 }
 
 ZEND_METHOD(hprose_bytes_io, skip) {
     long n;
-    HPROSE_OBJECT_EX(bytes_io, bytes);
+    HPROSE_OBJECT(bytes_io, bytes);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &n) == FAILURE) {
         return;
     }
@@ -204,15 +233,15 @@ ZEND_METHOD(hprose_bytes_io, skip) {
 }
 
 ZEND_METHOD(hprose_bytes_io, eof) {
-    HPROSE_OBJECT(bytes_io);
-    RETURN_BOOL(hprose_bytes_io_eof(bytes_io->bytes));
+    HPROSE_OBJECT(bytes_io, bytes);
+    RETURN_BOOL(hprose_bytes_io_eof(bytes));
 }
 
 ZEND_METHOD(hprose_bytes_io, write) {
     char *str;
     int len;
     long n = -1;
-    HPROSE_OBJECT_EX(bytes_io, bytes);
+    HPROSE_OBJECT(bytes_io, bytes);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &str, &len, &n) == FAILURE) {
         return;
     }
@@ -221,8 +250,8 @@ ZEND_METHOD(hprose_bytes_io, write) {
 }
 
 ZEND_METHOD(hprose_bytes_io, toString) {
-    HPROSE_OBJECT_EX(bytes_io, bytes);
-    RETURN_STRINGL(bytes->buf, bytes->len, 1);
+    HPROSE_OBJECT(bytes_io, bytes);
+    RETURN_STRINGL_1(bytes->buf, bytes->len);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_bytes_io_construct_arginfo, 0, 0, 0)
@@ -268,8 +297,16 @@ zend_class_entry *hprose_bytes_io_ce;
 HPROSE_STARTUP_FUNCTION(bytes_io) {
     zend_class_entry ce;
     INIT_NS_CLASS_ENTRY(ce, "Hprose", "BytesIO", hprose_bytes_io_methods)
-    hprose_bytes_io_ce = zend_register_internal_class(&ce TSRMLS_CC);
-    hprose_bytes_io_ce->create_object = php_hprose_bytes_io_new;
+    ce.create_object = php_hprose_bytes_io_new;
+#if PHP_MAJOR_VERSION < 7
+    hprose_bytes_io_ce = zend_register_internal_class_ex(&ce, NULL, NULL TSRMLS_CC);
+    memcpy(&hprose_bytes_io_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+#else
+    hprose_bytes_io_ce = zend_register_internal_class_ex(&ce, NULL);
+    memcpy(&hprose_bytes_io_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+    hprose_bytes_io_handlers.offset = XtOffsetOf(php_hprose_bytes_io_t, std);
+    hprose_bytes_io_handlers.free_obj = php_hprose_bytes_io_free;
+#endif
     zend_register_class_alias("HproseBytesIO", hprose_bytes_io_ce);
     return SUCCESS;
 }

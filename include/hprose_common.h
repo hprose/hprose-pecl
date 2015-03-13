@@ -23,11 +23,6 @@
 
 #include "php.h"
 #include "zend_exceptions.h"
-#if PHP_MAJOR_VERSION < 7
-#include "ext/standard/php_smart_str.h"
-#else
-#include "ext/standard/php_smart_string.h"
-#endif
 
 BEGIN_EXTERN_C()
 
@@ -127,45 +122,44 @@ ZEND_END_ARG_INFO()
 /**********************************************************\
 | Class & Object Macro definition                          |
 \**********************************************************/
-#define HPROSE_CLASS_BEGIN_EX(name, fieldname) \
-typedef struct {                               \
-    zend_object object;                        \
-    hprose_##name##_t *fieldname;              \
+#if PHP_MAJOR_VERSION < 7
 
-#define HPROSE_CLASS_BEGIN(name) HPROSE_CLASS_BEGIN_EX(name, name)
+#define RETURN_STRINGL_0(s, l) RETURN_STRINGL(s, l, 0)
+#define RETURN_STRINGL_1(s, l) RETURN_STRINGL(s, l, 1)
 
-#define HPROSE_CLASS_END(name) \
-} php_hprose_##name##_t;
+#define HPROSE_CLASS_BEGIN_EX(type_name, field_name) \
+typedef struct {                                     \
+    zend_object std;                                 \
+    hprose_##type_name##_t *field_name;              \
 
-#define HPROSE_OBJECT(name)       \
-    php_hprose_##name##_t *name;  \
-    name = (php_hprose_##name##_t *)zend_object_store_get_object(getThis() TSRMLS_CC);
+#define HPROSE_CLASS_END(type_name) \
+} php_hprose_##type_name##_t;
 
-#define HPROSE_OBJECT_EX(name, fieldname) \
-    hprose_##name##_t *fieldname;  \
-    fieldname = ((php_hprose_##name##_t *)zend_object_store_get_object(getThis() TSRMLS_CC))->fieldname;
+#define HPROSE_GET_OBJECT_P(type_name, zv) ((php_hprose_##type_name##_t *)zend_object_store_get_object((zv) TSRMLS_CC))
 
-#define HPROSE_OBJECT_FREE(name)  \
-static void php_hprose_##name##_free(php_hprose_##name##_t *name TSRMLS_DC) \
-{                                                                           \
-    zend_object_std_dtor(&name->object TSRMLS_CC);                          \
-    efree(name);                                                            \
-}
+#else
+#define RETURN_STRINGL_0(s, l) RETURN_STRINGL(s, l)
+#define RETURN_STRINGL_1(s, l) RETURN_STRINGL(s, l)
 
-#define HPROSE_OBJECT_NEW(name)                                                     \
-static zend_object_value php_hprose_##name##_new(zend_class_entry *ce TSRMLS_DC) {  \
-    zend_object_value retval;                                                       \
-    php_hprose_##name##_t *name;                                                    \
-    name = emalloc(sizeof(php_hprose_##name##_t));                                  \
-    zend_object_std_init(&name->object, ce TSRMLS_CC);                              \
-    object_properties_init(&name->object, ce);                                      \
-    retval.handle = zend_objects_store_put(                                         \
-        name, (zend_objects_store_dtor_t)zend_objects_destroy_object,               \
-        (zend_objects_free_object_storage_t)php_hprose_##name##_free,               \
-        NULL TSRMLS_CC);                                                            \
-    retval.handlers = zend_get_std_object_handlers();                               \
-    return retval;                                                                  \
-}
+#define HPROSE_CLASS_BEGIN_EX(type_name, fieldname) \
+typedef struct {                                    \
+    hprose_##type_name##_t *fieldname;              \
+
+#define HPROSE_CLASS_END(type_name)                 \
+    zend_object std;                                \
+} php_hprose_##type_name##_t;
+
+#define HPROSE_GET_OBJECT_P(type_name, zv) ((php_hprose_##type_name##_t *)((char*)(Z_OBJ_P(zv)) - XtOffsetOf(php_hprose_##type_name##_t, std)))
+#endif
+
+#define HPROSE_CLASS_BEGIN(type_name) HPROSE_CLASS_BEGIN_EX(type_name, type_name)
+
+#define HPROSE_OBJECT_INTERN(type_name) \
+    php_hprose_##type_name##_t *intern = HPROSE_GET_OBJECT_P(type_name, getThis());
+
+#define HPROSE_OBJECT(type_name, name) \
+    hprose_##type_name##_t *name = HPROSE_GET_OBJECT_P(type_name, getThis())->name;
+
 
 /**********************************************************\
 | helper function definition                               |

@@ -94,7 +94,7 @@ ZEND_FUNCTION(hprose_unserialize) {
 
 ZEND_FUNCTION(hprose_info) {
     array_init(return_value);
-#if PHP_MAJOR_VERSION < 7    
+#if PHP_MAJOR_VERSION < 7
     add_assoc_string(return_value, "ext_version", HPROSE_VERSION, 1);
     add_assoc_string(return_value, "ext_build_date", HPROSE_BUILD_DATE, 1);
     add_assoc_string(return_value, "ext_author", HPROSE_AUTHOR, 1);

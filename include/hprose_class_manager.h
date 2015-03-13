@@ -22,6 +22,11 @@
 #define	HPROSE_CLASS_MANAGER_H
 
 #include "hprose_common.h"
+#if PHP_MAJOR_VERSION < 7
+#include "ext/standard/php_smart_str.h"
+#else
+#include "ext/standard/php_smart_string.h"
+#endif
 
 BEGIN_EXTERN_C()
 

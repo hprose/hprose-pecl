@@ -25,8 +25,6 @@
 
 BEGIN_EXTERN_C()
 
-extern zend_class_entry *hprose_bytes_io_ce;
-
 HPROSE_STARTUP_FUNCTION(bytes_io);
 
 typedef struct {
@@ -41,12 +39,12 @@ typedef struct {
 #define HPROSE_BYTES_IO_PREALLOC 1024
 #endif
 
-#ifndef HPROSE_INT_MIN_STR
-#define HPROSE_INT_MIN_STR "-2147483648"
+#ifndef HPROSE_INT32_MIN_STR
+#define HPROSE_INT32_MIN_STR "-2147483648"
 #endif
 
-#ifndef HPROSE_LONG_MIN_STR
-#define HPROSE_LONG_MIN_STR "-9223372036854775808"
+#ifndef HPROSE_INT64_MIN_STR
+#define HPROSE_INT64_MIN_STR "-9223372036854775808"
 #endif
 
 static zend_always_inline int32_t _hprose_pow2roundup(int32_t x) {
@@ -237,8 +235,8 @@ static zend_always_inline void hprose_bytes_io_write(hprose_bytes_io_t *_this, c
 }
 
 static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io_t *_this, int32_t num) {
-    if (num == INT_MIN) {
-        hprose_bytes_io_write(_this, HPROSE_INT_MIN_STR, sizeof(HPROSE_INT_MIN_STR));
+    if (num == INT32_MIN) {
+        hprose_bytes_io_write(_this, HPROSE_INT32_MIN_STR, sizeof(HPROSE_INT32_MIN_STR));
     }
     else {
         char nb[32];
@@ -260,8 +258,8 @@ static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io_t *_thi
 }
 
 static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io_t *_this, int64_t num) {
-    if (num == LONG_MIN) {
-        hprose_bytes_io_write(_this, HPROSE_LONG_MIN_STR, sizeof(HPROSE_LONG_MIN_STR));
+    if (num == INT64_MIN) {
+        hprose_bytes_io_write(_this, HPROSE_INT64_MIN_STR, sizeof(HPROSE_INT64_MIN_STR));
     }
     else {
         char nb[32];
