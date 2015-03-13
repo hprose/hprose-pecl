@@ -302,6 +302,8 @@ static zend_always_inline void hprose_bytes_io_write_ulong(hprose_bytes_io_t *_t
     hprose_bytes_io_write(_this, p, nb + 31 - p);
 }
 
+zend_class_entry *get_hprose_bytes_io_ce();
+
 END_EXTERN_C()
 
 #endif	/* HPROSE_BYTES_IO_H */

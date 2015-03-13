@@ -24,92 +24,6 @@ HPROSE_CLASS_BEGIN_EX(bytes_io, bytes)
     int32_t mark;        
 HPROSE_CLASS_END(bytes_io)        
 
-static zend_object_handlers hprose_bytes_io_handlers;
-
-#if PHP_MAJOR_VERSION < 7
-
-static void php_hprose_bytes_io_free(void *object TSRMLS_DC) {
-    php_hprose_bytes_io_t *intern = (php_hprose_bytes_io_t *)object;
-    if (intern->bytes) {
-        hprose_bytes_io_free(intern->bytes);
-        intern->bytes = NULL;
-    }
-    zend_object_std_dtor(&intern->std TSRMLS_CC);
-    efree(intern);
-}
-
-#if PHP_API_VERSION < 20100412
-
-static zend_object_value php_hprose_bytes_io_new(
-    zend_class_entry *ce TSRMLS_DC) {
-    zend_object_value retval;
-    php_hprose_bytes_io_t *intern;
-    zval *tmp;
-
-    intern = emalloc(sizeof(php_hprose_bytes_io_t));
-    memset(intern, 0, sizeof(php_hprose_bytes_io_t));
-
-    zend_object_std_init(&intern->std, ce TSRMLS_CC);
-
-    zend_hash_copy(
-        intern->std.properties, &ce->default_properties,
-        (copy_ctor_func_t)zval_add_ref, (void *)&tmp, sizeof(zval *));
-
-    retval.handle = zend_objects_store_put(
-        intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
-        (zend_objects_free_object_storage_t)php_hprose_bytes_io_free,
-        NULL TSRMLS_CC);
-    retval.handlers = &hprose_bytes_io_handlers;
-
-    return retval;
-}
-
-#else
-
-static zend_object_value php_hprose_bytes_io_new(
-    zend_class_entry *ce TSRMLS_DC) {
-    zend_object_value retval;
-    php_hprose_bytes_io_t *intern;
-
-    intern = emalloc(sizeof(php_hprose_bytes_io_t));
-    memset(intern, 0, sizeof(php_hprose_bytes_io_t));
-
-    zend_object_std_init(&intern->std, ce TSRMLS_CC);
-
-    object_properties_init(&intern->std, ce);
-
-    retval.handle = zend_objects_store_put(
-        intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
-        (zend_objects_free_object_storage_t)php_hprose_bytes_io_free,
-        NULL TSRMLS_CC);
-    retval.handlers = &hprose_bytes_io_handlers;
-
-    return retval;
-}
-#endif
-
-#else
-
-static void php_hprose_bytes_io_free(zend_object *object) {
-    php_hprose_bytes_io_t *intern = (php_hprose_bytes_io_t *)((char*)(object) - XtOffsetOf(php_hprose_bytes_io_t, std));
-    if (intern->bytes) {
-        hprose_bytes_io_free(intern->bytes);
-        intern->bytes = NULL;
-    }
-    zend_object_std_dtor(&intern->std);
-}
-
-static zend_object *php_hprose_bytes_io_new(zend_class_entry *ce) {
-    php_hprose_bytes_io_t *intern;
-    intern = ecalloc(1, sizeof(php_hprose_bytes_io_t) + zend_object_properties_size(ce));
-    memset(intern, 0, sizeof(php_hprose_bytes_io_t) + zend_object_properties_size(ce));
-    zend_object_std_init(&intern->std, ce);
-    object_properties_init(&intern->std, ce);
-    intern->std.handlers = &hprose_bytes_io_handlers;
-    return &intern->std;
-}
-#endif
-
 ZEND_METHOD(hprose_bytes_io, __construct) {
     char *buf = NULL;
     int len = 0;
@@ -298,21 +212,21 @@ static zend_function_entry hprose_bytes_io_methods[] = {
     {NULL, NULL, NULL}
 };
 
-zend_class_entry *hprose_bytes_io_ce;
+HPROSE_OBJECT_HANDLERS(bytes_io)
+
+HPROSE_OBJECT_FREE_BEGIN(bytes_io)
+    if (intern->bytes) {
+        hprose_bytes_io_free(intern->bytes);
+        intern->bytes = NULL;
+    }
+HPROSE_OBJECT_FREE_END
+
+HPROSE_OBJECT_NEW_BEGIN(bytes_io)
+HPROSE_OBJECT_NEW_END(bytes_io)
+
+HPROSE_CLASS_ENTRY(bytes_io)
 
 HPROSE_STARTUP_FUNCTION(bytes_io) {
-    zend_class_entry ce;
-    INIT_NS_CLASS_ENTRY(ce, "Hprose", "BytesIO", hprose_bytes_io_methods)
-    ce.create_object = php_hprose_bytes_io_new;
-#if PHP_MAJOR_VERSION < 7
-    hprose_bytes_io_ce = zend_register_internal_class_ex(&ce, NULL, NULL TSRMLS_CC);
-    memcpy(&hprose_bytes_io_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-#else
-    hprose_bytes_io_ce = zend_register_internal_class_ex(&ce, NULL);
-    memcpy(&hprose_bytes_io_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-    hprose_bytes_io_handlers.offset = XtOffsetOf(php_hprose_bytes_io_t, std);
-    hprose_bytes_io_handlers.free_obj = php_hprose_bytes_io_free;
-#endif
-    zend_register_class_alias("HproseBytesIO", hprose_bytes_io_ce);
+    HPROSE_REGISTER_CLASS("Hprose", "BytesIO", bytes_io);
     return SUCCESS;
 }

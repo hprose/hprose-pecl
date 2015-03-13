@@ -132,12 +132,68 @@ typedef struct {                                     \
     zend_object std;                                 \
     hprose_##type_name##_t *field_name;              \
 
-#define HPROSE_CLASS_END(type_name) \
-} php_hprose_##type_name##_t;
+#define HPROSE_CLASS_END(type_name)                  \
+} php_hprose_##type_name##_t;                        \
 
 #define HPROSE_GET_OBJECT_P(type_name, zv) ((php_hprose_##type_name##_t *)zend_object_store_get_object((zv) TSRMLS_CC))
 
-#else
+#define HPROSE_OBJECT_FREE_BEGIN(type_name)                                     \
+static void php_hprose_##type_name##_free(void *object TSRMLS_DC) {             \
+    php_hprose_##type_name##_t *intern = (php_hprose_##type_name##_t *)object;  \
+
+#define HPROSE_OBJECT_FREE_END                      \
+    zend_object_std_dtor(&intern->std TSRMLS_CC);   \
+    efree(intern);                                  \
+}                                                   \
+
+#if PHP_API_VERSION < 20100412
+
+#define HPROSE_OBJECT_NEW_BEGIN(type_name)                              \
+static zend_object_value php_hprose_##type_name##_new(                  \
+    zend_class_entry *ce TSRMLS_DC) {                                   \
+    zend_object_value retval;                                           \
+    php_hprose_##type_name##_t *intern;                                 \
+    zval *tmp;                                                          \
+    intern = emalloc(sizeof(php_hprose_##type_name##_t));               \
+    memset(intern, 0, sizeof(php_hprose_##type_name##_t));              \
+    zend_object_std_init(&intern->std, ce TSRMLS_CC);                   \
+    zend_hash_copy(                                                     \
+        intern->std.properties, &ce->default_properties,                \
+        (copy_ctor_func_t)zval_add_ref, (void *)&tmp, sizeof(zval *));  \
+
+#else  /* PHP_API_VERSION < 20100412 */
+
+#define HPROSE_OBJECT_NEW_BEGIN(type_name)                  \
+static zend_object_value php_hprose_##type_name##_new(      \
+    zend_class_entry *ce TSRMLS_DC) {                       \
+    zend_object_value retval;                               \
+    php_hprose_##type_name##_t *intern;                     \
+    intern = emalloc(sizeof(php_hprose_##type_name##_t));   \
+    memset(intern, 0, sizeof(php_hprose_##type_name##_t));  \
+    zend_object_std_init(&intern->std, ce TSRMLS_CC);       \
+    object_properties_init(&intern->std, ce);               \
+
+#endif /* PHP_API_VERSION < 20100412 */
+
+#define HPROSE_OBJECT_NEW_END(type_name)                                    \
+    retval.handle = zend_objects_store_put(                                 \
+        intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,     \
+        (zend_objects_free_object_storage_t)php_hprose_##type_name##_free,  \
+        NULL TSRMLS_CC);                                                    \
+    retval.handlers = &hprose_##type_name##_handlers;                       \
+    return retval;                                                          \
+}                                                                           \
+
+#define HPROSE_REGISTER_CLASS(ns, name, type_name)                                                          \
+    zend_class_entry ce;                                                                                    \
+    INIT_NS_CLASS_ENTRY(ce, ns, name, hprose_##type_name##_methods)                                         \
+    ce.create_object = php_hprose_##type_name##_new;                                                        \
+    hprose_##type_name##_ce = zend_register_internal_class_ex(&ce, NULL, NULL TSRMLS_CC);                   \
+    memcpy(&hprose_##type_name##_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));   \
+    zend_register_class_alias(ns name, hprose_##type_name##_ce);                                            \
+
+#else  /* PHP_MAJOR_VERSION < 7 */
+
 #define RETURN_STRINGL_0(s, l) RETURN_STRINGL(s, l)
 #define RETURN_STRINGL_1(s, l) RETURN_STRINGL(s, l)
 
@@ -147,10 +203,45 @@ typedef struct {                                    \
 
 #define HPROSE_CLASS_END(type_name)                 \
     zend_object std;                                \
-} php_hprose_##type_name##_t;
+} php_hprose_##type_name##_t;                       \
 
-#define HPROSE_GET_OBJECT_P(type_name, zv) ((php_hprose_##type_name##_t *)((char*)(Z_OBJ_P(zv)) - XtOffsetOf(php_hprose_##type_name##_t, std)))
-#endif
+#define _HPROSE_GET_OBJECT_P(type_name, obj) ((php_hprose_##type_name##_t *)((char*)(obj) - XtOffsetOf(php_hprose_##type_name##_t, std)))
+
+#define HPROSE_GET_OBJECT_P(type_name, zv) _HPROSE_GET_OBJECT_P(type_name, Z_OBJ_P(zv))
+
+#define HPROSE_OBJECT_FREE_BEGIN(type_name)                                         \
+static void php_hprose_##type_name##_free(zend_object *object) {                    \
+    php_hprose_##type_name##_t *intern = _HPROSE_GET_OBJECT_P(type_name, object);   \
+
+#define HPROSE_OBJECT_FREE_END          \
+    zend_object_std_dtor(&intern->std); \
+}                                       \
+
+#define HPROSE_OBJECT_NEW_BEGIN(type_name)                                                       \
+static zend_object *php_hprose_##type_name##_new(zend_class_entry *ce) {                         \
+    php_hprose_##type_name##_t *intern;                                                          \
+    intern = ecalloc(1, sizeof(php_hprose_##type_name##_t) + zend_object_properties_size(ce));   \
+    memset(intern, 0, sizeof(php_hprose_##type_name##_t) + zend_object_properties_size(ce));     \
+    zend_object_std_init(&intern->std, ce);                                                      \
+    object_properties_init(&intern->std, ce);                                                    \
+
+#define HPROSE_OBJECT_NEW_END(type_name)                    \
+    intern->std.handlers = &hprose_##type_name##_handlers;  \
+    return &intern->std;                                    \
+}                                                           \
+
+#define HPROSE_REGISTER_CLASS(ns, name, type_name)                                                           \
+    zend_class_entry ce;                                                                                     \
+    INIT_NS_CLASS_ENTRY(ce, ns, name, hprose_##type_name##_methods)                                          \
+    ce.create_object = php_hprose_##type_name##_new;                                                         \
+    hprose_##type_name##_ce = zend_register_internal_class_ex(&ce, NULL);                                    \
+    memcpy(&hprose_##type_name##_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));    \
+    hprose_##type_name##_handlers.offset = XtOffsetOf(php_hprose_##type_name##_t, std);                      \
+    hprose_##type_name##_handlers.free_obj = php_hprose_##type_name##_free;                                  \
+    zend_register_class_alias(ns name, hprose_##type_name##_ce);                                             \
+
+
+#endif /* PHP_MAJOR_VERSION < 7 */
 
 #define HPROSE_CLASS_BEGIN(type_name) HPROSE_CLASS_BEGIN_EX(type_name, type_name)
 
@@ -160,6 +251,14 @@ typedef struct {                                    \
 #define HPROSE_OBJECT(type_name, name) \
     hprose_##type_name##_t *name = HPROSE_GET_OBJECT_P(type_name, getThis())->name;
 
+#define HPROSE_OBJECT_HANDLERS(type_name)                  \
+static zend_object_handlers hprose_##type_name##_handlers; \
+
+#define HPROSE_CLASS_ENTRY(type_name)               \
+zend_class_entry *hprose_##type_name##_ce;          \
+zend_class_entry *get_hprose_##type_name##_ce() {   \
+    return hprose_##type_name##_ce;                 \
+}                                                   \
 
 /**********************************************************\
 | helper function definition                               |
