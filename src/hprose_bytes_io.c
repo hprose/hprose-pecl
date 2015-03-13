@@ -30,7 +30,10 @@ static zend_object_handlers hprose_bytes_io_handlers;
 
 static void php_hprose_bytes_io_free(void *object TSRMLS_DC) {
     php_hprose_bytes_io_t *intern = (php_hprose_bytes_io_t *)object;
-    /* 插入自己的释放代码 */
+    if (intern->bytes) {
+        hprose_bytes_io_free(intern->bytes);
+        intern->bytes = NULL;
+    }
     zend_object_std_dtor(&intern->std TSRMLS_CC);
     efree(intern);
 }
@@ -89,7 +92,10 @@ static zend_object_value php_hprose_bytes_io_new(
 
 static void php_hprose_bytes_io_free(zend_object *object) {
     php_hprose_bytes_io_t *intern = (php_hprose_bytes_io_t *)((char*)(object) - XtOffsetOf(php_hprose_bytes_io_t, std));
-    /* 插入自己的释放代码 */
+    if (intern->bytes) {
+        hprose_bytes_io_free(intern->bytes);
+        intern->bytes = NULL;
+    }
     zend_object_std_dtor(&intern->std);
 }
 
