@@ -35,9 +35,8 @@ ZEND_END_MODULE_GLOBALS(hprose_class_manager)
 ZEND_DECLARE_MODULE_GLOBALS(hprose_class_manager)
 
 void hprose_bytes_io_dtor(void *s) {
-    hprose_bytes_io *bytes = (hprose_bytes_io *)s;
-    if (bytes) {
-        hprose_bytes_io_free(bytes);
+    if (s) {
+        hprose_bytes_io_free((hprose_bytes_io *)s);
     }
 }
 
@@ -139,12 +138,12 @@ ZEND_FUNCTION(get_class) {
 }
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_class_manager_register_arginfo, 0, 0, 2)
-    ZEND_ARG_INFO(0, classname)
+    ZEND_ARG_INFO(0, name)
     ZEND_ARG_INFO(0, alias)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_class_manager_get_alias_arginfo, 0, 0, 1)
-    ZEND_ARG_INFO(0, classname)
+    ZEND_ARG_INFO(0, name)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_class_manager_get_class_arginfo, 0, 0, 1)
@@ -161,7 +160,7 @@ static zend_function_entry hprose_class_manager_methods[] = {
 HPROSE_CLASS_ENTRY(class_manager)
 
 HPROSE_STARTUP_FUNCTION(class_manager) {
-    HPROSE_REGISTER_CLASS("Hprose", "ClassManager", class_manager);
     ZEND_INIT_MODULE_GLOBALS(hprose_class_manager, hprose_class_manager_ctor, hprose_class_manager_dtor);
+    HPROSE_REGISTER_CLASS("Hprose", "ClassManager", class_manager);
     return SUCCESS;
 }
