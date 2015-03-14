@@ -21,7 +21,7 @@
 #ifndef HPROSE_CLASS_MANAGER_H
 #define	HPROSE_CLASS_MANAGER_H
 
-#include "hprose_common.h"
+#include "hprose.h"
 
 BEGIN_EXTERN_C()
 

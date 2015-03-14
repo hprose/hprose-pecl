@@ -35,8 +35,8 @@ modules
 run-tests.php
 *.lo
 nbproject
-*.ini
-
-*.ini
-
-*.sh
+tests/*.diff
+tests/*.exp
+tests/*.log
+tests/*.out
+tests/*.php

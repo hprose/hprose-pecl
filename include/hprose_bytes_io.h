@@ -21,7 +21,7 @@
 #ifndef HPROSE_BYTES_IO_H
 #define	HPROSE_BYTES_IO_H
 
-#include "hprose_common.h"
+#include "hprose.h"
 
 BEGIN_EXTERN_C()
 
