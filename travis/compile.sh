@@ -1,2 +1,2 @@
 #!/bin/sh
-make clean && phpize && ./configure && make 
+phpize && ./configure && make 
