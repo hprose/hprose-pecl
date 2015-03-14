@@ -21,20 +21,32 @@
 #include "hprose_class_manager.h"
 #include "hprose_bytes_io.h"
 
+#if PHP_MAJOR_VERSION < 7
 static void hprose_bytes_io_dtor(void *s) {
     hprose_bytes_io_free(*(hprose_bytes_io **)s);
 }
+#else
+static void hprose_bytes_io_dtor(zval *zv) {
+    hprose_bytes_io_free((hprose_bytes_io *)Z_PTR_P(zv));
+}
+#endif
+
+#ifdef ZTS
+#define PERSISTENT_CACHE 0
+#else
+#define PERSISTENT_CACHE 1
+#endif
 
 void _hprose_class_manager_register(const char *name, int nlen, const char *alias, int alen TSRMLS_DC) {
-    hprose_bytes_io *_name = hprose_bytes_io_pcreate(name, nlen, 1);
-    hprose_bytes_io *_alias = hprose_bytes_io_pcreate(alias, alen, 1);
+    hprose_bytes_io *_name = hprose_bytes_io_pcreate(name, nlen, PERSISTENT_CACHE);
+    hprose_bytes_io *_alias = hprose_bytes_io_pcreate(alias, alen, PERSISTENT_CACHE);
     if (!HPROSE_G(cache1)) {
         ALLOC_HASHTABLE(HPROSE_G(cache1));
-        zend_hash_init(HPROSE_G(cache1), 64, NULL, &hprose_bytes_io_dtor, 1);
+        zend_hash_init(HPROSE_G(cache1), 64, NULL, hprose_bytes_io_dtor, PERSISTENT_CACHE);
     }
     if (!HPROSE_G(cache2)) {
         ALLOC_HASHTABLE(HPROSE_G(cache2));
-        zend_hash_init(HPROSE_G(cache2), 64, NULL, &hprose_bytes_io_dtor, 1);
+        zend_hash_init(HPROSE_G(cache2), 64, NULL, hprose_bytes_io_dtor, PERSISTENT_CACHE);
     }
     zend_hash_update(HPROSE_G(cache1), name, nlen + 1, &_alias, sizeof(_alias), NULL);
     zend_hash_update(HPROSE_G(cache2), alias, alen + 1, &_name, sizeof(_name), NULL);
