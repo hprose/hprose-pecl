@@ -302,6 +302,19 @@ zend_class_entry *get_hprose_##type_name##_ce() {   \
 }                                                   \
 
 /**********************************************************\
+| Hashtable function compatible PHP 7                      |
+\**********************************************************/
+
+#if PHP_MAJOR_VERSION < 7
+#define zend_hash_str_add_ptr(ht, key, klen, ptr) zend_hash_add((ht), (key), (klen), &(ptr), sizeof(ptr), NULL)
+#define zend_hash_str_update_ptr(ht, key, klen, ptr) zend_hash_update((ht), (key), (klen), &(ptr), sizeof(ptr), NULL)
+static zend_always_inline void * zend_hash_str_find_ptr(HashTable *ht, const char *key, int klen) {
+    void **ptr;
+    return (zend_hash_find(ht, key, klen, (void **)&ptr) == FAILURE) ? NULL : *ptr;
+}
+#endif /* PHP_MAJOR_VERSION < 7 */
+
+/**********************************************************\
 | helper function definition                               |
 \**********************************************************/
 static inline void hprose_str_replace(char from, char to, char *s, int len, int start) {

@@ -48,30 +48,30 @@ void _hprose_class_manager_register(const char *name, int nlen, const char *alia
         ALLOC_HASHTABLE(HPROSE_G(cache2));
         zend_hash_init(HPROSE_G(cache2), 64, NULL, hprose_bytes_io_dtor, PERSISTENT_CACHE);
     }
-    zend_hash_update(HPROSE_G(cache1), name, nlen + 1, &_alias, sizeof(_alias), NULL);
-    zend_hash_update(HPROSE_G(cache2), alias, alen + 1, &_name, sizeof(_name), NULL);
+    zend_hash_str_update_ptr(HPROSE_G(cache1), name, nlen + 1, _alias);
+    zend_hash_str_update_ptr(HPROSE_G(cache2), alias, alen + 1, _name);
 }
 
 char * _hprose_class_manager_get_alias(const char *name, int len, int* len_ptr TSRMLS_DC) {
     char *alias;
-    hprose_bytes_io **_alias;
-    if (HPROSE_G(cache1) && zend_hash_find(HPROSE_G(cache1), name, len + 1, (void **)&_alias) == FAILURE) {
+    hprose_bytes_io *_alias;
+    if (HPROSE_G(cache1) && (_alias = zend_hash_str_find_ptr(HPROSE_G(cache1), name, len + 1)) == NULL) {
         alias = estrndup(name, len);
         *len_ptr = len;
         str_replace('\\', '_', alias, len);
         hprose_class_manager_register(name, len, alias, len);
     }
     else {
-        alias = hprose_bytes_io_to_string(*_alias);
-        *len_ptr = (*_alias)->len;
+        alias = hprose_bytes_io_to_string(_alias);
+        *len_ptr = _alias->len;
     }
     return alias;
 }
 
 char * _hprose_class_manager_get_class(const char *alias, int len, int* len_ptr TSRMLS_DC) {
     char * name;
-    hprose_bytes_io **_name;
-    if (HPROSE_G(cache2) && zend_hash_find(HPROSE_G(cache2), alias, len + 1, (void **)&_name) == FAILURE) {
+    hprose_bytes_io *_name;
+    if (HPROSE_G(cache2) && (_name = zend_hash_str_find_ptr(HPROSE_G(cache2), alias, len + 1)) == NULL) {
         name = estrndup(alias, len);
         *len_ptr = len;
         if (!class_exists(alias, len, 0) && !class_exists(alias, len, 1)) {
@@ -87,8 +87,8 @@ char * _hprose_class_manager_get_class(const char *alias, int len, int* len_ptr 
         }
     }
     else {
-        name = hprose_bytes_io_to_string(*_name);
-        *len_ptr = (*_name)->len;
+        name = hprose_bytes_io_to_string(_name);
+        *len_ptr = _name->len;
     }
     return name;
 }
