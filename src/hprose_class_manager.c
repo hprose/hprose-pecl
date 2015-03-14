@@ -40,6 +40,11 @@ void hprose_bytes_io_dtor(void *s) {
     }
 }
 
+static void php_hprose_class_manager_init_globals(zend_hprose_class_manager_globals *hprose_class_manager_globals) {
+	hprose_class_manager_globals->cache1 = NULL;
+	hprose_class_manager_globals->cache2 = NULL;
+}
+
 ZEND_MODULE_GLOBALS_CTOR_D(hprose_class_manager) {
     ALLOC_HASHTABLE(hprose_class_manager_globals->cache1);
     ALLOC_HASHTABLE(hprose_class_manager_globals->cache2);
