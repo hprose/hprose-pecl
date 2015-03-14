@@ -21,61 +21,29 @@
 #include "hprose_class_manager.h"
 #include "hprose_bytes_io.h"
 
-ZEND_BEGIN_MODULE_GLOBALS(hprose_class_manager)
-HashTable *cache1;
-HashTable *cache2;
-ZEND_END_MODULE_GLOBALS(hprose_class_manager)
-
-#ifdef ZTS
-#define HPROSE_CLASS_MANAGER_G(v) TSRMG(hprose_class_manager_globals_id, zend_hprose_class_manager_globals *, v)
-#else
-#define HPROSE_CLASS_MANAGER_G(v) (hprose_class_manager_globals.v)
-#endif
-
-ZEND_DECLARE_MODULE_GLOBALS(hprose_class_manager)
-
-void hprose_bytes_io_dtor(void *s) {
-    if (s) {
-        hprose_bytes_io_free((hprose_bytes_io *)s);
-    }
-}
-
-static void php_hprose_class_manager_init_globals(zend_hprose_class_manager_globals *hprose_class_manager_globals) {
-	hprose_class_manager_globals->cache1 = NULL;
-	hprose_class_manager_globals->cache2 = NULL;
-}
-
-ZEND_MODULE_GLOBALS_CTOR_D(hprose_class_manager) {
-    ALLOC_HASHTABLE(hprose_class_manager_globals->cache1);
-    ALLOC_HASHTABLE(hprose_class_manager_globals->cache2);
-    zend_hash_init(hprose_class_manager_globals->cache1, 64, NULL, &hprose_bytes_io_dtor, 1);
-    zend_hash_init(hprose_class_manager_globals->cache2, 64, NULL, &hprose_bytes_io_dtor, 1);
-}
-
-ZEND_MODULE_GLOBALS_DTOR_D(hprose_class_manager) {
-    if (hprose_class_manager_globals->cache1) {
-        zend_hash_destroy(hprose_class_manager_globals->cache1);
-        FREE_HASHTABLE(hprose_class_manager_globals->cache1);
-        hprose_class_manager_globals->cache1 = NULL;
-    }
-    if (hprose_class_manager_globals->cache2) {
-        zend_hash_destroy(hprose_class_manager_globals->cache2);
-        FREE_HASHTABLE(hprose_class_manager_globals->cache2);
-        hprose_class_manager_globals->cache2 = NULL;
-    }
+static void hprose_bytes_io_dtor(void *s) {
+    hprose_bytes_io_free(*(hprose_bytes_io **)s);
 }
 
 void _hprose_class_manager_register(const char *name, int nlen, const char *alias, int alen TSRMLS_DC) {
     hprose_bytes_io *_name = hprose_bytes_io_pcreate(name, nlen, 1);
     hprose_bytes_io *_alias = hprose_bytes_io_pcreate(alias, alen, 1);
-    zend_hash_update(HPROSE_CLASS_MANAGER_G(cache1), name, nlen + 1, &_alias, sizeof(_alias), NULL);
-    zend_hash_update(HPROSE_CLASS_MANAGER_G(cache2), alias, alen + 1, &_name, sizeof(_name), NULL);
+    if (!HPROSE_G(cache1)) {
+        ALLOC_HASHTABLE(HPROSE_G(cache1));
+        zend_hash_init(HPROSE_G(cache1), 64, NULL, &hprose_bytes_io_dtor, 1);
+    }
+    if (!HPROSE_G(cache2)) {
+        ALLOC_HASHTABLE(HPROSE_G(cache2));
+        zend_hash_init(HPROSE_G(cache2), 64, NULL, &hprose_bytes_io_dtor, 1);
+    }
+    zend_hash_update(HPROSE_G(cache1), name, nlen + 1, &_alias, sizeof(_alias), NULL);
+    zend_hash_update(HPROSE_G(cache2), alias, alen + 1, &_name, sizeof(_name), NULL);
 }
 
 char * _hprose_class_manager_get_alias(const char *name, int len, int* len_ptr TSRMLS_DC) {
     char *alias;
     hprose_bytes_io **_alias;
-    if (zend_hash_find(HPROSE_CLASS_MANAGER_G(cache1), name, len + 1, (void **)&_alias) == FAILURE) {
+    if (HPROSE_G(cache1) && zend_hash_find(HPROSE_G(cache1), name, len + 1, (void **)&_alias) == FAILURE) {
         alias = estrndup(name, len);
         *len_ptr = len;
         str_replace('\\', '_', alias, len);
@@ -91,7 +59,7 @@ char * _hprose_class_manager_get_alias(const char *name, int len, int* len_ptr T
 char * _hprose_class_manager_get_class(const char *alias, int len, int* len_ptr TSRMLS_DC) {
     char * name;
     hprose_bytes_io **_name;
-    if (zend_hash_find(HPROSE_CLASS_MANAGER_G(cache2), alias, len + 1, (void **)&_name) == FAILURE) {
+    if (HPROSE_G(cache2) && zend_hash_find(HPROSE_G(cache2), alias, len + 1, (void **)&_name) == FAILURE) {
         name = estrndup(alias, len);
         *len_ptr = len;
         if (!class_exists(alias, len, 0) && !class_exists(alias, len, 1)) {
@@ -165,9 +133,30 @@ static zend_function_entry hprose_class_manager_methods[] = {
 HPROSE_CLASS_ENTRY(class_manager)
 
 HPROSE_STARTUP_FUNCTION(class_manager) {
-    ZEND_INIT_MODULE_GLOBALS(hprose_class_manager,
-        ZEND_MODULE_GLOBALS_CTOR_N(hprose_class_manager),
-        ZEND_MODULE_GLOBALS_DTOR_N(hprose_class_manager));
     HPROSE_REGISTER_CLASS("Hprose", "ClassManager", class_manager);
+    return SUCCESS;
+}
+
+HPROSE_ACTIVATE_FUNCTION(class_manager) {
+#ifdef ZTS
+    HPROSE_G(cache1) = NULL;
+    HPROSE_G(cache2) = NULL;
+#endif
+    return SUCCESS;
+}
+
+HPROSE_DEACTIVATE_FUNCTION(class_manager) {
+#ifdef ZTS
+    if (HPROSE_G(cache1)) {
+        zend_hash_destroy(HPROSE_G(cache1));
+        FREE_HASHTABLE(HPROSE_G(cache1));
+        HPROSE_G(cache1) = NULL;
+    }
+    if (HPROSE_G(cache2)) {
+        zend_hash_destroy(HPROSE_G(cache2));
+        FREE_HASHTABLE(HPROSE_G(cache2));
+        HPROSE_G(cache2) = NULL;
+    }
+#endif
     return SUCCESS;
 }

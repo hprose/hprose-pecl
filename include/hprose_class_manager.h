@@ -28,6 +28,8 @@ BEGIN_EXTERN_C()
 zend_class_entry *get_hprose_class_manager_ce();
 
 HPROSE_STARTUP_FUNCTION(class_manager);
+HPROSE_ACTIVATE_FUNCTION(class_manager);
+HPROSE_DEACTIVATE_FUNCTION(class_manager);
 
 void _hprose_class_manager_register(const char *name, int nlen, const char *alias, int alen TSRMLS_DC);
 char * _hprose_class_manager_get_alias(const char *name, int len, int* len_ptr TSRMLS_DC);

@@ -35,6 +35,12 @@ ZEND_RINIT_FUNCTION(hprose) {
 #if PHP_MAJOR_VERSION >= 7 && defined(COMPILE_DL_HPROSE) && defined(ZTS)
     ZEND_TSRMLS_CACHE_UPDATE();
 #endif
+    HPROSE_ACTIVATE(class_manager);
+    return SUCCESS;
+}
+
+ZEND_RSHUTDOWN_FUNCTION(hprose) {
+    HPROSE_DEACTIVATE(class_manager);
     return SUCCESS;
 }
 
@@ -93,18 +99,42 @@ const zend_function_entry hprose_functions[] = {
     ZEND_FE_END
 };
 
+ZEND_DECLARE_MODULE_GLOBALS(hprose)
+
+static ZEND_GINIT_FUNCTION(hprose) {
+    hprose_globals->cache1 = NULL;
+    hprose_globals->cache2 = NULL;
+}
+
+static ZEND_GSHUTDOWN_FUNCTION(hprose) {
+    if (hprose_globals->cache1) {
+        zend_hash_destroy(hprose_globals->cache1);
+        FREE_HASHTABLE(hprose_globals->cache1);
+        hprose_globals->cache1 = NULL;
+    }
+    if (hprose_globals->cache2) {
+        zend_hash_destroy(hprose_globals->cache2);
+        FREE_HASHTABLE(hprose_globals->cache2);
+        hprose_globals->cache2 = NULL;
+    }
+}
+
 /* compiled module information */
 zend_module_entry hprose_module_entry = {
     STANDARD_MODULE_HEADER,
-    HPROSE_MODULE_NAME,
-    hprose_functions,
-    ZEND_MINIT(hprose),
-    ZEND_MSHUTDOWN(hprose),
-    ZEND_RINIT(hprose),
-    NULL,
-    ZEND_MINFO(hprose),
-    HPROSE_VERSION,
-    STANDARD_MODULE_PROPERTIES
+    HPROSE_MODULE_NAME,            /* extension name */
+    hprose_functions,              /* function list */
+    ZEND_MINIT(hprose),            /* process startup */
+    ZEND_MSHUTDOWN(hprose),        /* process shutdown */
+    ZEND_RINIT(hprose),            /* request startup */
+    ZEND_RSHUTDOWN(hprose),        /* request shutdown */
+    ZEND_MINFO(hprose),            /* extension info */
+    HPROSE_VERSION,                /* extension version */
+    ZEND_MODULE_GLOBALS(hprose),   /* globals descriptor */
+    ZEND_GINIT(hprose),            /* globals ctor */
+    ZEND_GSHUTDOWN(hprose),        /* globals dtor */
+    NULL,                          /* post deactivate */
+    STANDARD_MODULE_PROPERTIES_EX
 };
 
 #ifdef COMPILE_DL_HPROSE

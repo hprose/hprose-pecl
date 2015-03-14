@@ -50,6 +50,19 @@ ZEND_TSRMLS_CACHE_EXTERN();
 #define HPROSE_API
 #endif
 
+ZEND_BEGIN_MODULE_GLOBALS(hprose)
+    HashTable *cache1;
+    HashTable *cache2;
+ZEND_END_MODULE_GLOBALS(hprose)
+
+#ifdef ZTS
+#define HPROSE_G(v) TSRMG(hprose_globals_id, zend_hprose_globals *, v)
+#else
+#define HPROSE_G(v) (hprose_globals.v)
+#endif
+
+ZEND_EXTERN_MODULE_GLOBALS(hprose)
+
 /**********************************************************\
 | int type definition                                      |
 \**********************************************************/
@@ -135,13 +148,13 @@ ZEND_END_ARG_INFO()
 | START UP Macro definition                                |
 \**********************************************************/
 #define HPROSE_STARTUP_FUNCTION(module)   	ZEND_MINIT_FUNCTION(hprose_##module)
-#define HPROSE_STARTUP(module)	 		  	ZEND_MODULE_STARTUP_N(hprose_##module)(INIT_FUNC_ARGS_PASSTHRU)
+#define HPROSE_STARTUP(module)	 		ZEND_MODULE_STARTUP_N(hprose_##module)(INIT_FUNC_ARGS_PASSTHRU)
 #define HPROSE_SHUTDOWN_FUNCTION(module)   	ZEND_MSHUTDOWN_FUNCTION(hprose_##module)
-#define HPROSE_SHUTDOWN(module)	 		  	ZEND_MODULE_SHUTDOWN_N(hprose_##module)(SHUTDOWN_FUNC_ARGS_PASSTHRU)
+#define HPROSE_SHUTDOWN(module)	 		ZEND_MODULE_SHUTDOWN_N(hprose_##module)(SHUTDOWN_FUNC_ARGS_PASSTHRU)
 #define HPROSE_ACTIVATE_FUNCTION(module)   	ZEND_MODULE_ACTIVATE_D(hprose_##module)
-#define HPROSE_ACTIVATE(module)	 		  	ZEND_MODULE_ACTIVATE_N(hprose_##module)(INIT_FUNC_ARGS_PASSTHRU)
-#define HPROSE_DEACTIVATE_FUNCTION(module)  ZEND_MODULE_DEACTIVATE_D(hprose_##module)
-#define HPROSE_DEACTIVATE(module)           ZEND_MODULE_DEACTIVATE_N(hprose_##module)(SHUTDOWN_FUNC_ARGS_PASSTHRU)
+#define HPROSE_ACTIVATE(module)	 		ZEND_MODULE_ACTIVATE_N(hprose_##module)(INIT_FUNC_ARGS_PASSTHRU)
+#define HPROSE_DEACTIVATE_FUNCTION(module)      ZEND_MODULE_DEACTIVATE_D(hprose_##module)
+#define HPROSE_DEACTIVATE(module)               ZEND_MODULE_DEACTIVATE_N(hprose_##module)(SHUTDOWN_FUNC_ARGS_PASSTHRU)
 
 /**********************************************************\
 | Class & Object Macro definition                          |
