@@ -13,7 +13,7 @@
  *                                                        *
  * hprose common for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 13, 2015                             *
+ * LastModified: Mar 14, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -25,6 +25,30 @@
 #include "zend_exceptions.h"
 
 BEGIN_EXTERN_C()
+
+/**********************************************************\
+| INIT                                                     |
+\**********************************************************/
+
+#ifdef ZTS
+#include "TSRM.h"
+#endif
+
+#if PHP_MAJOR_VERSION >= 7 && defined(ZTS) && defined(COMPILE_DL_HPROSE)
+ZEND_TSRMLS_CACHE_EXTERN();
+#endif
+
+#ifndef ZEND_FE_END
+#define ZEND_FE_END            { NULL, NULL, NULL }
+#endif
+
+#ifdef PHP_WIN32
+#define HPROSE_API __declspec(dllexport)
+#elif defined(__GNUC__) && __GNUC__ >= 4
+#define HPROSE_API __attribute__ ((visibility("default")))
+#else
+#define HPROSE_API
+#endif
 
 /**********************************************************\
 | int type definition                                      |

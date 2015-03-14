@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl header file.                           *
  *                                                        *
- * LastModified: Mar 12, 2015                             *
+ * LastModified: Mar 14, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -41,15 +41,6 @@ zend_module_entry hprose_module_entry;
 #define HPROSE_VERSION            "1.0.0"
 #define HPROSE_AUTHOR             "Ma Bingyao"
 #define HPROSE_HOMEPAGE           "https://github.com/hprose/hprose-pecl"
-
-ZEND_MINIT_FUNCTION(hprose);
-ZEND_MSHUTDOWN_FUNCTION(hprose);
-ZEND_MINFO_FUNCTION(hprose);
-
-/* declaration of functions to be exported */
-ZEND_FUNCTION(hprose_serialize);
-ZEND_FUNCTION(hprose_unserialize);
-ZEND_FUNCTION(hprose_info);
 
 END_EXTERN_C()
 

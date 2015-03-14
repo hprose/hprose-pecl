@@ -13,7 +13,7 @@
  *                                                        *
  * hprose class manager for pecl source file.             *
  *                                                        *
- * LastModified: Mar 13, 2015                             *
+ * LastModified: Mar 14, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -40,23 +40,23 @@ void hprose_bytes_io_dtor(void *s) {
     }
 }
 
-static void hprose_class_manager_ctor(zend_hprose_class_manager_globals * _globals) {
-    ALLOC_HASHTABLE(_globals->cache1);
-    ALLOC_HASHTABLE(_globals->cache2);
-    zend_hash_init(_globals->cache1, 64, NULL, &hprose_bytes_io_dtor, 1);
-    zend_hash_init(_globals->cache2, 64, NULL, &hprose_bytes_io_dtor, 1);
+ZEND_MODULE_GLOBALS_CTOR_D(hprose_class_manager) {
+    ALLOC_HASHTABLE(hprose_class_manager_globals->cache1);
+    ALLOC_HASHTABLE(hprose_class_manager_globals->cache2);
+    zend_hash_init(hprose_class_manager_globals->cache1, 64, NULL, &hprose_bytes_io_dtor, 1);
+    zend_hash_init(hprose_class_manager_globals->cache2, 64, NULL, &hprose_bytes_io_dtor, 1);
 }
 
-static void hprose_class_manager_dtor(zend_hprose_class_manager_globals * _globals) {
-    if (_globals->cache1) {
-        zend_hash_destroy(_globals->cache1);
-        FREE_HASHTABLE(_globals->cache1);
-        _globals->cache1 = NULL;
+ZEND_MODULE_GLOBALS_DTOR_D(hprose_class_manager) {
+    if (hprose_class_manager_globals->cache1) {
+        zend_hash_destroy(hprose_class_manager_globals->cache1);
+        FREE_HASHTABLE(hprose_class_manager_globals->cache1);
+        hprose_class_manager_globals->cache1 = NULL;
     }
-    if (_globals->cache2) {
-        zend_hash_destroy(_globals->cache2);
-        FREE_HASHTABLE(_globals->cache2);
-        _globals->cache2 = NULL;
+    if (hprose_class_manager_globals->cache2) {
+        zend_hash_destroy(hprose_class_manager_globals->cache2);
+        FREE_HASHTABLE(hprose_class_manager_globals->cache2);
+        hprose_class_manager_globals->cache2 = NULL;
     }
 }
 
@@ -154,13 +154,15 @@ static zend_function_entry hprose_class_manager_methods[] = {
     ZEND_ME_MAPPING(register, register, hprose_class_manager_register_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
     ZEND_ME_MAPPING(getAlias, get_alias, hprose_class_manager_get_alias_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
     ZEND_ME_MAPPING(getClass, get_class, hprose_class_manager_get_class_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
-    {NULL, NULL, NULL}
+    ZEND_FE_END
 };
 
 HPROSE_CLASS_ENTRY(class_manager)
 
 HPROSE_STARTUP_FUNCTION(class_manager) {
-    ZEND_INIT_MODULE_GLOBALS(hprose_class_manager, hprose_class_manager_ctor, hprose_class_manager_dtor);
+    ZEND_INIT_MODULE_GLOBALS(hprose_class_manager,
+        ZEND_MODULE_GLOBALS_CTOR_N(hprose_class_manager),
+        ZEND_MODULE_GLOBALS_DTOR_N(hprose_class_manager));
     HPROSE_REGISTER_CLASS("Hprose", "ClassManager", class_manager);
     return SUCCESS;
 }

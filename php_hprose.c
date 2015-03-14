@@ -13,39 +13,12 @@
  *                                                        *
  * hprose for pecl source file.                           *
  *                                                        *
- * LastModified: Mar 10, 2015                             *
+ * LastModified: Mar 14, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
 
 #include "php_hprose.h"
-
-/* compiled function list so Zend knows what's in this module */
-const zend_function_entry hprose_functions[] = {
-    ZEND_FE(hprose_serialize, NULL)
-    ZEND_FE(hprose_unserialize, NULL)
-    ZEND_FE(hprose_info, NULL)
-    {NULL, NULL, NULL}
-};
-
-/* compiled module information */
-zend_module_entry hprose_module_entry = {
-    STANDARD_MODULE_HEADER,
-    HPROSE_MODULE_NAME,
-    hprose_functions,
-    ZEND_MINIT(hprose),
-    ZEND_MSHUTDOWN(hprose),
-    NULL,
-    NULL,
-    ZEND_MINFO(hprose),
-    HPROSE_VERSION,
-    STANDARD_MODULE_PROPERTIES
-};
-
-/* implement standard "stub" routine to introduce ourselves to Zend */
-#if defined(COMPILE_DL_HPROSE)
-ZEND_GET_MODULE(hprose)
-#endif
 
 ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(tags);
@@ -55,6 +28,13 @@ ZEND_MINIT_FUNCTION(hprose) {
 }
 
 ZEND_MSHUTDOWN_FUNCTION(hprose) {
+    return SUCCESS;
+}
+
+ZEND_RINIT_FUNCTION(hprose) {
+#if PHP_MAJOR_VERSION >= 7 && defined(COMPILE_DL_HPROSE) && defined(ZTS)
+    ZEND_TSRMLS_CACHE_UPDATE();
+#endif
     return SUCCESS;
 }
 
@@ -104,3 +84,32 @@ ZEND_FUNCTION(hprose_info) {
     add_assoc_string(return_value, "ext_author", HPROSE_AUTHOR);
 #endif
 }
+
+/* compiled function list so Zend knows what's in this module */
+const zend_function_entry hprose_functions[] = {
+    ZEND_FE(hprose_serialize, NULL)
+    ZEND_FE(hprose_unserialize, NULL)
+    ZEND_FE(hprose_info, NULL)
+    ZEND_FE_END
+};
+
+/* compiled module information */
+zend_module_entry hprose_module_entry = {
+    STANDARD_MODULE_HEADER,
+    HPROSE_MODULE_NAME,
+    hprose_functions,
+    ZEND_MINIT(hprose),
+    ZEND_MSHUTDOWN(hprose),
+    ZEND_RINIT(hprose),
+    NULL,
+    ZEND_MINFO(hprose),
+    HPROSE_VERSION,
+    STANDARD_MODULE_PROPERTIES
+};
+
+#ifdef COMPILE_DL_HPROSE
+#if PHP_MAJOR_VERSION >= 7 && defined(ZTS)
+ZEND_TSRMLS_CACHE_DEFINE();
+#endif
+ZEND_GET_MODULE(hprose)
+#endif

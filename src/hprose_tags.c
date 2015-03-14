@@ -13,7 +13,7 @@
  *                                                        *
  * hprose tags for pecl source file.                      *
  *                                                        *
- * LastModified: Mar 13, 2015                             *
+ * LastModified: Mar 14, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -21,7 +21,7 @@
 #include "hprose_tags.h"
 
 static zend_function_entry hprose_tags_methods[] = {
-    {NULL, NULL, NULL}
+    ZEND_FE_END
 };
 
 #define DECLARE_TAG(name, value) \
