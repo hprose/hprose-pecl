@@ -108,7 +108,7 @@ char * _hprose_class_manager_get_class(const char *alias, int len, int* len_ptr 
     return name;
 }
 
-ZEND_FUNCTION(register) {
+ZEND_METHOD(hprose_class_manager, register) {
     char *name, *alias;
     int nlen, alen;
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &name, &nlen, &alias, &alen) == FAILURE) {
@@ -117,7 +117,7 @@ ZEND_FUNCTION(register) {
     hprose_class_manager_register(name, nlen, alias, alen);
 }
 
-ZEND_FUNCTION(get_alias) {
+ZEND_METHOD(hprose_class_manager, get_alias) {
     char *name, *alias;
     int nlen, alen;
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name, &nlen) == FAILURE) {
@@ -127,7 +127,7 @@ ZEND_FUNCTION(get_alias) {
     RETURN_STRINGL_0(alias, alen);
 }
 
-ZEND_FUNCTION(get_class) {
+ZEND_METHOD(hprose_class_manager, get_class) {
     char *name, *alias;
     int nlen, alen;
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &alias, &alen) == FAILURE) {
@@ -151,9 +151,9 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_class_manager_get_class_arginfo, 0, 0, 1)
 ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_class_manager_methods[] = {
-    ZEND_ME_MAPPING(register, register, hprose_class_manager_register_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
-    ZEND_ME_MAPPING(getAlias, get_alias, hprose_class_manager_get_alias_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
-    ZEND_ME_MAPPING(getClass, get_class, hprose_class_manager_get_class_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_class_manager, register, hprose_class_manager_register_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
+    ZEND_MALIAS(hprose_class_manager, getAlias, get_alias, hprose_class_manager_get_alias_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
+    ZEND_MALIAS(hprose_class_manager, getClass, get_class, hprose_class_manager_get_class_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 
