@@ -447,7 +447,8 @@ static inline zend_bool hprose_class_exists(const char *classname, size_t len, z
 
 static zend_always_inline zend_bool is_utf8(const char *str, size_t len) {
     const uint8_t * s = (const uint8_t *)str;
-    for (size_t i = 0; i < len; ++i) {
+    size_t i;
+    for (i = 0; i < len; ++i) {
         uint8_t c = s[i];
         switch (c >> 4) {
             case 0:
@@ -461,24 +462,24 @@ static zend_always_inline zend_bool is_utf8(const char *str, size_t len) {
                 break;
             case 12:
             case 13:
-                if ((s[++i] >> 6) != 0x2) return false;
+                if ((s[++i] >> 6) != 0x2) return 0;
                 break;
             case 14:
-                if ((s[++i] >> 6) != 0x2) return false;
-                if ((s[++i] >> 6) != 0x2) return false;
+                if ((s[++i] >> 6) != 0x2) return 0;
+                if ((s[++i] >> 6) != 0x2) return 0;
                 break;
             case 15: {
                 uint8_t b = s[++i];
-                if ((s[++i] >> 6) != 0x2) return false;
-                if ((s[++i] >> 6) != 0x2) return false;
-                if ((((c & 0xf) << 2) | ((b >> 4) & 0x3)) > 0x10) return false;
+                if ((s[++i] >> 6) != 0x2) return 0;
+                if ((s[++i] >> 6) != 0x2) return 0;
+                if ((((c & 0xf) << 2) | ((b >> 4) & 0x3)) > 0x10) return 0;
                 break;
             }
             default:
-                return false;
+                return 0;
         }
     }
-    return true;
+    return 1;
 }
 
 static zend_always_inline size_t ustrlen(const char *str, size_t len) {
