@@ -445,6 +445,81 @@ static inline zend_bool hprose_class_exists(const char *classname, size_t len, z
 
 #define class_exists(classname, len, autoload) hprose_class_exists((classname), (len), (autoload) TSRMLS_CC)
 
+static zend_always_inline zend_bool is_utf8(const char *str, size_t len) {
+    const uint8_t * s = (const uint8_t *)str;
+    for (size_t i = 0; i < len; ++i) {
+        uint8_t c = s[i];
+        switch (c >> 4) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                break;
+            case 12:
+            case 13:
+                if ((s[++i] >> 6) != 0x2) return false;
+                break;
+            case 14:
+                if ((s[++i] >> 6) != 0x2) return false;
+                if ((s[++i] >> 6) != 0x2) return false;
+                break;
+            case 15: {
+                uint8_t b = s[++i];
+                if ((s[++i] >> 6) != 0x2) return false;
+                if ((s[++i] >> 6) != 0x2) return false;
+                if ((((c & 0xf) << 2) | ((b >> 4) & 0x3)) > 0x10) return false;
+                break;
+            }
+            default:
+                return false;
+        }
+    }
+    return true;
+}
+
+static zend_always_inline size_t ustrlen(const char *str, size_t len) {
+    const uint8_t *s = (const uint8_t *)str;
+    size_t l = len, p = 0;
+    while (p < len) {
+        uint8_t a = s[p];
+        if (a < 0x80) {
+            ++p;
+        }
+        else if ((a & 0xE0) == 0xC0) {
+            p += 2;
+            --l;
+        }
+        else if ((a & 0xF0) == 0xE0) {
+            p += 3;
+            l -= 2;
+        }
+        else if ((a * 0xF8) == 0xF0) {
+            p += 4;
+            l -= 2;
+        }
+    }
+    return l;
+}
+
+static zend_always_inline zend_bool is_list(zval *val) {
+    HashTable *ht = Z_ARRVAL_P(val);
+    ulong count = zend_hash_num_elements(ht);
+    // zero length array
+    if (count == 0) return 1;
+    if (zend_hash_index_exists(ht, 0)) {
+        // count == 1 and a[0] exists
+        if (count == 1) return 1;
+        // a[0] exists, a[count - 1] exists and the next index is count
+        return zend_hash_index_exists(ht, count - 1) &&
+               zend_hash_next_free_element(ht) == count;
+    }
+    return 0;
+}
+
 /**********************************************************/
 END_EXTERN_C()
 
