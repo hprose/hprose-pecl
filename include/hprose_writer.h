@@ -32,11 +32,13 @@ HPROSE_STARTUP_FUNCTION(writer);
 typedef void hprose_writer_refer_set(void *_this, zval *val);
 typedef zend_bool hprose_writer_refer_write(void *_this, hprose_bytes_io *stream, zval *val);
 typedef void hprose_writer_refer_reset(void *_this);
+typedef void hprose_writer_refer_free(void **_this);
 
 typedef struct {
     hprose_writer_refer_set *set;
     hprose_writer_refer_write *write;
     hprose_writer_refer_reset *reset;
+    hprose_writer_refer_free *free;
 } hprose_writer_refer;
 
 static void hprose_writer_fack_refer_set(void *_this, zval *val) {}
@@ -45,11 +47,17 @@ static zend_bool hprose_writer_fack_refer_write(void *_this, hprose_bytes_io *st
 }
 static void hprose_writer_fack_refer_reset(void *_this) {}
 
+static void hprose_writer_fack_refer_free(void **_this) {
+    efree(*_this);
+    *_this = NULL;
+}
+
 static zend_always_inline hprose_writer_refer *hprose_writer_fack_refer_new() {
     hprose_writer_refer *_this = emalloc(sizeof(hprose_writer_refer));
     _this->set = &hprose_writer_fack_refer_set;
     _this->write = &hprose_writer_fack_refer_write;
     _this->reset = &hprose_writer_fack_refer_reset;
+    _this->free = *hprose_writer_fack_refer_free;
     return _this;
 }
 
@@ -57,6 +65,7 @@ typedef struct {
     hprose_writer_refer_set *set;
     hprose_writer_refer_write *write;
     hprose_writer_refer_reset *reset;
+    hprose_writer_refer_free *free;
     zend_llist *ref;
     zval *sref;
     zval *oref;
@@ -109,10 +118,39 @@ static zend_bool hprose_writer_real_refer_write(void *_this, hprose_bytes_io *st
     }
     return 0;
 }
+
 static void hprose_writer_real_refer_reset(void *_this) {
     hprose_writer_real_refer *refer = (hprose_writer_real_refer *)_this;
     zend_llist_clean(refer->ref);
+    zend_hash_clean(Z_ARRVAL_P(refer->sref));
+    zend_hash_clean(Z_ARRVAL_P(refer->oref));
+    refer->refcount = 0;
+}
 
+static void hprose_writer_real_refer_free(void **_this) {
+    hprose_writer_real_refer *refer = *(hprose_writer_real_refer **)_this;
+    zend_llist_destroy(refer->ref);
+    efree(refer->ref);
+    zval_ptr_dtor(&(refer->sref));
+    zval_ptr_dtor(&(refer->oref));
+    efree(refer);
+    *_this = NULL;
+}
+
+static zend_always_inline hprose_writer_refer * hprose_writer_real_refer_new() {
+    hprose_writer_real_refer *_this = emalloc(sizeof(hprose_writer_refer));
+    _this->set = &hprose_writer_real_refer_set;
+    _this->write = &hprose_writer_real_refer_write;
+    _this->reset = &hprose_writer_real_refer_reset;
+    _this->free = &hprose_writer_real_refer_free;
+    _this->ref = emalloc(sizeof(zend_llist));
+    zend_llist_init(_this->ref, 32, ZVAL_PTR_DTOR, 0);
+    MAKE_STD_ZVAL(_this->sref);
+    array_init(_this->sref);
+    MAKE_STD_ZVAL(_this->oref);
+    array_init(_this->oref);
+    _this->refcount = 0;
+    return (hprose_writer_refer *)(void *)_this;
 }
 
 typedef struct {
@@ -122,6 +160,7 @@ typedef struct {
     hprose_writer_refer *refer;
     zend_bool persistent;
 } hprose_writer;
+
 
 END_EXTERN_C()
 
