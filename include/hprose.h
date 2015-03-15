@@ -413,7 +413,7 @@ static inline zend_bool hprose_class_exists(const char *classname, size_t len, z
     else {
         return 0;
     }
-#else
+#else /* PHP_MAJOR_VERSION < 7 */
     zend_string *class_name = zend_string_init(classname, len, 0);
     zend_string *lc_name;
     zend_class_entry *ce;
@@ -433,14 +433,14 @@ static inline zend_bool hprose_class_exists(const char *classname, size_t len, z
     else {
         ce = zend_lookup_class(class_name);
     }
-
+    zend_string_release(class_name);
     if (ce) {
         return ((ce->ce_flags & (ZEND_ACC_INTERFACE | ZEND_ACC_TRAIT)) == 0);
     }
     else {
         return 0;
     }
-#endif
+#endif /* PHP_MAJOR_VERSION < 7 */
 }
 
 #define class_exists(classname, len, autoload) hprose_class_exists((classname), (len), (autoload) TSRMLS_CC)
@@ -520,6 +520,25 @@ static zend_always_inline zend_bool is_list(zval *val) {
     }
     return 0;
 }
+
+static zend_always_inline zend_bool __instanceof(zend_class_entry *ce, char *name, int len TSRMLS_DC) {
+#if PHP_MAJOR_VERSION < 7
+    zend_class_entry **_ce;
+    if (zend_lookup_class(name, len, &_ce TSRMLS_CC) == FAILURE) {
+        return 0;
+    }
+    return instanceof_function(ce, *_ce TSRMLS_CC);
+#else /* PHP_MAJOR_VERSION < 7 */
+    zend_string *_name = zend_string_init(name, len, 0);
+    zend_class_entry *_ce = zend_lookup_class(_name);
+    zend_string_release(_name);
+    if (_ce == NULL) return 0;
+    return instanceof_function(ce, _ce);
+#endif /* PHP_MAJOR_VERSION < 7 */
+}
+
+// name must be a literal constant string
+#define instanceof(ce, name) __instanceof(ce, name, sizeof(name) - 1 TSRMLS_CC)
 
 /**********************************************************/
 END_EXTERN_C()
