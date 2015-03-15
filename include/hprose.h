@@ -345,7 +345,7 @@ static zend_always_inline zval *php_array_get(zval *val, ulong h) {
 }
 
 static zend_always_inline zval *php_assoc_array_get(zval *val, const char *key, int len) {
-    return zend_hash_find(Z_ARRVAL_P(val), key, len);
+    return zend_hash_str_find(Z_ARRVAL_P(val), key, len);
 }
 
 #endif /* PHP_MAJOR_VERSION < 7 */
