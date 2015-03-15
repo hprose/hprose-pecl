@@ -41,23 +41,23 @@ typedef struct {
     hprose_writer_refer_free *free;
 } hprose_writer_refer;
 
-static void hprose_writer_fack_refer_set(void *_this, zval *val) {}
-static zend_bool hprose_writer_fack_refer_write(void *_this, hprose_bytes_io *stream, zval *val) {
+static void hprose_fake_writer_refer_set(void *_this, zval *val) {}
+static zend_bool hprose_fake_writer_refer_write(void *_this, hprose_bytes_io *stream, zval *val) {
     return 0;
 }
-static void hprose_writer_fack_refer_reset(void *_this) {}
+static void hprose_fake_writer_refer_reset(void *_this) {}
 
-static void hprose_writer_fack_refer_free(void **_this) {
+static void hprose_fake_writer_refer_free(void **_this) {
     efree(*_this);
     *_this = NULL;
 }
 
-static zend_always_inline hprose_writer_refer *hprose_writer_fack_refer_new() {
+static zend_always_inline hprose_writer_refer *hprose_fake_writer_refer_new() {
     hprose_writer_refer *_this = emalloc(sizeof(hprose_writer_refer));
-    _this->set = &hprose_writer_fack_refer_set;
-    _this->write = &hprose_writer_fack_refer_write;
-    _this->reset = &hprose_writer_fack_refer_reset;
-    _this->free = *hprose_writer_fack_refer_free;
+    _this->set = &hprose_fake_writer_refer_set;
+    _this->write = &hprose_fake_writer_refer_write;
+    _this->reset = &hprose_fake_writer_refer_reset;
+    _this->free = *hprose_fake_writer_refer_free;
     return _this;
 }
 
@@ -70,16 +70,16 @@ typedef struct {
     zval *sref;
     zval *oref;
     int refcount;
-} hprose_writer_real_refer;
+} hprose_real_writer_refer;
 
-static zend_always_inline void hprose_writer_real_refer_write_ref(hprose_bytes_io *stream, int32_t index) {
+static zend_always_inline void hprose_real_writer_refer_write_ref(hprose_bytes_io *stream, int32_t index) {
     hprose_bytes_io_write_char(stream, HPROSE_TAG_REF);
     hprose_bytes_io_write_int(stream, index);
     hprose_bytes_io_write_char(stream, HPROSE_TAG_SEMICOLON);
 }
 
-static void hprose_writer_real_refer_set(void *_this, zval *val) {
-    hprose_writer_real_refer *refer = (hprose_writer_real_refer *)_this;
+static void hprose_real_writer_refer_set(void *_this, zval *val) {
+    hprose_real_writer_refer *refer = (hprose_real_writer_refer *)_this;
     char *key;
     switch (Z_TYPE_P(val)) {
         case IS_STRING:
@@ -95,21 +95,21 @@ static void hprose_writer_real_refer_set(void *_this, zval *val) {
     }
     ++(refer->refcount);
 }
-static zend_bool hprose_writer_real_refer_write(void *_this, hprose_bytes_io *stream, zval *val) {
-    hprose_writer_real_refer *refer = (hprose_writer_real_refer *)_this;
+static zend_bool hprose_real_writer_refer_write(void *_this, hprose_bytes_io *stream, zval *val) {
+    hprose_real_writer_refer *refer = (hprose_real_writer_refer *)_this;
     long index;
     char *key;
     switch (Z_TYPE_P(val)) {
         case IS_STRING:
             if (php_assoc_array_get_long(refer->sref, Z_STRVAL_P(val), Z_STRLEN_P(val), &index)) {
-                hprose_writer_real_refer_write_ref(stream, (int32_t)index);
+                hprose_real_writer_refer_write_ref(stream, (int32_t)index);
                 return 1;
             }
             break;
         case IS_OBJECT:
             key = object_hash(val);
             if (php_assoc_array_get_long(refer->oref, key, 32, &index)) {
-                hprose_writer_real_refer_write_ref(stream, (int32_t)index);
+                hprose_real_writer_refer_write_ref(stream, (int32_t)index);
                 efree(key);
                 return 1;
             }
@@ -119,16 +119,16 @@ static zend_bool hprose_writer_real_refer_write(void *_this, hprose_bytes_io *st
     return 0;
 }
 
-static void hprose_writer_real_refer_reset(void *_this) {
-    hprose_writer_real_refer *refer = (hprose_writer_real_refer *)_this;
+static void hprose_real_writer_refer_reset(void *_this) {
+    hprose_real_writer_refer *refer = (hprose_real_writer_refer *)_this;
     zend_llist_clean(refer->ref);
     zend_hash_clean(Z_ARRVAL_P(refer->sref));
     zend_hash_clean(Z_ARRVAL_P(refer->oref));
     refer->refcount = 0;
 }
 
-static void hprose_writer_real_refer_free(void **_this) {
-    hprose_writer_real_refer *refer = *(hprose_writer_real_refer **)_this;
+static void hprose_real_writer_refer_free(void **_this) {
+    hprose_real_writer_refer *refer = *(hprose_real_writer_refer **)_this;
     zend_llist_destroy(refer->ref);
     efree(refer->ref);
     zval_ptr_dtor(&(refer->sref));
@@ -137,12 +137,12 @@ static void hprose_writer_real_refer_free(void **_this) {
     *_this = NULL;
 }
 
-static zend_always_inline hprose_writer_refer * hprose_writer_real_refer_new() {
-    hprose_writer_real_refer *_this = emalloc(sizeof(hprose_writer_refer));
-    _this->set = &hprose_writer_real_refer_set;
-    _this->write = &hprose_writer_real_refer_write;
-    _this->reset = &hprose_writer_real_refer_reset;
-    _this->free = &hprose_writer_real_refer_free;
+static zend_always_inline hprose_writer_refer * hprose_real_writer_refer_new() {
+    hprose_real_writer_refer *_this = emalloc(sizeof(hprose_writer_refer));
+    _this->set = &hprose_real_writer_refer_set;
+    _this->write = &hprose_real_writer_refer_write;
+    _this->reset = &hprose_real_writer_refer_reset;
+    _this->free = &hprose_real_writer_refer_free;
     _this->ref = emalloc(sizeof(zend_llist));
     zend_llist_init(_this->ref, 32, ZVAL_PTR_DTOR, 0);
     MAKE_STD_ZVAL(_this->sref);
@@ -155,11 +155,22 @@ static zend_always_inline hprose_writer_refer * hprose_writer_real_refer_new() {
 
 typedef struct {
     hprose_bytes_io *stream;
-    HashTable *classref;
-    HashTable *propsref;
+    zval *classref;
+    zval *propsref;
     hprose_writer_refer *refer;
-    zend_bool persistent;
 } hprose_writer;
+
+static zend_always_inline hprose_writer * hprose_writer_create(hprose_bytes_io *stream, zend_bool simple) {
+    hprose_writer *_this = emalloc(sizeof(hprose_writer));
+    _this->stream = stream;
+    MAKE_STD_ZVAL(_this->classref);
+    array_init(_this->classref);
+    MAKE_STD_ZVAL(_this->propsref);
+    array_init(_this->propsref);
+    _this->refer = simple ? hprose_fake_writer_refer_new() : hprose_real_writer_refer_new();
+    return _this;
+}
+
 
 
 END_EXTERN_C()
