@@ -51,7 +51,7 @@ BEGIN_EXTERN_C()
 /* Serialize Marks */
 #define HPROSE_TAG_POS          '+'
 #define HPROSE_TAG_NEG          '-'
-#define HPROSE_TAG_SEMISOLON    ';'
+#define HPROSE_TAG_SEMICOLON    ';'
 #define HPROSE_TAG_OPENBRACE    '{'
 #define HPROSE_TAG_CLOSEBRACE   '}'
 #define HPROSE_TAG_QUOTE        '"'

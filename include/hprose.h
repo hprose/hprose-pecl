@@ -43,11 +43,11 @@ ZEND_TSRMLS_CACHE_EXTERN();
 #endif
 
 #ifdef PHP_WIN32
-#define HPROSE_API __declspec(dllexport)
+#define PHP_HPROSE_API __declspec(dllexport)
 #elif defined(__GNUC__) && __GNUC__ >= 4
-#define HPROSE_API __attribute__ ((visibility("default")))
+#define PHP_HPROSE_API __attribute__ ((visibility("default")))
 #else
-#define HPROSE_API
+#define PHP_HPROSE_API
 #endif
 
 ZEND_BEGIN_MODULE_GLOBALS(hprose)
@@ -234,7 +234,7 @@ static zend_object_value php_hprose_##type_name##_new(      \
 #else  /* PHP_MAJOR_VERSION < 7 */
 
 #define RETURN_STRINGL_0(s, l) RETURN_STRINGL(s, l)
-#define RETURN_STRINGL_1(s, l) RETURN_STRINGL(s, l)
+#define RETURN_STRINGL_1(s, l) RETURN_PSTRINGL(s, l)
 
 #define HPROSE_CLASS_BEGIN_EX(type_name, fieldname) \
 typedef struct {                                    \
@@ -302,21 +302,82 @@ zend_class_entry *get_hprose_##type_name##_ce() {   \
 }                                                   \
 
 /**********************************************************\
-| Hashtable function compatible PHP 7                      |
+| Hashtable functions compatible PHP 7                     |
 \**********************************************************/
 
 #if PHP_MAJOR_VERSION < 7
-#define zend_hash_str_add_ptr(ht, key, klen, ptr) zend_hash_add((ht), (key), (klen), &(ptr), sizeof(ptr), NULL)
-#define zend_hash_str_update_ptr(ht, key, klen, ptr) zend_hash_update((ht), (key), (klen), &(ptr), sizeof(ptr), NULL)
-static zend_always_inline void * zend_hash_str_find_ptr(HashTable *ht, const char *key, int klen) {
-    void **ptr;
-    return (zend_hash_find(ht, key, klen, (void **)&ptr) == FAILURE) ? NULL : *ptr;
+#define zend_hash_str_add_ptr(ht, key, len, pData) zend_hash_add((ht), (key), (len), &(pData), sizeof(pData), NULL)
+#define zend_hash_index_add_ptr(ht, h, pData)  zend_hash_index_add((ht), (h), &(pData), sizeof(pData), NULL)
+#define zend_hash_str_update_ptr(ht, key, len, pData) zend_hash_update((ht), (key), (len), &(pData), sizeof(pData), NULL)
+#define zend_hash_index_update_ptr(ht, h, pData)  zend_hash_index_update((ht), (h), &(pData), sizeof(pData), NULL)
+static zend_always_inline void * zend_hash_str_find_ptr(HashTable *ht, const char *key, int len) {
+    void **ppData;
+    return (zend_hash_find(ht, key, len, (void **)&ppData) == FAILURE) ? NULL : *ppData;
+}
+static zend_always_inline void * zend_hash_index_find_ptr(HashTable *ht, ulong h) {
+    void **ppData;
+    return (zend_hash_index_find(ht, h, (void **)&ppData) == FAILURE) ? NULL : *ppData;
 }
 #endif /* PHP_MAJOR_VERSION < 7 */
 
 /**********************************************************\
+| array functions compatible PHP 7                         |
+\**********************************************************/
+
+#if PHP_MAJOR_VERSION < 7
+
+static zend_always_inline zval *php_array_get(zval *val, ulong h) {
+    zval **result;
+    if (zend_hash_index_find(Z_ARRVAL_P(val), h, (void **)&result) == FAILURE) return NULL;
+    return *result;
+}
+
+static zend_always_inline zval *php_assoc_array_get(zval *val, const char *key, int len) {
+    zval **result;
+    if (zend_hash_find(Z_ARRVAL_P(val), key, len, (void **)&result) == FAILURE) return NULL;
+    return *result;
+}
+
+#else /* PHP_MAJOR_VERSION < 7 */
+
+static zend_always_inline zval *php_array_get(zval *val, ulong h) {
+    return zend_hash_index_find(Z_ARRVAL_P(val), h);
+}
+
+static zend_always_inline zval *php_assoc_array_get(zval *val, const char *key, int len) {
+    return zend_hash_find(Z_ARRVAL_P(val), key, len);
+}
+
+#endif /* PHP_MAJOR_VERSION < 7 */
+
+static zend_always_inline zend_bool php_array_get_long(zval *val, ulong h, long *rval) {
+    zval *result = php_array_get(val, h);
+    if (result == NULL || Z_TYPE_P(result) != IS_LONG) {
+        return 0;
+    }
+    *rval = Z_LVAL_P(result);
+    return 1;
+}
+
+static zend_always_inline zend_bool php_assoc_array_get_long(zval *val, const char *key, int len, long *rval) {
+    zval *result = php_assoc_array_get(val, key, len);
+    if (result == NULL || Z_TYPE_P(result) != IS_LONG) {
+        return 0;
+    }
+    *rval = Z_LVAL_P(result);
+    return 1;
+}
+
+/**********************************************************\
 | helper function definition                               |
 \**********************************************************/
+
+static inline char *object_hash(zval *val) {
+    char *hash;
+    spprintf(&hash, 32, "%016lx%016lx", (intptr_t)Z_OBJ_HANDLE_P(val), (intptr_t)Z_OBJ_HT_P(val));
+    return hash;
+}
+
 static inline void hprose_str_replace(char from, char to, char *s, int len, int start) {
     register int i;
     for (i = start; i < len; i++) if (s[i] == from) s[i] = to;

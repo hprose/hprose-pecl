@@ -31,9 +31,9 @@ HPROSE_STARTUP_FUNCTION(class_manager);
 HPROSE_ACTIVATE_FUNCTION(class_manager);
 HPROSE_DEACTIVATE_FUNCTION(class_manager);
 
-void _hprose_class_manager_register(const char *name, int nlen, const char *alias, int alen TSRMLS_DC);
-char * _hprose_class_manager_get_alias(const char *name, int len, int* len_ptr TSRMLS_DC);
-char * _hprose_class_manager_get_class(const char *alias, int len, int* len_ptr TSRMLS_DC);
+PHP_HPROSE_API void _hprose_class_manager_register(const char *name, int nlen, const char *alias, int alen TSRMLS_DC);
+PHP_HPROSE_API char * _hprose_class_manager_get_alias(const char *name, int len, int* len_ptr TSRMLS_DC);
+PHP_HPROSE_API char * _hprose_class_manager_get_class(const char *alias, int len, int* len_ptr TSRMLS_DC);
 
 #define hprose_class_manager_register(name, nlen, alias, alen) _hprose_class_manager_register((name), (nlen), (alias), (alen) TSRMLS_CC)
 #define hprose_class_manager_get_alias(name, len, len_ptr) _hprose_class_manager_get_alias((name), (len), (len_ptr) TSRMLS_CC)

@@ -50,13 +50,17 @@ typedef struct {
 #endif
 
 static zend_always_inline int32_t _hprose_pow2roundup(int32_t x) {
-    --x;
-    x |= x >> 1;
-    x |= x >> 2;
-    x |= x >> 4;
-    x |= x >> 8;
-    x |= x >> 16;
+#if defined(__GNUC__)
+    return 0x2 << (__builtin_clz(x - 1) ^ 0x1f);
+#else
+    x -= 1;
+    x |= (x >> 1);
+    x |= (x >> 2);
+    x |= (x >> 4);
+    x |= (x >> 8);
+    x |= (x >> 16);
     return x + 1;
+#endif
 }
 
 static zend_always_inline void _hprose_bytes_io_grow(hprose_bytes_io *_this, int32_t n) {
@@ -234,6 +238,14 @@ static zend_always_inline void hprose_bytes_io_write(hprose_bytes_io *_this, con
     memcpy(_this->buf + _this->len, str, n);
     _this->len += n;
     _this->buf[_this->len] = '\0';
+}
+
+static zend_always_inline void hprose_bytes_io_write_char(hprose_bytes_io *_this, char c) {
+    if (_this->len + 1 >= _this->cap) {
+        _hprose_bytes_io_grow(_this, HPROSE_BYTES_IO_PREALLOC);
+    }
+    _this->buf[_this->len] = c;
+    _this->buf[++_this->len] = '\0';
 }
 
 static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io *_this, int32_t num) {
