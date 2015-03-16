@@ -27,14 +27,14 @@ $bytes->write("I'm coming back.");
 $bytes->reset();
 echo $bytes->length() . "\r\n";
 echo $bytes->toString() . "\r\n";
-echo $bytes . "\r\n";
+echo $bytes->toString() . "\r\n";
 var_dump($bytes->eof());
 $bytes->skip(100);
 var_dump($bytes->eof());
 unset($bytes);
 $bytes = new Hprose\BytesIO();
 $bytes->write("123", 2);
-echo $bytes . "\r\n";
+echo $bytes->toString() . "\r\n";
 ?>
 --EXPECT--
 28

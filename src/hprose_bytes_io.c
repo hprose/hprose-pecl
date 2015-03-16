@@ -22,7 +22,7 @@
 
 ZEND_METHOD(hprose_bytes_io, __construct) {
     char *buf = NULL;
-    int len = 0;
+    size_t len = 0;
     HPROSE_OBJECT_INTERN(bytes_io);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &buf, &len) == FAILURE) {
         return;
@@ -88,7 +88,7 @@ ZEND_METHOD(hprose_bytes_io, readfull) {
 
 ZEND_METHOD(hprose_bytes_io, readuntil) {
     char *s, *tag;
-    int len;
+    size_t len;
     int32_t l;
     HPROSE_OBJECT(bytes_io, bytes);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &tag, &len) == FAILURE) {
@@ -155,7 +155,7 @@ ZEND_METHOD(hprose_bytes_io, eof) {
 
 ZEND_METHOD(hprose_bytes_io, write) {
     char *str;
-    int len;
+    size_t len;
     long n = -1;
     HPROSE_OBJECT(bytes_io, bytes);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &str, &len, &n) == FAILURE) {
@@ -166,8 +166,10 @@ ZEND_METHOD(hprose_bytes_io, write) {
 }
 
 ZEND_METHOD(hprose_bytes_io, toString) {
+    char *str;
     HPROSE_OBJECT(bytes_io, bytes);
-    RETURN_STRINGL_0(hprose_bytes_io_to_string(bytes), bytes->len);
+    str = hprose_bytes_io_to_string(bytes);
+    RETURN_STRINGL_0(str, bytes->len);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_bytes_io_construct_arginfo, 0, 0, 0)

@@ -272,7 +272,10 @@ static zend_always_inline void hprose_bytes_io_write_char(hprose_bytes_io *_this
 }
 
 static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io *_this, int32_t num) {
-    if (num == INT32_MIN) {
+    if (num >= 0 && num <= 9) {
+        hprose_bytes_io_write_char(_this, '0' + num);
+    }
+    else if (num == INT32_MIN) {
         hprose_bytes_io_write(_this, HPROSE_INT32_MIN_STR, sizeof(HPROSE_INT32_MIN_STR) - 1);
     }
     else {
@@ -295,7 +298,10 @@ static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io *_this,
 }
 
 static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io *_this, int64_t num) {
-    if (num == INT64_MIN) {
+    if (num >= 0 && num <= 9) {
+        hprose_bytes_io_write_char(_this, '0' + num);
+    }
+    else if (num == INT64_MIN) {
         hprose_bytes_io_write(_this, HPROSE_INT64_MIN_STR, sizeof(HPROSE_INT64_MIN_STR) - 1);
     }
     else {
@@ -318,25 +324,35 @@ static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io *_this
 }
 
 static zend_always_inline void hprose_bytes_io_write_uint(hprose_bytes_io *_this, uint32_t num) {
-    char buf[32];
-    char *p = buf + 31;
-    *p = '\0';
-    while (num > 0) {
-        *(--p) = (char)(num % 10) + '0';
-        num /= 10;
+    if (num <= 9) {
+        hprose_bytes_io_write_char(_this, '0' + num);
     }
-    hprose_bytes_io_write(_this, p, buf + 31 - p);
+    else {
+        char buf[32];
+        char *p = buf + 31;
+        *p = '\0';
+        while (num > 0) {
+            *(--p) = (char)(num % 10) + '0';
+            num /= 10;
+        }
+        hprose_bytes_io_write(_this, p, buf + 31 - p);
+    }
 }
 
 static zend_always_inline void hprose_bytes_io_write_ulong(hprose_bytes_io *_this, uint64_t num) {
-    char buf[32];
-    char *p = buf + 31;
-    *p = '\0';
-    while (num > 0) {
-        *(--p) = (char)(num % 10) + '0';
-        num /= 10;
+    if (num <= 9) {
+        hprose_bytes_io_write_char(_this, '0' + num);
     }
-    hprose_bytes_io_write(_this, p, buf + 31 - p);
+    else {
+        char buf[32];
+        char *p = buf + 31;
+        *p = '\0';
+        while (num > 0) {
+            *(--p) = (char)(num % 10) + '0';
+            num /= 10;
+        }
+        hprose_bytes_io_write(_this, p, buf + 31 - p);
+    }
 }
 
 static zend_always_inline void hprose_bytes_io_write_double(hprose_bytes_io *_this, double num) {
@@ -346,7 +362,7 @@ static zend_always_inline void hprose_bytes_io_write_double(hprose_bytes_io *_th
 }
 
 static zend_always_inline char * hprose_bytes_io_to_string(hprose_bytes_io *_this) {
-    return pestrndup(_this->buf, _this->len, 0);
+    return estrndup(_this->buf, _this->len);
 }
 
 HPROSE_CLASS_BEGIN_EX(bytes_io, bytes)

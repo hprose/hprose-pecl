@@ -37,7 +37,7 @@ static void hprose_bytes_io_dtor(zval *zv) {
 #define PERSISTENT_CACHE 1
 #endif
 
-void _hprose_class_manager_register(const char *name, int nlen, const char *alias, int alen TSRMLS_DC) {
+void _hprose_class_manager_register(const char *name, size_t nlen, const char *alias, size_t alen TSRMLS_DC) {
     hprose_bytes_io *_name = hprose_bytes_io_pcreate(name, nlen, PERSISTENT_CACHE);
     hprose_bytes_io *_alias = hprose_bytes_io_pcreate(alias, alen, PERSISTENT_CACHE);
     if (!HPROSE_G(cache1)) {
@@ -48,14 +48,14 @@ void _hprose_class_manager_register(const char *name, int nlen, const char *alia
         ALLOC_HASHTABLE(HPROSE_G(cache2));
         zend_hash_init(HPROSE_G(cache2), 64, NULL, hprose_bytes_io_dtor, PERSISTENT_CACHE);
     }
-    zend_hash_str_update_ptr(HPROSE_G(cache1), name, nlen + 1, _alias);
-    zend_hash_str_update_ptr(HPROSE_G(cache2), alias, alen + 1, _name);
+    zend_hash_str_update_ptr(HPROSE_G(cache1), name, nlen, _alias);
+    zend_hash_str_update_ptr(HPROSE_G(cache2), alias, alen, _name);
 }
 
-char * _hprose_class_manager_get_alias(const char *name, int len, int* len_ptr TSRMLS_DC) {
+char * _hprose_class_manager_get_alias(const char *name, size_t len, size_t* len_ptr TSRMLS_DC) {
     char *alias;
     hprose_bytes_io *_alias;
-    if (HPROSE_G(cache1) && (_alias = zend_hash_str_find_ptr(HPROSE_G(cache1), name, len + 1)) == NULL) {
+    if (HPROSE_G(cache1) && (_alias = zend_hash_str_find_ptr(HPROSE_G(cache1), name, len)) == NULL) {
         alias = estrndup(name, len);
         *len_ptr = len;
         str_replace('\\', '_', alias, len);
@@ -68,10 +68,10 @@ char * _hprose_class_manager_get_alias(const char *name, int len, int* len_ptr T
     return alias;
 }
 
-char * _hprose_class_manager_get_class(const char *alias, int len, int* len_ptr TSRMLS_DC) {
+char * _hprose_class_manager_get_class(const char *alias, size_t len, size_t* len_ptr TSRMLS_DC) {
     char * name;
     hprose_bytes_io *_name;
-    if (HPROSE_G(cache2) && (_name = zend_hash_str_find_ptr(HPROSE_G(cache2), alias, len + 1)) == NULL) {
+    if (HPROSE_G(cache2) && (_name = zend_hash_str_find_ptr(HPROSE_G(cache2), alias, len)) == NULL) {
         name = estrndup(alias, len);
         *len_ptr = len;
         if (!class_exists(alias, len, 0) && !class_exists(alias, len, 1)) {
@@ -95,7 +95,7 @@ char * _hprose_class_manager_get_class(const char *alias, int len, int* len_ptr 
 
 ZEND_METHOD(hprose_class_manager, register) {
     char *name, *alias;
-    int nlen, alen;
+    size_t nlen, alen;
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &name, &nlen, &alias, &alen) == FAILURE) {
         return;
     }
@@ -104,7 +104,7 @@ ZEND_METHOD(hprose_class_manager, register) {
 
 ZEND_METHOD(hprose_class_manager, get_alias) {
     char *name, *alias;
-    int nlen, alen;
+    size_t nlen, alen;
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name, &nlen) == FAILURE) {
         RETURN_NULL();
     }
@@ -114,7 +114,7 @@ ZEND_METHOD(hprose_class_manager, get_alias) {
 
 ZEND_METHOD(hprose_class_manager, get_class) {
     char *name, *alias;
-    int nlen, alen;
+    size_t nlen, alen;
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &alias, &alen) == FAILURE) {
         RETURN_NULL();
     }

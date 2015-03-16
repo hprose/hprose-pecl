@@ -134,6 +134,8 @@ static void hprose_real_writer_refer_free(void *_this) {
 #else /* PHP_MAJOR_VERSION < 7 */
     zval_ptr_dtor(refer->sref);
     zval_ptr_dtor(refer->oref);
+    efree(refer->sref);
+    efree(refer->oref);
 #endif /* PHP_MAJOR_VERSION < 7 */
     refer->sref = NULL;
     refer->oref = NULL;
@@ -193,6 +195,8 @@ static zend_always_inline void hprose_writer_free(hprose_writer *_this) {
 #else /* PHP_MAJOR_VERSION < 7 */
     zval_ptr_dtor(_this->classref);
     zval_ptr_dtor(_this->propsref);
+    efree(_this->classref);
+    efree(_this->propsref);
 #endif /* PHP_MAJOR_VERSION < 7 */
     _this->classref = NULL;
     _this->propsref = NULL;
@@ -261,8 +265,11 @@ static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this
     else {
         ZVAL_LITERAL_STRINGL(&fmt, "\\DYmd\\THis.u;");
     }
+    zval_ptr_dtor(&tmp);
     call_php_function(dt, "format", &tmp, 1, &params);
+    zval_ptr_dtor(&fmt);
     hprose_bytes_io_write(_this->stream, Z_STRVAL(tmp), Z_STRLEN(tmp));
+    zval_ptr_dtor(&tmp);
 }
 static zend_always_inline void hprose_writer_write_datetime_with_ref(hprose_writer *_this, zval *dt TSRMLS_DC) {
     if (!(_this->refer->write(_this->refer, _this->stream, dt))) hprose_writer_write_datetime(_this, dt TSRMLS_CC);
