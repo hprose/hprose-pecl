@@ -244,10 +244,10 @@ static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this
     zval *params = &fmt;
     call_php_function(dt, "getOffset", &tmp, 0, NULL);
     if (Z_LVAL(tmp) == 0) {
-        ZVAL_LITERAL_STRINGL(&fmt, "\\DYmd\\THis.u\\Z");
+        ZVAL_LITERAL_STRINGL(fmt, "\\DYmd\\THis.u\\Z");
     }
     else {
-        ZVAL_LITERAL_STRINGL(&fmt, "\\DYmd\\THis.u;");
+        ZVAL_LITERAL_STRINGL(fmt, "\\DYmd\\THis.u;");
     }
     php_zval_dtor(tmp);
     call_php_function(dt, "format", &tmp, 1, &params);

@@ -563,9 +563,9 @@ static zend_always_inline int __call_php_function(zval *object, char *name, int3
 
 // s must be a literal constant string
 #if PHP_MAJOR_VERSION < 7
-#define ZVAL_LITERAL_STRINGL(val, s) ZVAL_STRINGL(val, s, sizeof(s) - 1, 0)
+#define ZVAL_LITERAL_STRINGL(val, s) ZVAL_STRINGL(&val, s, sizeof(s) - 1, 0)
 #else /* PHP_MAJOR_VERSION < 7 */
-#define ZVAL_LITERAL_STRINGL(val, s) ZVAL_STRINGL(val, s, sizeof(s) - 1)
+#define ZVAL_LITERAL_STRINGL(val, s) ZVAL_STRINGL(&val, s, sizeof(s) - 1)
 #endif /* PHP_MAJOR_VERSION < 7 */
 
 #if PHP_MAJOR_VERSION < 7
