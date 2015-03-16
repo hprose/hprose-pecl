@@ -209,8 +209,23 @@ static zend_always_inline void hprose_writer_write_long(hprose_writer *_this, in
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_SEMICOLON);
 }
 
-static zend_always_inline void hprose_writer_write_double(hprose_writer *_this, double d) {
+static zend_always_inline void hprose_writer_write_infinity(hprose_writer *_this, zend_bool positive) {
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_INFINITY);
+    hprose_bytes_io_write_char(_this->stream, (positive ? HPROSE_TAG_POS : HPROSE_TAG_NEG));
+}
 
+static zend_always_inline void hprose_writer_write_double(hprose_writer *_this, double d) {
+    if (isnan(d)) {
+        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_NAN);
+    }
+    else if (isinf(d)) {
+        hprose_writer_write_infinity(_this, d > 0);
+    }
+    else {
+        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_DOUBLE);
+        hprose_bytes_io_write_double(_this->stream, d);
+        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_SEMICOLON);
+    }
 }
 
 static zend_always_inline void hprose_writer_write_array(hprose_writer *_this, zval *a) {
