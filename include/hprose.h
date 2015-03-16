@@ -540,6 +540,20 @@ static zend_always_inline zend_bool __instanceof(zend_class_entry *ce, char *nam
 // name must be a literal constant string
 #define instanceof(ce, name) __instanceof(ce, name, sizeof(name) - 1 TSRMLS_CC)
 
+static zend_always_inline int __call_php_function(zval *object, char *name, int32_t nlen, zval *retval_ptr, int32_t argc, zval *params[] TSRMLS_DC) {
+    zval method;
+#if PHP_MAJOR_VERSION < 7
+    ZVAL_STRINGL(&method, name, nlen, 0);
+    return call_user_function(CG(function_table), &object, &method, retval_ptr, argc, params TSRMLS_CC);
+#else /* PHP_MAJOR_VERSION < 7 */
+    ZVAL_STRINGL(&method, name, nlen);
+    return call_user_function(CG(function_table), object, &method, retval_ptr, argc, *params);
+#endif /* PHP_MAJOR_VERSION < 7 */
+}
+
+// name must be a literal constant string
+#define call_php_function(object, name, retval_ptr, argc, params) __call_php_function(object, name, sizeof(name) - 1, retval_ptr, args, params TSRMLS_CC)
+
 /**********************************************************/
 END_EXTERN_C()
 
