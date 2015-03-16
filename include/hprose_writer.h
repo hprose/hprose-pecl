@@ -13,7 +13,7 @@
  *                                                        *
  * hprose writer for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 14, 2015                             *
+ * LastModified: Mar 16, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -22,6 +22,7 @@
 #define	HPROSE_WRITER_H
 
 #include "hprose.h"
+#include "hprose_tags.h"
 #include "hprose_bytes_io.h"
 
 BEGIN_EXTERN_C()
@@ -33,7 +34,7 @@ HPROSE_STARTUP_FUNCTION(writer);
 typedef void hprose_writer_refer_set(void *_this, zval *val);
 typedef zend_bool hprose_writer_refer_write(void *_this, hprose_bytes_io *stream, zval *val);
 typedef void hprose_writer_refer_reset(void *_this);
-typedef void hprose_writer_refer_free(void **_this);
+typedef void hprose_writer_refer_free(void *_this);
 
 typedef struct {
     hprose_writer_refer_set *set;
@@ -43,22 +44,16 @@ typedef struct {
 } hprose_writer_refer;
 
 static void hprose_fake_writer_refer_set(void *_this, zval *val) {}
-static zend_bool hprose_fake_writer_refer_write(void *_this, hprose_bytes_io *stream, zval *val) {
-    return 0;
-}
+static zend_bool hprose_fake_writer_refer_write(void *_this, hprose_bytes_io *stream, zval *val) { return 0; }
 static void hprose_fake_writer_refer_reset(void *_this) {}
-
-static void hprose_fake_writer_refer_free(void **_this) {
-    efree(*_this);
-    *_this = NULL;
-}
+static void hprose_fake_writer_refer_free(void *_this) { efree(_this); }
 
 static zend_always_inline hprose_writer_refer *hprose_fake_writer_refer_new() {
     hprose_writer_refer *_this = emalloc(sizeof(hprose_writer_refer));
     _this->set = &hprose_fake_writer_refer_set;
     _this->write = &hprose_fake_writer_refer_write;
     _this->reset = &hprose_fake_writer_refer_reset;
-    _this->free = *hprose_fake_writer_refer_free;
+    _this->free = &hprose_fake_writer_refer_free;
     return _this;
 }
 
@@ -128,10 +123,11 @@ static void hprose_real_writer_refer_reset(void *_this) {
     refer->refcount = 0;
 }
 
-static void hprose_real_writer_refer_free(void **_this) {
-    hprose_real_writer_refer *refer = *(hprose_real_writer_refer **)_this;
+static void hprose_real_writer_refer_free(void *_this) {
+    hprose_real_writer_refer *refer = (hprose_real_writer_refer *)_this;
     zend_llist_destroy(refer->ref);
     efree(refer->ref);
+    refer->ref = NULL;
 #if PHP_MAJOR_VERSION < 7
     zval_ptr_dtor(&(refer->sref));
     zval_ptr_dtor(&(refer->oref));
@@ -139,12 +135,13 @@ static void hprose_real_writer_refer_free(void **_this) {
     zval_ptr_dtor(refer->sref);
     zval_ptr_dtor(refer->oref);
 #endif /* PHP_MAJOR_VERSION < 7 */
+    refer->sref = NULL;
+    refer->oref = NULL;
     efree(refer);
-    *_this = NULL;
 }
 
 static zend_always_inline hprose_writer_refer * hprose_real_writer_refer_new() {
-    hprose_real_writer_refer *_this = emalloc(sizeof(hprose_writer_refer));
+    hprose_real_writer_refer *_this = emalloc(sizeof(hprose_real_writer_refer));
     _this->set = &hprose_real_writer_refer_set;
     _this->write = &hprose_real_writer_refer_write;
     _this->reset = &hprose_real_writer_refer_reset;
@@ -188,6 +185,22 @@ static zend_always_inline hprose_writer * hprose_writer_create(hprose_bytes_io *
     return _this;
 }
 
+static zend_always_inline void hprose_writer_free(hprose_writer *_this) {
+    _this->stream = NULL;
+#if PHP_MAJOR_VERSION < 7
+    zval_ptr_dtor(&(_this->classref));
+    zval_ptr_dtor(&(_this->propsref));
+#else /* PHP_MAJOR_VERSION < 7 */
+    zval_ptr_dtor(_this->classref);
+    zval_ptr_dtor(_this->propsref);
+#endif /* PHP_MAJOR_VERSION < 7 */
+    _this->classref = NULL;
+    _this->propsref = NULL;
+    _this->refer->free(_this->refer);
+    _this->refer = NULL;
+    efree(_this);
+}
+
 #define hprose_writer_write_null(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_NULL)
 #define hprose_writer_write_true(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_TRUE)
 #define hprose_writer_write_false(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_FALSE)
@@ -204,9 +217,11 @@ static zend_always_inline void hprose_writer_write_long(hprose_writer *_this, in
     if (i >= 0 && i <= 9) {
         hprose_bytes_io_write_char(_this->stream, '0' + i);
     }
-    hprose_bytes_io_write_char(_this->stream, (i > INT32_MAX || i < INT32_MIN) ? HPROSE_TAG_LONG : HPROSE_TAG_INTEGER);
-    hprose_bytes_io_write_int(_this->stream, i);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_SEMICOLON);
+    else {
+        hprose_bytes_io_write_char(_this->stream, (i > INT32_MAX || i < INT32_MIN) ? HPROSE_TAG_LONG : HPROSE_TAG_INTEGER);
+        hprose_bytes_io_write_long(_this->stream, i);
+        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_SEMICOLON);
+    }
 }
 
 static zend_always_inline void hprose_writer_write_infinity(hprose_writer *_this, zend_bool positive) {
@@ -235,11 +250,22 @@ static zend_always_inline void hprose_writer_write_array(hprose_writer *_this, z
 static zend_always_inline void hprose_writer_write_assoc_array(hprose_writer *_this, zval *aa) {
 
 }
-static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this, zval *dt) {
-
+static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this, zval *dt TSRMLS_DC) {
+    _this->refer->set(_this->refer, dt);
+    zval tmp, fmt;
+    zval *params = &fmt;
+    call_php_function(dt, "getOffset", &tmp, 0, NULL);
+    if (Z_LVAL(tmp) == 0) {
+        ZVAL_LITERAL_STRINGL(&fmt, "\\DYmd\\THis.u\\Z");
+    }
+    else {
+        ZVAL_LITERAL_STRINGL(&fmt, "\\DYmd\\THis.u;");
+    }
+    call_php_function(dt, "format", &tmp, 1, &params);
+    hprose_bytes_io_write(_this->stream, Z_STRVAL(tmp), Z_STRLEN(tmp));
 }
-static zend_always_inline void hprose_writer_write_datetime_with_ref(hprose_writer *_this, zval *dt) {
-
+static zend_always_inline void hprose_writer_write_datetime_with_ref(hprose_writer *_this, zval *dt TSRMLS_DC) {
+    if (!(_this->refer->write(_this->refer, _this->stream, dt))) hprose_writer_write_datetime(_this, dt TSRMLS_CC);
 }
 static zend_always_inline void hprose_writer_write_map(hprose_writer *_this, zval *obj) {
 
@@ -308,7 +334,7 @@ static zend_always_inline void hprose_writer_serialize(hprose_writer *_this, zva
         case IS_OBJECT: {
             zend_class_entry *ce = Z_OBJCE_P(val);
             if (instanceof(ce, "DateTime")) {
-                hprose_writer_write_datetime_with_ref(_this, val);
+                hprose_writer_write_datetime_with_ref(_this, val TSRMLS_CC);
             }
             else if (instanceof(ce, "SplObjectStorage")) {
                 hprose_writer_write_map_with_ref(_this, val);
@@ -349,6 +375,9 @@ static zend_always_inline void hprose_writer_serialize(hprose_writer *_this, zva
             break;
     }
 }
+
+HPROSE_CLASS_BEGIN(writer)
+HPROSE_CLASS_END(writer)
 
 END_EXTERN_C()
 

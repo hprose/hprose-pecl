@@ -20,10 +20,6 @@
 
 #include "hprose_bytes_io.h"
 
-HPROSE_CLASS_BEGIN_EX(bytes_io, bytes)
-    int32_t mark;        
-HPROSE_CLASS_END(bytes_io)        
-
 ZEND_METHOD(hprose_bytes_io, __construct) {
     char *buf = NULL;
     int len = 0;

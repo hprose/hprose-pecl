@@ -8,7 +8,8 @@ if test "$PHP_HPROSE" != "no"; then
   dnl Finally, tell the build system about the extension and what files are needed
   HPROSE_SOURCES="src/hprose_tags.c \
     src/hprose_bytes_io.c \
-    src/hprose_class_manager.c"
+    src/hprose_class_manager.c \
+    src/hprose_writer.c"
   PHP_NEW_EXTENSION(hprose, hprose.c $HPROSE_SOURCES, $ext_shared)
   PHP_ADD_INCLUDE([$ext_srcdir/include])
   PHP_SUBST(HPROSE_SHARED_LIBADD)

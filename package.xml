@@ -73,16 +73,19 @@ http://pear.php.net/dtd/package-2.0.xsd">
 				<file role="src" name="hprose_tags.h" />
 				<file role="src" name="hprose_bytes_io.h" />
 				<file role="src" name="hprose_class_manager.h" />
+				<file role="src" name="hprose_writer.h" />
 			</dir>
 			<dir name="src">
         			<file role="src" name="hprose_tags.c" />
         			<file role="src" name="hprose_bytes_io.c" />
         			<file role="src" name="hprose_class_manager.c" />
+        			<file role="src" name="hprose_writer.c" />
 			</dir>
 			<dir name="test">
 				<file role="test" name="tags.phpt" />
 				<file role="test" name="bytes_io.phpt" />
 				<file role="test" name="class_manager.phpt" />
+				<file role="test" name="writer.phpt" />
 			</dir>
 		</dir>
 	</contents>

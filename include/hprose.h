@@ -13,7 +13,7 @@
  *                                                        *
  * hprose common for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 14, 2015                             *
+ * LastModified: Mar 16, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -552,7 +552,14 @@ static zend_always_inline int __call_php_function(zval *object, char *name, int3
 }
 
 // name must be a literal constant string
-#define call_php_function(object, name, retval_ptr, argc, params) __call_php_function(object, name, sizeof(name) - 1, retval_ptr, args, params TSRMLS_CC)
+#define call_php_function(object, name, retval_ptr, argc, params) __call_php_function(object, name, sizeof(name) - 1, retval_ptr, argc, params TSRMLS_CC)
+
+// s must be a literal constant string
+#if PHP_MAJOR_VERSION < 7
+#define ZVAL_LITERAL_STRINGL(val, s) ZVAL_STRINGL(val, s, sizeof(s) - 1, 0)
+#else /* PHP_MAJOR_VERSION < 7 */
+#define ZVAL_LITERAL_STRINGL(val, s) ZVAL_STRINGL(val, s, sizeof(s) - 1)
+#endif /* PHP_MAJOR_VERSION < 7 */
 
 /**********************************************************/
 END_EXTERN_C()

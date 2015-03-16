@@ -273,7 +273,7 @@ static zend_always_inline void hprose_bytes_io_write_char(hprose_bytes_io *_this
 
 static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io *_this, int32_t num) {
     if (num == INT32_MIN) {
-        hprose_bytes_io_write(_this, HPROSE_INT32_MIN_STR, sizeof(HPROSE_INT32_MIN_STR));
+        hprose_bytes_io_write(_this, HPROSE_INT32_MIN_STR, sizeof(HPROSE_INT32_MIN_STR) - 1);
     }
     else {
         char buf[32];
@@ -296,7 +296,7 @@ static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io *_this,
 
 static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io *_this, int64_t num) {
     if (num == INT64_MIN) {
-        hprose_bytes_io_write(_this, HPROSE_INT64_MIN_STR, sizeof(HPROSE_INT64_MIN_STR));
+        hprose_bytes_io_write(_this, HPROSE_INT64_MIN_STR, sizeof(HPROSE_INT64_MIN_STR) - 1);
     }
     else {
         char buf[32];
@@ -348,6 +348,10 @@ static zend_always_inline void hprose_bytes_io_write_double(hprose_bytes_io *_th
 static zend_always_inline char * hprose_bytes_io_to_string(hprose_bytes_io *_this) {
     return pestrndup(_this->buf, _this->len, 0);
 }
+
+HPROSE_CLASS_BEGIN_EX(bytes_io, bytes)
+    int32_t mark;
+HPROSE_CLASS_END(bytes_io)
 
 END_EXTERN_C()
 
