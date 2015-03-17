@@ -558,20 +558,19 @@ static zend_always_inline zend_bool __instanceof(zend_class_entry *ce, char *nam
 
 static zend_always_inline int __call_php_function(zval *object, char *name, int32_t nlen, zval *retval_ptr, int32_t argc, zval *params[] TSRMLS_DC) {
     zval method;
-    int result;
 #if PHP_MAJOR_VERSION < 7
-    ZVAL_STRINGL(&method, name, nlen, 1);
-    result = call_user_function(CG(function_table), &object, &method, retval_ptr, argc, params TSRMLS_CC);
+    ZVAL_STRINGL(&method, name, nlen, 0);
+    return call_user_function(CG(function_table), &object, &method, retval_ptr, argc, params TSRMLS_CC);
 #else /* PHP_MAJOR_VERSION < 7 */
     zval *_params = ecalloc(argc, sizeof(zval));
-    int i;
+    int i, result;
     for (i = 0; i < argc; ++i) _params[i] = *params[i];
     ZVAL_STRINGL(&method, name, nlen);
     result = call_user_function(CG(function_table), object, &method, retval_ptr, argc, _params);
     efree(_params);
-#endif /* PHP_MAJOR_VERSION < 7 */
-    hprose_zval_ptr_dtor(&method);
+    zval_ptr_dtor(&method);
     return result;
+#endif /* PHP_MAJOR_VERSION < 7 */
 }
 
 // name must be a literal constant string
@@ -579,7 +578,7 @@ static zend_always_inline int __call_php_function(zval *object, char *name, int3
 
 // s must be a literal constant string
 #if PHP_MAJOR_VERSION < 7
-#define ZVAL_LITERAL_STRINGL(val, s) ZVAL_STRINGL(val, s, sizeof(s) - 1, 1)
+#define ZVAL_LITERAL_STRINGL(val, s) ZVAL_STRINGL(val, s, sizeof(s) - 1, 0)
 #else /* PHP_MAJOR_VERSION < 7 */
 #define ZVAL_LITERAL_STRINGL(val, s) ZVAL_STRINGL(val, s, sizeof(s) - 1)
 #endif /* PHP_MAJOR_VERSION < 7 */

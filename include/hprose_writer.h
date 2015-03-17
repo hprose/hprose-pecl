@@ -142,7 +142,6 @@ static zend_always_inline hprose_writer_refer * hprose_real_writer_refer_new() {
     _this->reset = &hprose_real_writer_refer_reset;
     _this->free = &hprose_real_writer_refer_free;
     _this->ref = emalloc(sizeof(zend_llist));
-    // I don't know if this can work on PHP 7
     zend_llist_init(_this->ref, 32, (void (*)(void *))ZVAL_PTR_DTOR, 0);
     hprose_make_zval(_this->sref);
     hprose_make_zval(_this->oref);
