@@ -251,11 +251,14 @@ static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this
     else {
         ZVAL_LITERAL_STRINGL(&fmt, "\\DYmd\\THis.u;");
     }
-    hprose_zval_ptr_dtor(&tmp);
     call_php_method(dt, "format", &tmp, 1, &params[0]);
     hprose_bytes_io_write(_this->stream, Z_STRVAL(tmp), Z_STRLEN(tmp));
-    hprose_zval_ptr_dtor(&fmt);
-    hprose_zval_ptr_dtor(&tmp);
+#if PHP_MAJOR_VERSION < 7
+    STR_FREE(Z_STRVAL(tmp));
+#else
+    zval_ptr_dtor(&fmt);
+    zval_ptr_dtor(&tmp);
+#endif
 }
 static zend_always_inline void hprose_writer_write_datetime_with_ref(hprose_writer *_this, zval *dt TSRMLS_DC) {
     if (!(_this->refer->write(_this->refer, _this->stream, dt))) hprose_writer_write_datetime(_this, dt TSRMLS_CC);
