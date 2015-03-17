@@ -315,10 +315,18 @@ static zend_always_inline void hprose_writer_write_string_with_ref(hprose_writer
     if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_string(_this, val);
 }
 static zend_always_inline void hprose_writer_write_bytes(hprose_writer *_this, zval *val) {
-
+    _this->refer->handlers->set(_this->refer, val);
+    int32_t len = Z_STRLEN_P(val);
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_BYTES);
+    if (len) {
+        hprose_bytes_io_write_int(_this->stream, len);
+    }
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+    hprose_bytes_io_write(_this->stream, Z_STRVAL_P(val), len);
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
 }
 static zend_always_inline void hprose_writer_write_bytes_with_ref(hprose_writer *_this, zval *val) {
-
+    if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_bytes(_this, val);
 }
 static zend_always_inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRMLS_DC) {
     switch (Z_TYPE_P(val)) {

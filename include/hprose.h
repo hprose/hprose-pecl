@@ -451,9 +451,9 @@ static inline zend_bool hprose_class_exists(const char *classname, size_t len, z
 
 #define class_exists(classname, len, autoload) hprose_class_exists((classname), (len), (autoload) TSRMLS_CC)
 
-static zend_always_inline zend_bool is_utf8(const char *str, size_t len) {
+static zend_always_inline zend_bool is_utf8(const char *str, int32_t len) {
     const uint8_t * s = (const uint8_t *)str;
-    size_t i;
+    int32_t i;
     for (i = 0; i < len; ++i) {
         uint8_t c = s[i];
         switch (c >> 4) {
@@ -488,9 +488,9 @@ static zend_always_inline zend_bool is_utf8(const char *str, size_t len) {
     return 1;
 }
 
-static zend_always_inline size_t ustrlen(const char *str, size_t len) {
+static zend_always_inline int32_t ustrlen(const char *str, int32_t len) {
     const uint8_t *s = (const uint8_t *)str;
-    size_t l = len, p = 0;
+    int32_t l = len, p = 0;
     while (p < len) {
         uint8_t a = s[p];
         if (a < 0x80) {
@@ -504,9 +504,12 @@ static zend_always_inline size_t ustrlen(const char *str, size_t len) {
             p += 3;
             l -= 2;
         }
-        else if ((a * 0xF8) == 0xF0) {
+        else if ((a & 0xF8) == 0xF0) {
             p += 4;
             l -= 2;
+        }
+        else {
+            return -1;
         }
     }
     return l;
