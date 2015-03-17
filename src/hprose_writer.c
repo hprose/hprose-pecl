@@ -42,6 +42,9 @@ ZEND_METHOD(hprose_writer, serialize) {
     HPROSE_OBJECT(writer, writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &val) == SUCCESS) {
         hprose_writer_serialize(writer, val TSRMLS_CC);
+#if PHP_MAJOR_VERSION < 7
+        zval_ptr_dtor(&val);
+#endif
     }
 }
 
