@@ -232,20 +232,23 @@ static zend_always_inline void hprose_writer_write_assoc_array(hprose_writer *_t
 }
 static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this, zval *dt TSRMLS_DC) {
     _this->refer->set(_this->refer, dt);
-    zval tmp, fmt;
-    zval *params = &fmt;
-    call_php_function(dt, "getOffset", &tmp, 0, NULL);
-    if (Z_LVAL(tmp) == 0) {
+    zval *tmp, *fmt;
+    hprose_make_zval(tmp);
+    hprose_make_zval(fmt);
+    zval **params = &fmt;
+    call_php_function(dt, "getOffset", tmp, 0, NULL);
+    if (Z_LVAL_P(tmp) == 0) {
         ZVAL_LITERAL_STRINGL(fmt, "\\DYmd\\THis.u\\Z");
     }
     else {
         ZVAL_LITERAL_STRINGL(fmt, "\\DYmd\\THis.u;");
     }
-    hprose_zval_ptr_dtor(&tmp);
-    call_php_function(dt, "format", &tmp, 1, &params);
-    hprose_zval_ptr_dtor(&fmt);
-    hprose_bytes_io_write(_this->stream, Z_STRVAL(tmp), Z_STRLEN(tmp));
-    hprose_zval_ptr_dtor(&tmp);
+    hprose_zval_free(tmp);
+    hprose_make_zval(tmp);
+    call_php_function(dt, "format", tmp, 1, params);
+    hprose_zval_free(fmt);
+    hprose_bytes_io_write(_this->stream, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+    hprose_zval_free(tmp);
 }
 static zend_always_inline void hprose_writer_write_datetime_with_ref(hprose_writer *_this, zval *dt TSRMLS_DC) {
     if (!(_this->refer->write(_this->refer, _this->stream, dt))) hprose_writer_write_datetime(_this, dt TSRMLS_CC);
