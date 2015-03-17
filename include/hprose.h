@@ -69,6 +69,37 @@ typedef int length_t;
 typedef size_t length_t;
 #endif
 
+#if PHP_API_VERSION < 20090626
+#if ZEND_DEBUG
+# define zend_always_inline inline
+# define zend_never_inline
+#else
+# if defined(__GNUC__)
+#  if __GNUC__ >= 3
+#   define zend_always_inline inline __attribute__((always_inline))
+#   define zend_never_inline __attribute__((noinline))
+#  else
+#   define zend_always_inline inline
+#   define zend_never_inline
+#  endif
+# elif defined(_MSC_VER)
+#  define zend_always_inline __forceinline
+#  define zend_never_inline
+# else
+#  if __has_attribute(always_inline)
+#   define zend_always_inline inline __attribute__((always_inline))
+#  else
+#   define zend_always_inline inline
+#  endif
+#  if __has_attribute(noinline)
+#   define zend_never_inline __attribute__((noinline))
+#  else
+#   define zend_never_inline
+#  endif
+# endif
+#endif /* ZEND_DEBUG */
+#endif /* PHP_API_VERSION < 20090626 */
+
 /**********************************************************\
 | int type definition                                      |
 \**********************************************************/
