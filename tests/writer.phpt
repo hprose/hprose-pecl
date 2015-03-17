@@ -36,9 +36,9 @@ $date = \DateTime::createFromFormat('YmdHis.u', '20150219143448.123456');
 $writer->serialize($date);
 $writer->serialize(\DateTime::createFromFormat('YmdHis.u', '20150219143448.123456',
                                                 new \DateTimeZone('UTC')));
-//$writer->serialize($date);
+$writer->serialize($date);
 echo $bytes . "\r\n";
 ?>
 --EXPECT--
 0123456789i-2147483648;i2147483647;l2147483648;d3.14159265897932;NI-I+tfen
-D20150219T143448.123456;D20150219T143448.123456Z
+D20150219T143448.123456;D20150219T143448.123456Zr0;
