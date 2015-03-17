@@ -167,9 +167,6 @@ ZEND_END_ARG_INFO()
 \**********************************************************/
 #if PHP_MAJOR_VERSION < 7
 
-#define RETURN_STRINGL_0(s, l) RETURN_STRINGL(s, l, 0)
-#define RETURN_STRINGL_1(s, l) RETURN_STRINGL(s, l, 1)
-
 #define HPROSE_CLASS_BEGIN_EX(type_name, field_name) \
 typedef struct {                                     \
     zend_object std;                                 \
@@ -239,9 +236,6 @@ static zend_object_value php_hprose_##type_name##_new(      \
 
 #else  /* PHP_MAJOR_VERSION < 7 */
 
-#define RETURN_STRINGL_0(s, l) RETVAL_STRINGL(s, l); efree(s); return;
-#define RETURN_STRINGL_1(s, l) RETURN_STRINGL(s, l)
-
 #define HPROSE_CLASS_BEGIN_EX(type_name, fieldname) \
 typedef struct {                                    \
     hprose_##type_name *fieldname;                  \
@@ -306,6 +300,22 @@ zend_class_entry *hprose_##type_name##_ce;          \
 zend_class_entry *get_hprose_##type_name##_ce() {   \
     return hprose_##type_name##_ce;                 \
 }                                                   \
+
+/**********************************************************\
+| String macros compatible PHP 7                           |
+\**********************************************************/
+
+#if PHP_MAJOR_VERSION < 7
+#define RETVAL_STRINGL_0(s, l) RETVAL_STRINGL(s, l, 0)
+#define RETVAL_STRINGL_1(s, l) RETVAL_STRINGL(s, l, 1)
+#define RETURN_STRINGL_0(s, l) RETURN_STRINGL(s, l, 0)
+#define RETURN_STRINGL_1(s, l) RETURN_STRINGL(s, l, 1)
+#else  /* PHP_MAJOR_VERSION < 7 */
+#define RETVAL_STRINGL_0(s, l) RETVAL_STRINGL(s, l); efree(s);
+#define RETVAL_STRINGL_1(s, l) RETVAL_STRINGL(s, l)
+#define RETURN_STRINGL_0(s, l) RETVAL_STRINGL_0(s, l); return;
+#define RETURN_STRINGL_1(s, l) RETURN_STRINGL(s, l)
+#endif /* PHP_MAJOR_VERSION < 7 */
 
 /**********************************************************\
 | Hashtable functions compatible PHP 7                     |
