@@ -25,23 +25,23 @@ ZEND_METHOD(hprose_writer, __construct) {
     zend_bool simple = 0;
     HPROSE_OBJECT_INTERN(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|b", &obj, &simple) == SUCCESS) {
-        intern->writer = hprose_writer_create(HPROSE_GET_OBJECT_P(bytes_io, obj)->bytes, simple);
+        intern->_this = hprose_writer_create(HPROSE_GET_OBJECT_P(bytes_io, obj)->_this, simple);
     }
 }
 
 ZEND_METHOD(hprose_writer, __destruct) {
     HPROSE_OBJECT_INTERN(writer);
-    if (intern->writer) {
-        hprose_writer_free(intern->writer);
-        intern->writer = NULL;
+    if (intern->_this) {
+        hprose_writer_free(intern->_this);
+        intern->_this = NULL;
     }
 }
 
 ZEND_METHOD(hprose_writer, serialize) {
     zval *val = NULL;
-    HPROSE_OBJECT(writer, writer);
+    HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &val) == SUCCESS) {
-        hprose_writer_serialize(writer, val TSRMLS_CC);
+        hprose_writer_serialize(_this, val TSRMLS_CC);
     }
 }
 
@@ -64,9 +64,9 @@ static zend_function_entry hprose_writer_methods[] = {
 HPROSE_OBJECT_HANDLERS(writer)
 
 HPROSE_OBJECT_FREE_BEGIN(writer)
-    if (intern->writer) {
-        hprose_writer_free(intern->writer);
-        intern->writer = NULL;
+    if (intern->_this) {
+        hprose_writer_free(intern->_this);
+        intern->_this = NULL;
     }
 HPROSE_OBJECT_FREE_END
 

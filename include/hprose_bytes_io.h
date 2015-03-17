@@ -365,7 +365,7 @@ static zend_always_inline char * hprose_bytes_io_to_string(hprose_bytes_io *_thi
     return estrndup(_this->buf, _this->len);
 }
 
-HPROSE_CLASS_BEGIN_EX(bytes_io, bytes)
+HPROSE_CLASS_BEGIN(bytes_io)
     int32_t mark;
 HPROSE_CLASS_END(bytes_io)
 

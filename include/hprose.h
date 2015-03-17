@@ -167,13 +167,13 @@ ZEND_END_ARG_INFO()
 \**********************************************************/
 #if PHP_MAJOR_VERSION < 7
 
-#define HPROSE_CLASS_BEGIN_EX(type_name, field_name) \
-typedef struct {                                     \
-    zend_object std;                                 \
-    hprose_##type_name *field_name;                  \
+#define HPROSE_CLASS_BEGIN(type_name)   \
+typedef struct {                        \
+    zend_object std;                    \
+    hprose_##type_name *_this;          \
 
-#define HPROSE_CLASS_END(type_name)                  \
-} php_hprose_##type_name;                            \
+#define HPROSE_CLASS_END(type_name)     \
+} php_hprose_##type_name;               \
 
 #define HPROSE_GET_OBJECT_P(type_name, zv) ((php_hprose_##type_name *)zend_object_store_get_object((zv) TSRMLS_CC))
 
@@ -236,13 +236,13 @@ static zend_object_value php_hprose_##type_name##_new(      \
 
 #else  /* PHP_MAJOR_VERSION < 7 */
 
-#define HPROSE_CLASS_BEGIN_EX(type_name, fieldname) \
-typedef struct {                                    \
-    hprose_##type_name *fieldname;                  \
+#define HPROSE_CLASS_BEGIN(type_name) \
+typedef struct {                      \
+    hprose_##type_name *_this;        \
 
-#define HPROSE_CLASS_END(type_name)                 \
-    zend_object std;                                \
-} php_hprose_##type_name;                           \
+#define HPROSE_CLASS_END(type_name)   \
+    zend_object std;                  \
+} php_hprose_##type_name;             \
 
 #define _HPROSE_GET_OBJECT_P(type_name, obj) ((php_hprose_##type_name *)((char*)(obj) - XtOffsetOf(php_hprose_##type_name, std)))
 
@@ -284,13 +284,13 @@ static zend_object *php_hprose_##type_name##_new(zend_class_entry *ce) {        
 
 #endif /* PHP_MAJOR_VERSION < 7 */
 
-#define HPROSE_CLASS_BEGIN(type_name) HPROSE_CLASS_BEGIN_EX(type_name, type_name)
-
 #define HPROSE_OBJECT_INTERN(type_name) \
     php_hprose_##type_name *intern = HPROSE_GET_OBJECT_P(type_name, getThis());
 
 #define HPROSE_OBJECT(type_name, name) \
-    hprose_##type_name *name = HPROSE_GET_OBJECT_P(type_name, getThis())->name;
+    hprose_##type_name *name = HPROSE_GET_OBJECT_P(type_name, getThis())->_this;
+
+#define HPROSE_THIS(type_name) HPROSE_OBJECT(type_name, _this)
 
 #define HPROSE_OBJECT_HANDLERS(type_name)                  \
 static zend_object_handlers hprose_##type_name##_handlers; \
