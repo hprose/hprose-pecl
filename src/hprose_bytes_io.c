@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl source file.                  *
  *                                                        *
- * LastModified: Mar 14, 2015                             *
+ * LastModified: Mar 17, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -22,7 +22,7 @@
 
 ZEND_METHOD(hprose_bytes_io, __construct) {
     char *buf = NULL;
-    size_t len = 0;
+    length_t len = 0;
     HPROSE_OBJECT_INTERN(bytes_io);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &buf, &len) == FAILURE) {
         return;
@@ -88,7 +88,7 @@ ZEND_METHOD(hprose_bytes_io, readfull) {
 
 ZEND_METHOD(hprose_bytes_io, readuntil) {
     char *s, *tag;
-    size_t len;
+    length_t len;
     int32_t l;
     HPROSE_OBJECT(bytes_io, bytes);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &tag, &len) == FAILURE) {
@@ -155,7 +155,7 @@ ZEND_METHOD(hprose_bytes_io, eof) {
 
 ZEND_METHOD(hprose_bytes_io, write) {
     char *str;
-    size_t len;
+    length_t len;
     long n = -1;
     HPROSE_OBJECT(bytes_io, bytes);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &str, &len, &n) == FAILURE) {

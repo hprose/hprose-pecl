@@ -13,7 +13,7 @@
  *                                                        *
  * hprose class manager for pecl header file.             *
  *                                                        *
- * LastModified: Mar 13, 2015                             *
+ * LastModified: Mar 17, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -31,9 +31,9 @@ HPROSE_STARTUP_FUNCTION(class_manager);
 HPROSE_ACTIVATE_FUNCTION(class_manager);
 HPROSE_DEACTIVATE_FUNCTION(class_manager);
 
-PHP_HPROSE_API void _hprose_class_manager_register(const char *name, size_t nlen, const char *alias, size_t alen TSRMLS_DC);
-PHP_HPROSE_API char * _hprose_class_manager_get_alias(const char *name, size_t len, size_t* len_ptr TSRMLS_DC);
-PHP_HPROSE_API char * _hprose_class_manager_get_class(const char *alias, size_t len, size_t* len_ptr TSRMLS_DC);
+PHP_HPROSE_API void _hprose_class_manager_register(const char *name, int32_t nlen, const char *alias, int32_t alen TSRMLS_DC);
+PHP_HPROSE_API char * _hprose_class_manager_get_alias(const char *name, int32_t len, int32_t* len_ptr TSRMLS_DC);
+PHP_HPROSE_API char * _hprose_class_manager_get_class(const char *alias, int32_t len, int32_t* len_ptr TSRMLS_DC);
 
 #define hprose_class_manager_register(name, nlen, alias, alen) _hprose_class_manager_register((name), (nlen), (alias), (alen) TSRMLS_CC)
 #define hprose_class_manager_get_alias(name, len, len_ptr) _hprose_class_manager_get_alias((name), (len), (len_ptr) TSRMLS_CC)

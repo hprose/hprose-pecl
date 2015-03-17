@@ -13,7 +13,7 @@
  *                                                        *
  * hprose common for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 16, 2015                             *
+ * LastModified: Mar 17, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -62,6 +62,12 @@ ZEND_END_MODULE_GLOBALS(hprose)
 #endif
 
 ZEND_EXTERN_MODULE_GLOBALS(hprose)
+
+#if PHP_MAJOR_VERSION < 7
+typedef int length_t;
+#else
+typedef size_t length_t;
+#endif
 
 /**********************************************************\
 | int type definition                                      |
