@@ -38,8 +38,10 @@ $writer->serialize($date);
 $writer->serialize(\DateTime::createFromFormat('YmdHis.u', '20150219143448.123456',
                                                 new \DateTimeZone('UTC')));
 $writer->serialize($date);
+$writer->serialize("Hello World! 你好，中国！");
+$writer->serialize("Hello World! 你好，中国！");
 echo $bytes . "\r\n";
 ?>
 --EXPECT--
 0123456789i-2147483648;i2147483647;l2147483648;d3.14159265897932;NI-I+tfenu我
-D20150219T143448.123456;D20150219T143448.123456Zr0;
+D20150219T143448.123456;D20150219T143448.123456Zr0;s19"Hello World! 你好，中国！"r2;

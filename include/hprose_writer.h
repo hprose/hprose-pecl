@@ -287,20 +287,28 @@ static zend_always_inline void hprose_writer_write_object(hprose_writer *_this, 
 static zend_always_inline void hprose_writer_write_object_with_ref(hprose_writer *_this, zval *obj) {
 
 }
-static zend_always_inline void hprose_writer_write_utf8char(hprose_writer *_this, const char *str, int32_t len) {
+static zend_always_inline void hprose_writer_write_utf8char(hprose_writer *_this, zval *val) {
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_UTF8CHAR);
-    hprose_bytes_io_write(_this->stream, str, len);
+    hprose_bytes_io_write(_this->stream, Z_STRVAL_P(val), Z_STRLEN_P(val));
 }
-static zend_always_inline void hprose_writer_write_string(hprose_writer *_this, const char *str, int32_t len) {
+static zend_always_inline void hprose_writer_write_string(hprose_writer *_this, zval *val) {
+    _this->refer->set(_this->refer, val);
+    int32_t len = ustrlen(Z_STRVAL_P(val), Z_STRLEN_P(val));
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_STRING);
+    if (len) {
+        hprose_bytes_io_write_int(_this->stream, len);
+    }
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+    hprose_bytes_io_write(_this->stream, Z_STRVAL_P(val), Z_STRLEN_P(val));
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+}
+static zend_always_inline void hprose_writer_write_string_with_ref(hprose_writer *_this, zval *val) {
+    if (!(_this->refer->write(_this->refer, _this->stream, val))) hprose_writer_write_string(_this, val);
+}
+static zend_always_inline void hprose_writer_write_bytes(hprose_writer *_this, zval *val) {
 
 }
-static zend_always_inline void hprose_writer_write_string_with_ref(hprose_writer *_this, const char *str, int32_t len) {
-
-}
-static zend_always_inline void hprose_writer_write_bytes(hprose_writer *_this, const char *str, int32_t len) {
-
-}
-static zend_always_inline void hprose_writer_write_bytes_with_ref(hprose_writer *_this, const char *str, int32_t len) {
+static zend_always_inline void hprose_writer_write_bytes_with_ref(hprose_writer *_this, zval *val) {
 
 }
 static zend_always_inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRMLS_DC) {
@@ -355,14 +363,14 @@ static zend_always_inline void hprose_writer_serialize(hprose_writer *_this, zva
             }
             else if (is_utf8(s, l)) {
                 if (l < 4 && ustrlen(s, l) == 1) {
-                    hprose_writer_write_utf8char(_this, s, l);
+                    hprose_writer_write_utf8char(_this, val);
                 }
                 else {
-                    hprose_writer_write_string_with_ref(_this, s, l);
+                    hprose_writer_write_string_with_ref(_this, val);
                 }
             }
             else {
-                hprose_writer_write_bytes_with_ref(_this, s, l);
+                hprose_writer_write_bytes_with_ref(_this, val);
             }
             break;
         }
