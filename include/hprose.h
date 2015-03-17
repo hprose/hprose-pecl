@@ -226,9 +226,9 @@ static zend_object_value php_hprose_##type_name##_new(      \
 
 #define HPROSE_REGISTER_CLASS(ns, name, type_name)                                                          \
     zend_class_entry ce;                                                                                    \
-    INIT_NS_CLASS_ENTRY(ce, ns, name, hprose_##type_name##_methods)                                         \
+    INIT_CLASS_ENTRY(ce, ns name, hprose_##type_name##_methods)                                         \
     hprose_##type_name##_ce = zend_register_internal_class_ex(&ce, NULL, NULL TSRMLS_CC);                   \
-    zend_register_class_alias(ns name, hprose_##type_name##_ce);                                            \
+    zend_register_class_alias(ns "\\" name, hprose_##type_name##_ce);                                            \
 
 #define HPROSE_REGISTER_CLASS_HANDLERS(type_name)                                                           \
     hprose_##type_name##_ce->create_object = php_hprose_##type_name##_new;                                                        \
@@ -271,9 +271,9 @@ static zend_object *php_hprose_##type_name##_new(zend_class_entry *ce) {        
 
 #define HPROSE_REGISTER_CLASS(ns, name, type_name)                                                           \
     zend_class_entry ce;                                                                                     \
-    INIT_CLASS_ENTRY(ce, ns name, hprose_##type_name##_methods)                                          \
+    INIT_NS_CLASS_ENTRY(ce, ns, name, hprose_##type_name##_methods)                                          \
     hprose_##type_name##_ce = zend_register_internal_class_ex(&ce, NULL);                                    \
-    zend_register_class_alias(ns "\\" name, hprose_##type_name##_ce);                                             \
+    zend_register_class_alias(ns name, hprose_##type_name##_ce);                                             \
 
 #define HPROSE_REGISTER_CLASS_HANDLERS(type_name)                                                            \
     hprose_##type_name##_ce->create_object = php_hprose_##type_name##_new;                                                         \
