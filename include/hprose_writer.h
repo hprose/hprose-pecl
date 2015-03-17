@@ -288,7 +288,8 @@ static zend_always_inline void hprose_writer_write_object_with_ref(hprose_writer
 
 }
 static zend_always_inline void hprose_writer_write_utf8char(hprose_writer *_this, const char *str, int32_t len) {
-
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_UTF8CHAR);
+    hprose_bytes_io_write(_this->stream, str, len);
 }
 static zend_always_inline void hprose_writer_write_string(hprose_writer *_this, const char *str, int32_t len) {
 

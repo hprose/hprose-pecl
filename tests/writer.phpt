@@ -28,6 +28,7 @@ $writer->serialize(true);
 $writer->serialize(false);
 $writer->serialize("");
 $writer->serialize(null);
+$writer->serialize("我");
 echo $bytes . "\r\n";
 $bytes->close();
 unset($writer);
@@ -40,5 +41,5 @@ $writer->serialize($date);
 echo $bytes . "\r\n";
 ?>
 --EXPECT--
-0123456789i-2147483648;i2147483647;l2147483648;d3.14159265897932;NI-I+tfen
+0123456789i-2147483648;i2147483647;l2147483648;d3.14159265897932;NI-I+tfenu我
 D20150219T143448.123456;D20150219T143448.123456Zr0;
