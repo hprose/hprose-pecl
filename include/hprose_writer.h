@@ -128,8 +128,8 @@ static void hprose_real_writer_refer_free(void *_this) {
     zend_llist_destroy(refer->ref);
     efree(refer->ref);
     refer->ref = NULL;
-    hprose_zval_dtor(refer->sref);
-    hprose_zval_dtor(refer->oref);
+    hprose_zval_free(refer->sref);
+    hprose_zval_free(refer->oref);
     refer->sref = NULL;
     refer->oref = NULL;
     efree(refer);
@@ -172,8 +172,8 @@ static zend_always_inline hprose_writer * hprose_writer_create(hprose_bytes_io *
 
 static zend_always_inline void hprose_writer_free(hprose_writer *_this) {
     _this->stream = NULL;
-    hprose_zval_dtor(_this->classref);
-    hprose_zval_dtor(_this->propsref);
+    hprose_zval_free(_this->classref);
+    hprose_zval_free(_this->propsref);
     _this->classref = NULL;
     _this->propsref = NULL;
     _this->refer->free(_this->refer);
