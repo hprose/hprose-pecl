@@ -128,12 +128,8 @@ static void hprose_real_writer_refer_free(void *_this) {
     zend_llist_destroy(refer->ref);
     efree(refer->ref);
     refer->ref = NULL;
-    php_zval_ptr_dtor(refer->sref);
-    php_zval_ptr_dtor(refer->oref);
-#if PHP_MAJOR_VERSION >= 7
-    efree(refer->sref);
-    efree(refer->oref);
-#endif
+    hprose_zval_dtor(refer->sref);
+    hprose_zval_dtor(refer->oref);
     refer->sref = NULL;
     refer->oref = NULL;
     efree(refer);
@@ -148,8 +144,8 @@ static zend_always_inline hprose_writer_refer * hprose_real_writer_refer_new() {
     _this->ref = emalloc(sizeof(zend_llist));
     // I don't know if this can work on PHP 7
     zend_llist_init(_this->ref, 32, (void (*)(void *))ZVAL_PTR_DTOR, 0);
-    php_make_zval(_this->sref);
-    php_make_zval(_this->oref);
+    hprose_make_zval(_this->sref);
+    hprose_make_zval(_this->oref);
     array_init(_this->sref);
     array_init(_this->oref);
     _this->refcount = 0;
@@ -166,8 +162,8 @@ typedef struct {
 static zend_always_inline hprose_writer * hprose_writer_create(hprose_bytes_io *stream, zend_bool simple) {
     hprose_writer *_this = emalloc(sizeof(hprose_writer));
     _this->stream = stream;
-    php_make_zval(_this->classref);
-    php_make_zval(_this->propsref);
+    hprose_make_zval(_this->classref);
+    hprose_make_zval(_this->propsref);
     array_init(_this->classref);
     array_init(_this->propsref);
     _this->refer = simple ? hprose_fake_writer_refer_new() : hprose_real_writer_refer_new();
@@ -176,12 +172,8 @@ static zend_always_inline hprose_writer * hprose_writer_create(hprose_bytes_io *
 
 static zend_always_inline void hprose_writer_free(hprose_writer *_this) {
     _this->stream = NULL;
-    php_zval_ptr_dtor(_this->classref);
-    php_zval_ptr_dtor(_this->propsref);
-#if PHP_MAJOR_VERSION >= 7
-    efree(_this->classref);
-    efree(_this->propsref);
-#endif
+    hprose_zval_dtor(_this->classref);
+    hprose_zval_dtor(_this->propsref);
     _this->classref = NULL;
     _this->propsref = NULL;
     _this->refer->free(_this->refer);
@@ -249,11 +241,11 @@ static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this
     else {
         ZVAL_LITERAL_STRINGL(fmt, "\\DYmd\\THis.u;");
     }
-    php_zval_dtor(tmp);
+    hprose_zval_ptr_dtor(&tmp);
     call_php_function(dt, "format", &tmp, 1, &params);
-    php_zval_dtor(fmt);
+    hprose_zval_ptr_dtor(&fmt);
     hprose_bytes_io_write(_this->stream, Z_STRVAL(tmp), Z_STRLEN(tmp));
-    php_zval_dtor(tmp);
+    hprose_zval_ptr_dtor(&tmp);
 }
 static zend_always_inline void hprose_writer_write_datetime_with_ref(hprose_writer *_this, zval *dt TSRMLS_DC) {
     if (!(_this->refer->write(_this->refer, _this->stream, dt))) hprose_writer_write_datetime(_this, dt TSRMLS_CC);
