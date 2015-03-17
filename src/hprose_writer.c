@@ -45,10 +45,19 @@ ZEND_METHOD(hprose_writer, serialize) {
     }
 }
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_writer_construct_arginfo, 0, 0, 2)
+    ZEND_ARG_OBJ_INFO(0, stream, HproseBytesIO, 0)
+    ZEND_ARG_INFO(0, simple)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_writer_serialize_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, data)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry hprose_writer_methods[] = {
-    ZEND_ME(hprose_writer, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+    ZEND_ME(hprose_writer, __construct, hprose_writer_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     ZEND_ME(hprose_writer, __destruct, hprose_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
-    ZEND_ME(hprose_writer, serialize, NULL, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_writer, serialize, hprose_writer_serialize_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 

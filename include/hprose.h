@@ -560,13 +560,23 @@ static zend_always_inline int __call_php_function(zval *object, char *name, int3
     zval method;
 #if PHP_MAJOR_VERSION < 7
     ZVAL_STRINGL(&method, name, nlen, 0);
-    return call_user_function(CG(function_table), &object, &method, retval_ptr, argc, params TSRMLS_CC);
+    if (object) {
+        return call_user_function(NULL, &object, &method, retval_ptr, argc, params TSRMLS_CC);
+    }
+    else {
+        return call_user_function(CG(function_table), NULL, &method, retval_ptr, argc, params TSRMLS_CC);
+    }
 #else /* PHP_MAJOR_VERSION < 7 */
     zval *_params = ecalloc(argc, sizeof(zval));
     int i, result;
     for (i = 0; i < argc; ++i) _params[i] = *params[i];
     ZVAL_STRINGL(&method, name, nlen);
-    result = call_user_function(CG(function_table), object, &method, retval_ptr, argc, _params);
+    if (object) {
+        result = call_user_function(NULL, object, &method, retval_ptr, argc, _params);
+    }
+    else {
+        result = call_user_function(CG(function_table), NULL, &method, retval_ptr, argc, _params);
+    }
     efree(_params);
     zval_ptr_dtor(&method);
     return result;
@@ -574,7 +584,8 @@ static zend_always_inline int __call_php_function(zval *object, char *name, int3
 }
 
 // name must be a literal constant string
-#define call_php_function(object, name, retval_ptr, argc, params) __call_php_function(object, name, sizeof(name) - 1, retval_ptr, argc, params TSRMLS_CC)
+#define call_php_function(name, retval_ptr, argc, params) __call_php_function(NULL, name, sizeof(name) - 1, retval_ptr, argc, params TSRMLS_CC)
+#define call_php_method(object, name, retval_ptr, argc, params) __call_php_function(object, name, sizeof(name) - 1, retval_ptr, argc, params TSRMLS_CC)
 
 // s must be a literal constant string
 #if PHP_MAJOR_VERSION < 7
