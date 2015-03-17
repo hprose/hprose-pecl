@@ -7,10 +7,10 @@ Test that the Hprose\ClassManager class works.
 class Test {}
 class Test2 {}
 HproseClassManager::register("Test", "t");
-echo Hprose\ClassManager::getAlias("Test") . "\r\n";
-echo Hprose\ClassManager::getAlias("Test2") . "\r\n";
-echo Hprose\ClassManager::getClass("t") . "\r\n";
-echo Hprose\ClassManager::getClass("tttt") . "\r\n";
+echo HproseClassManager::getAlias("Test") . "\r\n";
+echo HproseClassManager::getAlias("Test2") . "\r\n";
+echo HproseClassManager::getClass("t") . "\r\n";
+echo HproseClassManager::getClass("tttt") . "\r\n";
 ?>
 --EXPECT--
 t

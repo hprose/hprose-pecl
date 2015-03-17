@@ -9,17 +9,17 @@
 
 /**********************************************************\
  *                                                        *
- * hprose_common.h                                        *
+ * hprose.h                                               *
  *                                                        *
- * hprose common for pecl header file.                    *
+ * hprose for pecl header file.                           *
  *                                                        *
  * LastModified: Mar 17, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
 
-#ifndef HPROSE_COMMON_H
-#define HPROSE_COMMON_H
+#ifndef HPROSE_H
+#define HPROSE_H
 
 #include "php.h"
 #include "zend_exceptions.h"
@@ -255,14 +255,23 @@ static zend_object_value php_hprose_##type_name##_new(      \
     return retval;                                                          \
 }                                                                           \
 
+#if PHP_API_VERSION < 20090626
 #define HPROSE_REGISTER_CLASS(ns, name, type_name)                                                          \
     zend_class_entry ce;                                                                                    \
-    INIT_CLASS_ENTRY(ce, ns name, hprose_##type_name##_methods)                                         \
+    INIT_CLASS_ENTRY(ce, ns name, hprose_##type_name##_methods)                                             \
     hprose_##type_name##_ce = zend_register_internal_class_ex(&ce, NULL, NULL TSRMLS_CC);                   \
-    zend_register_class_alias(ns "\\" name, hprose_##type_name##_ce);                                            \
+
+#else /* PHP_API_VERSION < 20090626 */
+#define HPROSE_REGISTER_CLASS(ns, name, type_name)                                                          \
+    zend_class_entry ce;                                                                                    \
+    INIT_CLASS_ENTRY(ce, ns name, hprose_##type_name##_methods)                                             \
+    hprose_##type_name##_ce = zend_register_internal_class_ex(&ce, NULL, NULL TSRMLS_CC);                   \
+    zend_register_class_alias(ns "\\" name, hprose_##type_name##_ce);                                       \
+
+#endif /* PHP_API_VERSION < 20090626 */
 
 #define HPROSE_REGISTER_CLASS_HANDLERS(type_name)                                                           \
-    hprose_##type_name##_ce->create_object = php_hprose_##type_name##_new;                                                        \
+    hprose_##type_name##_ce->create_object = php_hprose_##type_name##_new;                                  \
     memcpy(&hprose_##type_name##_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));   \
 
 #else  /* PHP_MAJOR_VERSION < 7 */
@@ -307,7 +316,7 @@ static zend_object *php_hprose_##type_name##_new(zend_class_entry *ce) {        
     zend_register_class_alias(ns name, hprose_##type_name##_ce);                                             \
 
 #define HPROSE_REGISTER_CLASS_HANDLERS(type_name)                                                            \
-    hprose_##type_name##_ce->create_object = php_hprose_##type_name##_new;                                                         \
+    hprose_##type_name##_ce->create_object = php_hprose_##type_name##_new;                                   \
     memcpy(&hprose_##type_name##_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));    \
     hprose_##type_name##_handlers.offset = XtOffsetOf(php_hprose_##type_name, std);                          \
     hprose_##type_name##_handlers.free_obj = php_hprose_##type_name##_free;                                  \
@@ -357,7 +366,7 @@ zend_class_entry *get_hprose_##type_name##_ce() {   \
 #define zend_hash_index_add_ptr(ht, h, pData)  zend_hash_index_add((ht), (h), &(pData), sizeof(pData), NULL)
 #define zend_hash_str_update_ptr(ht, key, len, pData) zend_hash_update((ht), (key), (len), &(pData), sizeof(pData), NULL)
 #define zend_hash_index_update_ptr(ht, h, pData)  zend_hash_index_update((ht), (h), &(pData), sizeof(pData), NULL)
-static zend_always_inline void * zend_hash_str_find_ptr(HashTable *ht, const char *key, int len) {
+static zend_always_inline void * zend_hash_str_find_ptr(HashTable *ht, char *key, int len) {
     void **ppData;
     return (zend_hash_find(ht, key, len, (void **)&ppData) == FAILURE) ? NULL : *ppData;
 }
@@ -379,7 +388,7 @@ static zend_always_inline zval *php_array_get(zval *val, ulong h) {
     return *result;
 }
 
-static zend_always_inline zval *php_assoc_array_get(zval *val, const char *key, int len) {
+static zend_always_inline zval *php_assoc_array_get(zval *val, char *key, int len) {
     zval **result;
     if (zend_hash_find(Z_ARRVAL_P(val), key, len, (void **)&result) == FAILURE) return NULL;
     return *result;
@@ -391,7 +400,7 @@ static zend_always_inline zval *php_array_get(zval *val, ulong h) {
     return zend_hash_index_find(Z_ARRVAL_P(val), h);
 }
 
-static zend_always_inline zval *php_assoc_array_get(zval *val, const char *key, int len) {
+static zend_always_inline zval *php_assoc_array_get(zval *val, char *key, int len) {
     return zend_hash_str_find(Z_ARRVAL_P(val), key, len);
 }
 
@@ -406,7 +415,7 @@ static zend_always_inline zend_bool php_array_get_long(zval *val, ulong h, long 
     return 1;
 }
 
-static zend_always_inline zend_bool php_assoc_array_get_long(zval *val, const char *key, int len, long *rval) {
+static zend_always_inline zend_bool php_assoc_array_get_long(zval *val, char *key, int len, long *rval) {
     zval *result = php_assoc_array_get(val, key, len);
     if (result == NULL || Z_TYPE_P(result) != IS_LONG) {
         return 0;
@@ -436,7 +445,7 @@ static inline void hprose_str_replace(char from, char to, char *s, int len, int 
 #define ZEND_ACC_TRAIT 0
 #endif
 
-static inline zend_bool hprose_class_exists(const char *classname, size_t len, zend_bool autoload TSRMLS_DC) {
+static inline zend_bool hprose_class_exists(char *classname, size_t len, zend_bool autoload TSRMLS_DC) {
 #if PHP_MAJOR_VERSION < 7
     char *lc_name;
     zend_class_entry **ce = NULL;
@@ -492,8 +501,8 @@ static inline zend_bool hprose_class_exists(const char *classname, size_t len, z
 
 #define class_exists(classname, len, autoload) hprose_class_exists((classname), (len), (autoload) TSRMLS_CC)
 
-static zend_always_inline zend_bool is_utf8(const char *str, int32_t len) {
-    const uint8_t * s = (const uint8_t *)str;
+static zend_always_inline zend_bool is_utf8(char *str, int32_t len) {
+    uint8_t * s = (uint8_t *)str;
     int32_t i;
     for (i = 0; i < len; ++i) {
         uint8_t c = s[i];
@@ -529,8 +538,8 @@ static zend_always_inline zend_bool is_utf8(const char *str, int32_t len) {
     return 1;
 }
 
-static zend_always_inline int32_t ustrlen(const char *str, int32_t len) {
-    const uint8_t *s = (const uint8_t *)str;
+static zend_always_inline int32_t ustrlen(char *str, int32_t len) {
+    uint8_t *s = (uint8_t *)str;
     int32_t l = len, p = 0;
     while (p < len) {
         uint8_t a = s[p];
@@ -639,4 +648,4 @@ static zend_always_inline int __call_php_function(zval *object, char *name, int3
 /**********************************************************/
 END_EXTERN_C()
 
-#endif	/* HPROSE_COMMON_H */
+#endif	/* HPROSE_H */

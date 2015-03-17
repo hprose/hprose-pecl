@@ -4,7 +4,7 @@ Test that the Hprose\Tags class works.
 <?php if (!extension_loaded("hprose")) print "skip"; ?>
 --FILE--
 <?php
-echo Hprose\Tags::TagInteger;
+echo HproseTags::TagInteger;
 echo HproseTags::TagEnd;
 ?>
 --EXPECT--

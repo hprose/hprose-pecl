@@ -32,7 +32,7 @@ var_dump($bytes->eof());
 $bytes->skip(100);
 var_dump($bytes->eof());
 unset($bytes);
-$bytes = new Hprose\BytesIO();
+$bytes = new HproseBytesIO();
 $bytes->write("123", 2);
 echo $bytes->toString() . "\r\n";
 ?>
