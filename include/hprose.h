@@ -561,7 +561,7 @@ static zend_always_inline int32_t ustrlen(char *str, int32_t len) {
 
 static zend_always_inline zend_bool is_list(zval *val) {
     HashTable *ht = Z_ARRVAL_P(val);
-    ulong count = zend_hash_num_elements(ht);
+    int32_t count = zend_hash_num_elements(ht);
     // zero length array
     if (count == 0) return 1;
     if (zend_hash_index_exists(ht, 0)) {
