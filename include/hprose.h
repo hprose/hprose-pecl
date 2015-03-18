@@ -336,7 +336,7 @@ static zend_object *php_hprose_##type_name##_new(zend_class_entry *ce) {        
 static zend_object_handlers hprose_##type_name##_handlers; \
 
 #define HPROSE_CLASS_ENTRY(type_name)               \
-zend_class_entry *hprose_##type_name##_ce;          \
+static zend_class_entry *hprose_##type_name##_ce;   \
 zend_class_entry *get_hprose_##type_name##_ce() {   \
     return hprose_##type_name##_ce;                 \
 }                                                   \
