@@ -353,7 +353,7 @@ static inline void hprose_writer_write_assoc_array(hprose_writer *_this, zval *v
             if (zend_hash_get_current_key_ex(ht, &str, &len, &index, 0, NULL) == HASH_KEY_IS_STRING) {
                 zval key;
                 ZVAL_STRINGL(&key, str, len - 1, 0);
-                hprose_writer_write_string(_this, &key);
+                hprose_writer_write_string_with_ref(_this, &key);
             }
             else {
                 hprose_writer_write_int(_this, (int32_t)index);
@@ -361,11 +361,12 @@ static inline void hprose_writer_write_assoc_array(hprose_writer *_this, zval *v
             zend_hash_get_current_data(ht, (void **)&value);
             hprose_writer_serialize(_this, *value TSRMLS_CC);
 #else
-            zval *key, *value;
-            zend_hash_get_current_key_zval(ht, key);
+            zval key, *value;
+            zend_hash_get_current_key_zval(ht, &key);
             value = zend_hash_get_current_data(ht);
-            hprose_writer_serialize(_this, key TSRMLS_CC);
+            hprose_writer_serialize(_this, &key TSRMLS_CC);
             hprose_writer_serialize(_this, value TSRMLS_CC);
+            zval_ptr_dtor(&key);
 #endif
             zend_hash_move_forward(ht);
 
