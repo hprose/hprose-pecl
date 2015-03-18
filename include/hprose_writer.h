@@ -282,6 +282,21 @@ static zend_always_inline void hprose_writer_write_bytes_with_ref(hprose_writer 
 }
 
 static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this, zval *val TSRMLS_DC) {
+#if PHP_MAJOR_VERSION < 7
+    zval *tmp, *fmt;
+    hprose_make_zval(tmp);
+    hprose_make_zval(fmt);
+    _this->refer->handlers->set(_this->refer, val);
+    call_php_method(val, "getOffset", tmp, 0, NULL);
+    if (Z_LVAL_P(tmp) == 0) {
+        ZVAL_LITERAL_STRINGL(fmt, "\\DYmd\\THis.u\\Z");
+    }
+    else {
+        ZVAL_LITERAL_STRINGL(fmt, "\\DYmd\\THis.u;");
+    }
+    call_php_method(val, "format", tmp, 1, &fmt);
+    hprose_bytes_io_write(_this->stream, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+#else
     zval tmp, fmt;
     zval *params[] = { &fmt, NULL };
     _this->refer->handlers->set(_this->refer, val);
@@ -294,12 +309,9 @@ static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this
     }
     call_php_method(val, "format", &tmp, 1, &params[0]);
     hprose_bytes_io_write(_this->stream, Z_STRVAL(tmp), Z_STRLEN(tmp));
-#if PHP_MAJOR_VERSION < 7
-    STR_FREE(Z_STRVAL(tmp));
-#else
+#endif
     zval_ptr_dtor(&fmt);
     zval_ptr_dtor(&tmp);
-#endif
 }
 
 static zend_always_inline void hprose_writer_write_datetime_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
@@ -398,8 +410,6 @@ static inline void hprose_writer_write_map(hprose_writer *_this, zval *val TSRML
             call_php_method(val, "offsetGet", value, 1, &key);
             hprose_writer_serialize(_this, key TSRMLS_CC);
             hprose_writer_serialize(_this, value TSRMLS_CC);
-            hprose_zval_free(key);
-            hprose_zval_free(value);
 #else /* PHP_MAJOR_VERSION < 7 */
 /*
    The above code can also work well in PHP 7.
@@ -411,9 +421,9 @@ static inline void hprose_writer_write_map(hprose_writer *_this, zval *val TSRML
             call_php_method(val, "offsetGet", &value, 1, &params[0]);
             hprose_writer_serialize(_this, &key TSRMLS_CC);
             hprose_writer_serialize(_this, &value TSRMLS_CC);
+#endif /* PHP_MAJOR_VERSION < 7 */
             zval_ptr_dtor(&key);
             zval_ptr_dtor(&value);
-#endif /* PHP_MAJOR_VERSION < 7 */
             call_php_method(val, "next", &tmp, 0, NULL);
         }
     }
