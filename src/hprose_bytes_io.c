@@ -172,6 +172,9 @@ ZEND_METHOD(hprose_bytes_io, toString) {
     RETURN_STRINGL_0(str, _this->len);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_bytes_io_void_arginfo, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_bytes_io_construct_arginfo, 0, 0, 0)
     ZEND_ARG_INFO(0, str)
 ZEND_END_ARG_INFO()
@@ -191,22 +194,22 @@ ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_bytes_io_methods[] = {
     ZEND_ME(hprose_bytes_io, __construct, hprose_bytes_io_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    ZEND_ME(hprose_bytes_io, __destruct, hprose_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
-    ZEND_ME(hprose_bytes_io, close, hprose_void_arginfo, ZEND_ACC_PUBLIC)
-    ZEND_ME(hprose_bytes_io, length, hprose_void_arginfo, ZEND_ACC_PUBLIC)
-    ZEND_ME(hprose_bytes_io, getc, hprose_void_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_bytes_io, __destruct, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
+    ZEND_ME(hprose_bytes_io, close, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_bytes_io, length, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_bytes_io, getc, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_bytes_io, read, hprose_bytes_io_long_arginfo, ZEND_ACC_PUBLIC)
-    ZEND_ME(hprose_bytes_io, readfull, hprose_void_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_bytes_io, readfull, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_bytes_io, readuntil, hprose_bytes_io_readuntil_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_bytes_io, readString, hprose_bytes_io_long_arginfo, ZEND_ACC_PUBLIC)
-    ZEND_ME(hprose_bytes_io, mark, hprose_void_arginfo, ZEND_ACC_PUBLIC)
-    ZEND_ME(hprose_bytes_io, unmark, hprose_void_arginfo, ZEND_ACC_PUBLIC)
-    ZEND_ME(hprose_bytes_io, reset, hprose_void_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_bytes_io, mark, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_bytes_io, unmark, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_bytes_io, reset, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_bytes_io, skip, hprose_bytes_io_long_arginfo, ZEND_ACC_PUBLIC)
-    ZEND_ME(hprose_bytes_io, eof, hprose_void_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_bytes_io, eof, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_bytes_io, write, hprose_bytes_io_write_arginfo, ZEND_ACC_PUBLIC)
-    ZEND_ME(hprose_bytes_io, toString, hprose_void_arginfo, ZEND_ACC_PUBLIC)
-    ZEND_MALIAS(hprose_bytes_io, __toString, toString, hprose_void_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_bytes_io, toString, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_MALIAS(hprose_bytes_io, __toString, toString, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 

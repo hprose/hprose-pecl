@@ -176,12 +176,6 @@ typedef unsigned __int64 uint64_t;
 #endif
 
 /**********************************************************\
-| void arginfo definition                                  |
-\**********************************************************/
-ZEND_BEGIN_ARG_INFO_EX(hprose_void_arginfo, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
-/**********************************************************\
 | START UP Macro definition                                |
 \**********************************************************/
 #define HPROSE_STARTUP_FUNCTION(module)   	ZEND_MINIT_FUNCTION(hprose_##module)

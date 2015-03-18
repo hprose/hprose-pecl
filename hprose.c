@@ -92,11 +92,24 @@ ZEND_FUNCTION(hprose_info) {
 #endif
 }
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_serialize_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, val)
+    ZEND_ARG_INFO(0, simple)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_unserialize_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, data)
+    ZEND_ARG_INFO(0, simple)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_info_arginfo, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 /* compiled function list so Zend knows what's in this module */
 const zend_function_entry hprose_functions[] = {
-    ZEND_FE(hprose_serialize, NULL)
-    ZEND_FE(hprose_unserialize, NULL)
-    ZEND_FE(hprose_info, NULL)
+    ZEND_FE(hprose_serialize, hprose_serialize_arginfo)
+    ZEND_FE(hprose_unserialize, hprose_unserialize_arginfo)
+    ZEND_FE(hprose_info, hprose_info_arginfo)
     ZEND_FE_END
 };
 
