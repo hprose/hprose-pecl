@@ -308,16 +308,16 @@ static zend_always_inline void hprose_writer_write_datetime_with_ref(hprose_writ
 
 static inline void hprose_writer_write_array(hprose_writer *_this, zval *val TSRMLS_DC) {
     HashTable *ht = Z_ARRVAL_P(val);
-    int32_t i, count = zend_hash_num_elements(ht);
+    int32_t i = zend_hash_num_elements(ht);
     _this->refer->handlers->set(_this->refer, val);
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_LIST);
-    if (count) {
-        hprose_bytes_io_write_int(_this->stream, count);
+    if (i) {
+        hprose_bytes_io_write_int(_this->stream, i);
     }
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
-    if (count) {
+    if (i) {
         zend_hash_internal_pointer_reset(ht);
-        for (i = 0; i < count; ++i) {
+        for (; i > 0; --i) {
 #if PHP_MAJOR_VERSION < 7
             zval **e;
             zend_hash_get_current_data(ht, (void **)&e);
@@ -335,16 +335,16 @@ static inline void hprose_writer_write_array(hprose_writer *_this, zval *val TSR
 
 static inline void hprose_writer_write_assoc_array(hprose_writer *_this, zval *val TSRMLS_DC) {
     HashTable *ht = Z_ARRVAL_P(val);
-    int32_t i, count = zend_hash_num_elements(ht);
+    int32_t i = zend_hash_num_elements(ht);
     _this->refer->handlers->set(_this->refer, val);
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_MAP);
-    if (count) {
-        hprose_bytes_io_write_int(_this->stream, count);
+    if (i) {
+        hprose_bytes_io_write_int(_this->stream, i);
     }
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
-    if (count) {
+    if (i) {
         zend_hash_internal_pointer_reset(ht);
-        for (i = 0; i < count; ++i) {
+        for (; i > 0; --i) {
 #if PHP_MAJOR_VERSION < 7
             char *str;
             uint len;
@@ -374,29 +374,72 @@ static inline void hprose_writer_write_assoc_array(hprose_writer *_this, zval *v
     }
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
 }
+
 static inline void hprose_writer_write_map(hprose_writer *_this, zval *val TSRMLS_DC) {
-
+    zval count;
+    int32_t i;
+    _this->refer->handlers->set(_this->refer, val);
+    call_php_method(val, "count", &count, 0, NULL);
+    i = Z_LVAL(count);
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_MAP);
+    if (i) {
+        hprose_bytes_io_write_int(_this->stream, i);
+    }
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
+    if (i) {
+        zval tmp;
+        call_php_method(val, "rewind", &tmp, 0, NULL);
+        for (; i > 0; --i) {
+#if PHP_MAJOR_VERSION < 7
+            zval *key, *value;
+            hprose_make_zval(key);
+            hprose_make_zval(value);
+            call_php_method(val, "current", key, 0, NULL);
+            call_php_method(val, "offsetGet", value, 1, &key);
+            hprose_writer_serialize(_this, key TSRMLS_CC);
+            hprose_writer_serialize(_this, value TSRMLS_CC);
+            hprose_zval_free(key);
+            hprose_zval_free(value);
+#else /* PHP_MAJOR_VERSION < 7 */
+/*
+   The above code can also work well in PHP 7.
+   The following code is only for the purpose of optimization.
+ */
+            zval key, value;
+            zval *params[] = { &key, NULL };
+            call_php_method(val, "current", &key, 0, NULL);
+            call_php_method(val, "offsetGet", &value, 1, &params[0]);
+            hprose_writer_serialize(_this, &key TSRMLS_CC);
+            hprose_writer_serialize(_this, &value TSRMLS_CC);
+            zval_ptr_dtor(&key);
+            zval_ptr_dtor(&value);
+#endif /* PHP_MAJOR_VERSION < 7 */
+            call_php_method(val, "next", &tmp, 0, NULL);
+        }
+    }
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
 }
-static inline void hprose_writer_write_map_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
 
+static inline void hprose_writer_write_map_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
+    if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_map(_this, val TSRMLS_CC);
 }
 static inline void hprose_writer_write_list(hprose_writer *_this, zval *val TSRMLS_DC) {
 
 }
 static inline void hprose_writer_write_list_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
-
+    if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_list(_this, val TSRMLS_CC);
 }
 static inline void hprose_writer_write_stdclass(hprose_writer *_this, zval *val TSRMLS_DC) {
 
 }
 static inline void hprose_writer_write_stdclass_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
-
+    if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_stdclass(_this, val TSRMLS_CC);
 }
 static inline void hprose_writer_write_object(hprose_writer *_this, zval *val TSRMLS_DC) {
 
 }
 static inline void hprose_writer_write_object_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
-
+    if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_object(_this, val TSRMLS_CC);
 }
 static inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRMLS_DC) {
     switch (Z_TYPE_P(val)) {

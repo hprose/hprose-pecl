@@ -49,9 +49,13 @@ $writer = new HproseWriter($bytes);
 $writer->serialize(array(1,2,3,4,5));
 $writer->serialize(array("Apple", "Banana", "Cherry"));
 $writer->serialize(array("Apple"=>"苹果", "Banana"=>"香蕉", "Cherry"=>"樱桃"));
+$sos = new SplObjectStorage();
+$sos->attach($date, array("Apple", "Banana", "Cherry"));
+$sos->attach($sos, $date);
+$writer->serialize($sos);
 echo $bytes . "\r\n";
 ?>
 --EXPECT--
 0123456789i-2147483648;i2147483647;l2147483648;d3.14159265897932;NI-I+tfenu我s2"🆚"
 D20150219T143448.123456;D20150219T143448.123456Zr0;s19"Hello World! 你好，中国！"r2;
-a5{12345}a3{s5"Apple"s6"Banana"s6"Cherry"}m3{r2;s2"苹果"r3;s2"香蕉"r4;s2"樱桃"}
+a5{12345}a3{s5"Apple"s6"Banana"s6"Cherry"}m3{r2;s2"苹果"r3;s2"香蕉"r4;s2"樱桃"}m2{D20150219T143448.123456;a3{r2;r3;r4;}r9;r10;}
