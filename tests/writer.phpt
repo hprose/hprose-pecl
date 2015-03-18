@@ -48,9 +48,10 @@ unset($writer);
 $writer = new HproseWriter($bytes);
 $writer->serialize(array(1,2,3,4,5));
 $writer->serialize(array("Apple", "Banana", "Cherry"));
+$writer->serialize(array("Apple"=>"苹果", "Banana"=>"香蕉", "Cherry"=>"樱桃"));
 echo $bytes . "\r\n";
 ?>
 --EXPECT--
 0123456789i-2147483648;i2147483647;l2147483648;d3.14159265897932;NI-I+tfenu我s2"🆚"
 D20150219T143448.123456;D20150219T143448.123456Zr0;s19"Hello World! 你好，中国！"r2;
-a5{12345}a3{s5"Apple"s6"Banana"s6"Cherry"}
+a5{12345}a3{s5"Apple"s6"Banana"s6"Cherry"}m3{s5"Apple"s2"苹果"s6"Banana"s2"香蕉"s6"Cherry"s2"樱桃"}

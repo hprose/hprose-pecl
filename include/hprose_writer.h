@@ -244,6 +244,68 @@ static zend_always_inline void hprose_writer_write_double(hprose_writer *_this, 
     }
 }
 
+static zend_always_inline void hprose_writer_write_utf8char(hprose_writer *_this, zval *val) {
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_UTF8CHAR);
+    hprose_bytes_io_write(_this->stream, Z_STRVAL_P(val), Z_STRLEN_P(val));
+}
+
+static zend_always_inline void hprose_writer_write_string(hprose_writer *_this, zval *val) {
+    int32_t len = ustrlen(Z_STRVAL_P(val), Z_STRLEN_P(val));
+    _this->refer->handlers->set(_this->refer, val);
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_STRING);
+    if (len) {
+        hprose_bytes_io_write_int(_this->stream, len);
+    }
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+    hprose_bytes_io_write(_this->stream, Z_STRVAL_P(val), Z_STRLEN_P(val));
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+}
+
+static zend_always_inline void hprose_writer_write_string_with_ref(hprose_writer *_this, zval *val) {
+    if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_string(_this, val);
+}
+
+static zend_always_inline void hprose_writer_write_bytes(hprose_writer *_this, zval *val) {
+    int32_t len = Z_STRLEN_P(val);
+    _this->refer->handlers->set(_this->refer, val);
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_BYTES);
+    if (len) {
+        hprose_bytes_io_write_int(_this->stream, len);
+    }
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+    hprose_bytes_io_write(_this->stream, Z_STRVAL_P(val), len);
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+}
+
+static zend_always_inline void hprose_writer_write_bytes_with_ref(hprose_writer *_this, zval *val) {
+    if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_bytes(_this, val);
+}
+
+static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this, zval *val TSRMLS_DC) {
+    zval tmp, fmt;
+    zval *params[] = { &fmt, NULL };
+    _this->refer->handlers->set(_this->refer, val);
+    call_php_method(val, "getOffset", &tmp, 0, NULL);
+    if (Z_LVAL(tmp) == 0) {
+        ZVAL_LITERAL_STRINGL(&fmt, "\\DYmd\\THis.u\\Z");
+    }
+    else {
+        ZVAL_LITERAL_STRINGL(&fmt, "\\DYmd\\THis.u;");
+    }
+    call_php_method(val, "format", &tmp, 1, &params[0]);
+    hprose_bytes_io_write(_this->stream, Z_STRVAL(tmp), Z_STRLEN(tmp));
+#if PHP_MAJOR_VERSION < 7
+    STR_FREE(Z_STRVAL(tmp));
+#else
+    zval_ptr_dtor(&fmt);
+    zval_ptr_dtor(&tmp);
+#endif
+}
+
+static zend_always_inline void hprose_writer_write_datetime_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
+    if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_datetime(_this, val TSRMLS_CC);
+}
+
 static inline void hprose_writer_write_array(hprose_writer *_this, zval *val TSRMLS_DC) {
     HashTable *ht = Z_ARRVAL_P(val);
     int32_t i, count = zend_hash_num_elements(ht);
@@ -272,30 +334,44 @@ static inline void hprose_writer_write_array(hprose_writer *_this, zval *val TSR
 }
 
 static inline void hprose_writer_write_assoc_array(hprose_writer *_this, zval *val TSRMLS_DC) {
-
-}
-static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this, zval *val TSRMLS_DC) {
-    zval tmp, fmt;
-    zval *params[] = { &fmt, NULL };
+    HashTable *ht = Z_ARRVAL_P(val);
+    int32_t i, count = zend_hash_num_elements(ht);
     _this->refer->handlers->set(_this->refer, val);
-    call_php_method(val, "getOffset", &tmp, 0, NULL);
-    if (Z_LVAL(tmp) == 0) {
-        ZVAL_LITERAL_STRINGL(&fmt, "\\DYmd\\THis.u\\Z");
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_MAP);
+    if (count) {
+        hprose_bytes_io_write_int(_this->stream, count);
     }
-    else {
-        ZVAL_LITERAL_STRINGL(&fmt, "\\DYmd\\THis.u;");
-    }
-    call_php_method(val, "format", &tmp, 1, &params[0]);
-    hprose_bytes_io_write(_this->stream, Z_STRVAL(tmp), Z_STRLEN(tmp));
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
+    if (count) {
+        zend_hash_internal_pointer_reset(ht);
+        for (i = 0; i < count; ++i) {
 #if PHP_MAJOR_VERSION < 7
-    STR_FREE(Z_STRVAL(tmp));
+            char *str;
+            uint len;
+            ulong index;
+            zval **value;
+            if (zend_hash_get_current_key_ex(ht, &str, &len, &index, 0, NULL) == HASH_KEY_IS_STRING) {
+                zval key;
+                ZVAL_STRINGL(&key, str, len - 1, 0);
+                hprose_writer_write_string(_this, &key);
+            }
+            else {
+                hprose_writer_write_int(_this, (int32_t)index);
+            }
+            zend_hash_get_current_data(ht, (void **)&value);
+            hprose_writer_serialize(_this, *value TSRMLS_CC);
 #else
-    zval_ptr_dtor(&fmt);
-    zval_ptr_dtor(&tmp);
+            zval *key, *value;
+            zend_hash_get_current_key_zval(ht, key);
+            value = zend_hash_get_current_data(ht);
+            hprose_writer_serialize(_this, key TSRMLS_CC);
+            hprose_writer_serialize(_this, value TSRMLS_CC);
 #endif
-}
-static zend_always_inline void hprose_writer_write_datetime_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
-    if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_datetime(_this, val TSRMLS_CC);
+            zend_hash_move_forward(ht);
+
+        }
+    }
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
 }
 static inline void hprose_writer_write_map(hprose_writer *_this, zval *val TSRMLS_DC) {
 
@@ -320,38 +396,6 @@ static inline void hprose_writer_write_object(hprose_writer *_this, zval *val TS
 }
 static inline void hprose_writer_write_object_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
 
-}
-static zend_always_inline void hprose_writer_write_utf8char(hprose_writer *_this, zval *val) {
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_UTF8CHAR);
-    hprose_bytes_io_write(_this->stream, Z_STRVAL_P(val), Z_STRLEN_P(val));
-}
-static zend_always_inline void hprose_writer_write_string(hprose_writer *_this, zval *val) {
-    int32_t len = ustrlen(Z_STRVAL_P(val), Z_STRLEN_P(val));
-    _this->refer->handlers->set(_this->refer, val);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_STRING);
-    if (len) {
-        hprose_bytes_io_write_int(_this->stream, len);
-    }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
-    hprose_bytes_io_write(_this->stream, Z_STRVAL_P(val), Z_STRLEN_P(val));
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
-}
-static zend_always_inline void hprose_writer_write_string_with_ref(hprose_writer *_this, zval *val) {
-    if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_string(_this, val);
-}
-static zend_always_inline void hprose_writer_write_bytes(hprose_writer *_this, zval *val) {
-    int32_t len = Z_STRLEN_P(val);
-    _this->refer->handlers->set(_this->refer, val);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_BYTES);
-    if (len) {
-        hprose_bytes_io_write_int(_this->stream, len);
-    }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
-    hprose_bytes_io_write(_this->stream, Z_STRVAL_P(val), len);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
-}
-static zend_always_inline void hprose_writer_write_bytes_with_ref(hprose_writer *_this, zval *val) {
-    if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_bytes(_this, val);
 }
 static inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRMLS_DC) {
     switch (Z_TYPE_P(val)) {
