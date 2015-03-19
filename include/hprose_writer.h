@@ -434,7 +434,39 @@ static inline void hprose_writer_write_map_with_ref(hprose_writer *_this, zval *
     if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_map(_this, val TSRMLS_CC);
 }
 static inline void hprose_writer_write_list(hprose_writer *_this, zval *val TSRMLS_DC) {
-
+    zval count;
+    int32_t i;
+    _this->refer->handlers->set(_this->refer, val);
+    call_php_method(val, "count", &count, 0, NULL);
+    i = Z_LVAL(count);
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_LIST);
+    if (i) {
+        hprose_bytes_io_write_int(_this->stream, i);
+    }
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
+    if (i) {
+        zval tmp;
+        call_php_method(val, "rewind", &tmp, 0, NULL);
+        for (; i > 0; --i) {
+#if PHP_MAJOR_VERSION < 7
+            zval *e;
+            hprose_make_zval(e);
+            call_php_method(val, "current", e, 0, NULL);
+            hprose_writer_serialize(_this, e TSRMLS_CC);
+#else /* PHP_MAJOR_VERSION < 7 */
+/*
+   The above code can also work well in PHP 7.
+   The following code is only for the purpose of optimization.
+ */
+            zval e;
+            call_php_method(val, "current", &e, 0, NULL);
+            hprose_writer_serialize(_this, &e TSRMLS_CC);
+#endif /* PHP_MAJOR_VERSION < 7 */
+            zval_ptr_dtor(&e);
+            call_php_method(val, "next", &tmp, 0, NULL);
+        }
+    }
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
 }
 static inline void hprose_writer_write_list_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
     if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_list(_this, val TSRMLS_CC);
