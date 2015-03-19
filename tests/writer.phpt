@@ -58,9 +58,13 @@ $sfa[0] = "昨天";
 $sfa[1] = "今天";
 $sfa[2] = "明天";
 $writer->serialize($sfa);
+$stdobj = new stdClass();
+$stdobj->name = "张三";
+$stdobj->age = 18;
+$writer->serialize($stdobj);
 echo $bytes . "\r\n";
 ?>
 --EXPECT--
 0123456789i-2147483648;i2147483647;l2147483648;d3.14159265897932;NI-I+tfenu我s2"🆚"
 D20150219T143448.123456;D20150219T143448.123456Zr0;s19"Hello World! 你好，中国！"r2;
-a5{12345}a3{s5"Apple"s6"Banana"s6"Cherry"}m3{r2;s2"苹果"r3;s2"香蕉"r4;s2"樱桃"}m2{D20150219T143448.123456;a3{r2;r3;r4;}r9;r10;}a3{s2"昨天"s2"今天"s2"明天"}
+a5{12345}a3{s5"Apple"s6"Banana"s6"Cherry"}m3{r2;s2"苹果"r3;s2"香蕉"r4;s2"樱桃"}m2{D20150219T143448.123456;a3{r2;r3;r4;}r9;r10;}a3{s2"昨天"s2"今天"s2"明天"}m2{s4"name"s2"张三"s3"age"i18;}

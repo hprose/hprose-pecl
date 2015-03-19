@@ -345,24 +345,24 @@ static inline void hprose_writer_write_array(hprose_writer *_this, zval *val TSR
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
 }
 
-static inline void hprose_writer_write_assoc_array(hprose_writer *_this, zval *val TSRMLS_DC) {
-    HashTable *ht = Z_ARRVAL_P(val);
+static inline void hprose_writer_write_hashtable(hprose_writer *_this, HashTable *ht TSRMLS_DC) {
     int32_t i = zend_hash_num_elements(ht);
-    _this->refer->handlers->set(_this->refer, val);
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_MAP);
     if (i) {
         hprose_bytes_io_write_int(_this->stream, i);
     }
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
     if (i) {
-        zend_hash_internal_pointer_reset(ht);
+        HashPosition *position = emalloc(sizeof(HashPosition));
+        memset(position, 0, sizeof(HashPosition));
+        zend_hash_internal_pointer_reset_ex(ht, position);
         for (; i > 0; --i) {
 #if PHP_MAJOR_VERSION < 7
             char *str;
             uint len;
             ulong index;
             zval **value;
-            if (zend_hash_get_current_key_ex(ht, &str, &len, &index, 0, NULL) == HASH_KEY_IS_STRING) {
+            if (zend_hash_get_current_key_ex(ht, &str, &len, &index, 0, position) == HASH_KEY_IS_STRING) {
                 zval key;
                 ZVAL_STRINGL(&key, str, len - 1, 0);
                 hprose_writer_write_string_with_ref(_this, &key);
@@ -370,21 +370,27 @@ static inline void hprose_writer_write_assoc_array(hprose_writer *_this, zval *v
             else {
                 hprose_writer_write_int(_this, (int32_t)index);
             }
-            zend_hash_get_current_data(ht, (void **)&value);
+            zend_hash_get_current_data_ex(ht, (void **)&value, position);
             hprose_writer_serialize(_this, *value TSRMLS_CC);
 #else
             zval key, *value;
-            zend_hash_get_current_key_zval(ht, &key);
-            value = zend_hash_get_current_data(ht);
+            zend_hash_get_current_key_zval_ex(ht, &key, position);
+            value = zend_hash_get_current_data_ex(ht, position);
             hprose_writer_serialize(_this, &key TSRMLS_CC);
             hprose_writer_serialize(_this, value TSRMLS_CC);
             zval_ptr_dtor(&key);
 #endif
-            zend_hash_move_forward(ht);
+            zend_hash_move_forward_ex(ht, position);
 
         }
+        efree(position);
     }
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
+}
+
+static inline void hprose_writer_write_assoc_array(hprose_writer *_this, zval *val TSRMLS_DC) {
+    _this->refer->handlers->set(_this->refer, val);
+    hprose_writer_write_hashtable(_this, Z_ARRVAL_P(val));
 }
 
 static inline void hprose_writer_write_map(hprose_writer *_this, zval *val TSRMLS_DC) {
@@ -472,7 +478,8 @@ static inline void hprose_writer_write_list_with_ref(hprose_writer *_this, zval 
     if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_list(_this, val TSRMLS_CC);
 }
 static inline void hprose_writer_write_stdclass(hprose_writer *_this, zval *val TSRMLS_DC) {
-
+    _this->refer->handlers->set(_this->refer, val);
+    hprose_writer_write_hashtable(_this, Z_OBJPROP_P(val));
 }
 static inline void hprose_writer_write_stdclass_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
     if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_stdclass(_this, val TSRMLS_CC);
