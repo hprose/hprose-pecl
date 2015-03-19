@@ -4,6 +4,11 @@ Test that the Hprose\Writer class works.
 <?php if (!extension_loaded("hprose")) print "skip"; ?>
 --FILE--
 <?php
+class User {
+    private $id = 0;
+    public $name = "默认用户";
+    public $age = 18;
+}
 date_default_timezone_set('Asia/Shanghai');
 $bytes = new HproseBytesIO();
 $writer = new HproseWriter($bytes, true);
@@ -62,6 +67,7 @@ $stdobj = new stdClass();
 $stdobj->name = "张三";
 $stdobj->age = 18;
 $writer->serialize($stdobj);
+//$writer->serialize(new User());
 echo $bytes . "\r\n";
 ?>
 --EXPECT--

@@ -24,6 +24,7 @@
 #include "hprose.h"
 #include "hprose_tags.h"
 #include "hprose_bytes_io.h"
+#include "hprose_class_manager.h"
 
 BEGIN_EXTERN_C()
 
@@ -339,7 +340,6 @@ static inline void hprose_writer_write_array(hprose_writer *_this, zval *val TSR
             hprose_writer_serialize(_this, e TSRMLS_CC);
 #endif
             zend_hash_move_forward(ht);
-
         }
     }
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
@@ -484,8 +484,102 @@ static inline void hprose_writer_write_stdclass(hprose_writer *_this, zval *val 
 static inline void hprose_writer_write_stdclass_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
     if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_stdclass(_this, val TSRMLS_CC);
 }
-static inline void hprose_writer_write_object(hprose_writer *_this, zval *val TSRMLS_DC) {
+static inline int32_t hprose_writer_write_class(hprose_writer *_this, char *alias, int32_t len, HashTable *ht TSRMLS_DC) {
+    zval *props;
+    int32_t i = zend_hash_num_elements(ht);
+    int32_t index = zend_hash_num_elements(Z_ARRVAL_P(_this->propsref));
+    hprose_make_zval(props);
+    array_init(props);
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLASS);
+    hprose_bytes_io_write_int(_this->stream, len);
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+    hprose_bytes_io_write(_this->stream, alias, len);
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+    if (i) {
+        HashPosition *position = emalloc(sizeof(HashPosition));
+        memset(position, 0, sizeof(HashPosition));
+        zend_hash_internal_pointer_reset_ex(ht, position);
+        hprose_bytes_io_write_int(_this->stream, i);
+        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
+        for (; i > 0; --i) {
+#if PHP_MAJOR_VERSION < 7
+            char *str;
+            uint len;
+            ulong index;
+            if (zend_hash_get_current_key_ex(ht, &str, &len, &index, 0, position) == HASH_KEY_IS_STRING) {
+                zval prop;
+                add_next_index_stringl(props, str, len, 1);
+                if (str[0]) {
+                    ZVAL_STRINGL(&prop, str, len - 1, 0);
+                }
+                else {
+                    size_t pos = strlen(str + 1) + 2;
+                    ZVAL_STRINGL(&prop, str + pos, len - pos - 1, 0);
+                }
+                hprose_writer_write_string_with_ref(_this, &prop);
+            }
+#else
+            zval prop;
+            zend_hash_get_current_key_zval_ex(ht, &prop, position);
+            assert(Z_TYPE(prop) == IS_STRING);
+            add_next_index_zval(props, &prop);
+            hprose_writer_serialize(_this, &prop TSRMLS_CC);
+#endif
+            zend_hash_move_forward_ex(ht, position);
+        }
+        efree(position);
+        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
+    }
+    else {
+        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
+        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
+    }
+    add_next_index_zval(_this->propsref, props);
+    add_assoc_long_ex(_this->classref, alias, len, index);
+    return index;
+}
 
+static inline void hprose_writer_write_object(hprose_writer *_this, zval *val TSRMLS_DC) {
+    HashTable *ht = Z_OBJPROP_P(val), *props_ht;
+#if PHP_MAJOR_VERSION < 7
+    char *classname = Z_OBJ_CLASS_NAME_P(val);
+    int32_t nlen = strlen(classname);
+#else
+    zend_string *_classname = Z_OBJ_HT_P(val)->get_class_name(Z_OBJ_P(val));
+    char *classname = _classname->val;
+    int32_t nlen = _classname->len;
+#endif
+    int32_t alen;
+    char *alias = hprose_class_manager_get_alias(classname, nlen, &alen);
+    zval *props;
+    long index;
+    if (!php_assoc_array_get_long(_this->classref, alias, alen, &index)) {
+        index = hprose_writer_write_class(_this, alias, alen, ht TSRMLS_CC);
+    }
+    props = php_array_get(_this->propsref, index);
+    props_ht = Z_ARRVAL_P(props);
+    int32_t i = zend_hash_num_elements(props_ht);
+    _this->refer->handlers->set(_this->refer, val);
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OBJECT);
+    hprose_bytes_io_write_int(_this->stream, index);
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
+    if (i) {
+        zend_hash_internal_pointer_reset(props_ht);
+        for (; i > 0; --i) {
+#if PHP_MAJOR_VERSION < 7
+            zval **e;
+            zend_hash_get_current_data(props_ht, (void **)&e);
+            zval *value = zend_hash_str_find_ptr(ht, Z_STRVAL_PP(e), Z_STRLEN_PP(e));
+            hprose_writer_serialize(_this, value TSRMLS_CC);
+#else
+            zval *e = zend_hash_get_current_data(props_ht);
+            zval *value = zend_hash_str_find_ptr(ht, Z_STRVAL_P(e), Z_STRLEN_P(e));
+            hprose_writer_serialize(_this, value TSRMLS_CC);
+#endif
+            zend_hash_move_forward(props_ht);
+        }
+    }
+    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
 }
 static inline void hprose_writer_write_object_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
     if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_object(_this, val TSRMLS_CC);
