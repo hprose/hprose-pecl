@@ -390,7 +390,7 @@ static inline void hprose_writer_write_hashtable(hprose_writer *_this, HashTable
 
 static inline void hprose_writer_write_assoc_array(hprose_writer *_this, zval *val TSRMLS_DC) {
     _this->refer->handlers->set(_this->refer, val);
-    hprose_writer_write_hashtable(_this, Z_ARRVAL_P(val));
+    hprose_writer_write_hashtable(_this, Z_ARRVAL_P(val) TSRMLS_CC);
 }
 
 static inline void hprose_writer_write_map(hprose_writer *_this, zval *val TSRMLS_DC) {
@@ -479,7 +479,7 @@ static inline void hprose_writer_write_list_with_ref(hprose_writer *_this, zval 
 }
 static inline void hprose_writer_write_stdclass(hprose_writer *_this, zval *val TSRMLS_DC) {
     _this->refer->handlers->set(_this->refer, val);
-    hprose_writer_write_hashtable(_this, Z_OBJPROP_P(val));
+    hprose_writer_write_hashtable(_this, Z_OBJPROP_P(val) TSRMLS_CC);
 }
 static inline void hprose_writer_write_stdclass_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
     if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_stdclass(_this, val TSRMLS_CC);
