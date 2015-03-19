@@ -13,7 +13,7 @@
  *                                                        *
  * hprose class manager for pecl source file.             *
  *                                                        *
- * LastModified: Mar 17, 2015                             *
+ * LastModified: Mar 19, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -55,7 +55,7 @@ void _hprose_class_manager_register(char *name, int32_t nlen, char *alias, int32
 char * _hprose_class_manager_get_alias(char *name, int32_t len, int32_t* len_ptr TSRMLS_DC) {
     char *alias;
     hprose_bytes_io *_alias;
-    if (HPROSE_G(cache1) && (_alias = zend_hash_str_find_ptr(HPROSE_G(cache1), name, len)) == NULL) {
+    if (!HPROSE_G(cache1) || (_alias = zend_hash_str_find_ptr(HPROSE_G(cache1), name, len)) == NULL) {
         alias = estrndup(name, len);
         *len_ptr = len;
         str_replace('\\', '_', alias, len);
@@ -71,7 +71,7 @@ char * _hprose_class_manager_get_alias(char *name, int32_t len, int32_t* len_ptr
 char * _hprose_class_manager_get_class(char *alias, int32_t len, int32_t* len_ptr TSRMLS_DC) {
     char * name;
     hprose_bytes_io *_name;
-    if (HPROSE_G(cache2) && (_name = zend_hash_str_find_ptr(HPROSE_G(cache2), alias, len)) == NULL) {
+    if (!HPROSE_G(cache2) || (_name = zend_hash_str_find_ptr(HPROSE_G(cache2), alias, len)) == NULL) {
         name = estrndup(alias, len);
         *len_ptr = len;
         if (!class_exists(alias, len, 0) && !class_exists(alias, len, 1)) {
