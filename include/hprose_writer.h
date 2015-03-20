@@ -203,16 +203,28 @@ static zend_always_inline void hprose_writer_free(hprose_writer *_this) {
     efree(_this);
 }
 
+static zend_always_inline void hprose_writer_reset(hprose_writer *_this) {
+    zend_hash_clean(Z_ARRVAL_P(_this->classref));
+    zend_hash_clean(Z_ARRVAL_P(_this->propsref));
+    _this->refer->handlers->reset(_this->refer);
+}
+
+#define hprose_writer_write_nan(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_NAN)
 #define hprose_writer_write_null(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_NULL)
 #define hprose_writer_write_true(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_TRUE)
 #define hprose_writer_write_false(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_FALSE)
 #define hprose_writer_write_bool(_this, val) ((val) ? hprose_writer_write_true(_this) : hprose_writer_write_false(_this))
 #define hprose_writer_write_empty(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_EMPTY)
 
-static zend_always_inline void hprose_writer_write_int(hprose_writer *_this, int32_t i) {
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_INTEGER);
-    hprose_bytes_io_write_int(_this->stream, i);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_SEMICOLON);
+static zend_always_inline void hprose_writer_write_ulong(hprose_writer *_this, uint64_t i) {
+    if (i <= 9) {
+        hprose_bytes_io_write_char(_this->stream, '0' + i);
+    }
+    else {
+        hprose_bytes_io_write_char(_this->stream, (i > INT32_MAX) ? HPROSE_TAG_LONG : HPROSE_TAG_INTEGER);
+        hprose_bytes_io_write_ulong(_this->stream, i);
+        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_SEMICOLON);
+    }
 }
 
 static zend_always_inline void hprose_writer_write_long(hprose_writer *_this, int64_t i) {
@@ -233,7 +245,7 @@ static zend_always_inline void hprose_writer_write_infinity(hprose_writer *_this
 
 static zend_always_inline void hprose_writer_write_double(hprose_writer *_this, double d) {
     if (isnan(d)) {
-        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_NAN);
+        hprose_writer_write_nan(_this);
     }
     else if (isinf(d)) {
         hprose_writer_write_infinity(_this, d > 0);
@@ -368,7 +380,7 @@ static inline void hprose_writer_write_hashtable(hprose_writer *_this, HashTable
                 hprose_writer_write_string_with_ref(_this, &key);
             }
             else {
-                hprose_writer_write_int(_this, (int32_t)index);
+                hprose_writer_write_ulong(_this, (uint64_t)index);
             }
             zend_hash_get_current_data_ex(ht, (void **)&value, position);
             hprose_writer_serialize(_this, *value TSRMLS_CC);
@@ -564,7 +576,7 @@ static inline int32_t hprose_writer_write_class(hprose_writer *_this, char *alia
 static inline void hprose_writer_write_object(hprose_writer *_this, zval *val TSRMLS_DC) {
     HashTable *ht = Z_OBJPROP_P(val), *props_ht;
 #if PHP_MAJOR_VERSION < 7
-    char *classname = Z_OBJ_CLASS_NAME_P(val);
+    char *classname = (char *)Z_OBJ_CLASS_NAME_P(val);
     int32_t nlen = strlen(classname);
 #else
     zend_string *_classname = Z_OBJ_HT_P(val)->get_class_name(Z_OBJ_P(val));
@@ -609,6 +621,9 @@ static inline void hprose_writer_write_object_with_ref(hprose_writer *_this, zva
     if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_object(_this, val TSRMLS_CC);
 }
 static inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRMLS_DC) {
+    if (!val) {
+        hprose_writer_write_null(_this); return;
+    }
     switch (Z_TYPE_P(val)) {
         case IS_NULL:
             hprose_writer_write_null(_this); break;

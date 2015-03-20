@@ -49,8 +49,7 @@ $writer->serialize("Hello World! 你好，中国！");
 echo $bytes . "\r\n";
 
 $bytes->close();
-unset($writer);
-$writer = new HproseWriter($bytes);
+$writer->reset();
 $writer->serialize(array(1,2,3,4,5));
 $writer->serialize(array("Apple", "Banana", "Cherry"));
 $writer->serialize(array("Apple"=>"苹果", "Banana"=>"香蕉", "Cherry"=>"樱桃"));
