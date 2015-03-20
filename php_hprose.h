@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl header file.                           *
  *                                                        *
- * LastModified: Mar 14, 2015                             *
+ * LastModified: Mar 21, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -29,6 +29,7 @@
 #include "hprose_bytes_io.h"
 #include "hprose_class_manager.h"
 #include "hprose_writer.h"
+#include "hprose_raw_reader.h"
 
 #include "ext/standard/info.h" /* for phpinfo() functions */
 

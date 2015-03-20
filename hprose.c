@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl source file.                           *
  *                                                        *
- * LastModified: Mar 16, 2015                             *
+ * LastModified: Mar 21, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -25,6 +25,7 @@ ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(bytes_io);
     HPROSE_STARTUP(class_manager);
     HPROSE_STARTUP(writer);
+    HPROSE_STARTUP(raw_reader);
     return SUCCESS;
 }
 

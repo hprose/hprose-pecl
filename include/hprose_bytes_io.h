@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl header file.                  *
  *                                                        *
- * LastModified: Mar 13, 2015                             *
+ * LastModified: Mar 21, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -364,6 +364,99 @@ static zend_always_inline void hprose_bytes_io_write_double(hprose_bytes_io *_th
 static zend_always_inline char * hprose_bytes_io_to_string(hprose_bytes_io *_this) {
     return estrndup(_this->buf, _this->len);
 }
+
+static zend_always_inline void hprose_bytes_io_getc_to(hprose_bytes_io *from, hprose_bytes_io *to) {
+    hprose_bytes_io_write_char(to, from->buf[from->pos++]);
+}
+
+static zend_always_inline void hprose_bytes_io_read_to(hprose_bytes_io *from, hprose_bytes_io *to, int32_t n) {
+    assert(from->buf != NULL);
+    assert(from->pos + n <= from->len);
+    hprose_bytes_io_write(to, from->buf + from->pos, n);
+    from->pos += n;
+}
+
+static zend_always_inline void hprose_bytes_io_readuntil_to(hprose_bytes_io *from, hprose_bytes_io *to, char tag, zend_bool include_tag) {
+    int32_t i = from->pos, n = from->len, p = from->len;
+    assert(from->buf != NULL);
+    for (; i < n; ++i) {
+        if (from->buf[i] == tag) {
+            p = include_tag ? i + 1 : i;
+            break;
+        }
+    }
+    hprose_bytes_io_write(to, from->buf + from->pos, p - from->pos);
+    from->pos = p;
+    if (from->pos < from->len && !include_tag) {
+        from->pos++;
+    }
+}
+
+static zend_always_inline int32_t hprose_bytes_io_read_int_to(hprose_bytes_io *from, hprose_bytes_io *to, char tag, zend_bool include_tag) {
+    int32_t result = 0, p = from->pos;
+    char c = hprose_bytes_io_getc(from);
+    if (c == tag) {
+        if (include_tag) {
+            hprose_bytes_io_write_char(to, c);
+        }
+        return 0;
+    }
+    int32_t sign = 1;
+    switch (c) {
+        case '-': sign = -1; // fallthrough
+        case '+': c = hprose_bytes_io_getc(from); break;
+    }
+    while ((from->pos < from->len) && (c != tag)) {
+        result *= 10;
+        result += (c - '0') * sign;
+        c = hprose_bytes_io_getc(from);
+    }
+    hprose_bytes_io_write(to, from->buf + p, from->pos - p - 1 + (int32_t)include_tag);
+    return result;
+}
+
+static zend_always_inline void _hprose_bytes_io_read_string_to(hprose_bytes_io *from, hprose_bytes_io *to, int32_t n TSRMLS_DC) {
+    int32_t i, p = from->pos, l = from->len;
+    uint8_t *buf = (uint8_t *)from->buf;
+    assert(from->buf != NULL);
+    for (i = 0; i < n && p < l; ++i) {
+        switch (buf[p] >> 4) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                // 0xxx xxxx
+                ++p;
+                break;
+            case 12:
+            case 13:
+                // 110x xxxx   10xx xxxx
+                p += 2;
+                break;
+            case 14:
+                // 1110 xxxx  10xx xxxx  10xx xxxx
+                p += 3;
+                break;
+            case 15:
+                // 1111 0xxx  10xx xxxx  10xx xxxx  10xx xxxx
+                p += 4;
+                ++i;
+                if (i < n) break;
+                /* fall through */
+            default:
+                zend_throw_exception(zend_exception_get_default(TSRMLS_C), "bad utf-8 encoding", 0 TSRMLS_CC);
+                break;
+        }
+    }
+    hprose_bytes_io_write(to, from->buf + from->pos, p - from->pos);
+    from->pos = p;
+}
+
+#define hprose_bytes_io_read_string_to(from, to, n) _hprose_bytes_io_read_string_to((from), (to), (n) TSRMLS_CC)
 
 HPROSE_CLASS_BEGIN(bytes_io)
     int32_t mark;
