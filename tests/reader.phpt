@@ -1,5 +1,5 @@
 --TEST--
-Test that the Hprose\RawReader class works.
+Test that the Hprose\Reader class works.
 --SKIPIF--
 <?php if (!extension_loaded("hprose")) print "skip"; ?>
 --FILE--
@@ -51,6 +51,9 @@ var_dump($rawreader->unserialize());
 var_dump($rawreader->unserialize());
 var_dump($rawreader->unserialize());
 var_dump($rawreader->unserialize());
+var_dump($rawreader->unserialize());
+var_dump($rawreader->unserialize());
+var_dump($rawreader->unserialize());
 
 ?>
 --EXPECT--
@@ -68,3 +71,6 @@ int(-2147483648)
 int(2147483647)
 string(10) "2147483648"
 float(3.1415926535898)
+float(NAN)
+float(-INF)
+float(INF)

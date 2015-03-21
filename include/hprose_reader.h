@@ -201,6 +201,10 @@ static zend_always_inline double hprose_reader_read_double_without_tag(hprose_re
     return d;
 }
 
+static zend_always_inline double hprose_reader_read_infinity_without_tag(hprose_reader *_this) {
+    return (hprose_bytes_io_getc(_this->stream) == HPROSE_TAG_NEG) ? -INFINITY : INFINITY;
+}
+
 static zend_always_inline double hprose_reader_read_double(hprose_reader *_this TSRMLS_DC) {
     char tag = hprose_bytes_io_getc(_this->stream);
     switch (tag) {
@@ -219,6 +223,10 @@ static zend_always_inline double hprose_reader_read_double(hprose_reader *_this 
         case HPROSE_TAG_LONG:
         case HPROSE_TAG_DOUBLE:
             return hprose_reader_read_double_without_tag(_this);
+        case HPROSE_TAG_NAN:
+            return NAN;
+        case HPROSE_TAG_INFINITY:
+            return hprose_reader_read_infinity_without_tag(_this);
         default: unexpected_tag(tag, NULL TSRMLS_CC); return 0;
     }
 }
@@ -246,6 +254,10 @@ static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_
         case HPROSE_TAG_DOUBLE: {
             RETURN_DOUBLE(hprose_reader_read_double_without_tag(_this));
         }
+        case HPROSE_TAG_NAN:
+            RETURN_DOUBLE(NAN);
+        case HPROSE_TAG_INFINITY:
+            RETURN_DOUBLE(hprose_reader_read_infinity_without_tag(_this));
     }
 }
 
