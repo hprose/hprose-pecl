@@ -231,6 +231,11 @@ static zend_always_inline double hprose_reader_read_double(hprose_reader *_this 
     }
 }
 
+static zend_always_inline void hprose_reader_read_ref(hprose_reader *_this, zval *return_value) {
+    zval *val = _this->refer->handlers->read(_this->refer, hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_SEMICOLON));
+    RETURN_ZVAL(val, 0, 1);
+}
+
 static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     char tag;
 #if PHP_MAJOR_VERSION < 7
@@ -450,7 +455,7 @@ static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_
 
         }
         case HPROSE_TAG_REF: {
-
+            hprose_reader_read_ref(_this, return_value);
         }
         case HPROSE_TAG_ERROR: {
 
