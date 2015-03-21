@@ -34,8 +34,11 @@ $writer->serialize(true);
 $writer->serialize(false);
 $writer->serialize("");
 $writer->serialize(null);
-$writer->serialize("我");
-$writer->serialize("🆚");
+$writer->serialize(DateTime::createFromFormat('YmdHis.u', '20150219143448.123456'));
+$writer->serialize(DateTime::createFromFormat('YmdHis.u', '20150219143448.123456',
+                                                new DateTimeZone('UTC')));
+//$writer->serialize("我");
+//$writer->serialize("🆚");
 
 var_dump($rawreader->unserialize());
 var_dump($rawreader->unserialize());
@@ -58,6 +61,12 @@ var_dump($rawreader->unserialize());
 var_dump($rawreader->unserialize());
 var_dump($rawreader->unserialize());
 var_dump($rawreader->unserialize());
+$d = $rawreader->unserialize();
+var_dump($d->format("Y-m-d H:i:s.u"));
+var_dump($d->getTimezone()->getName());
+$d = $rawreader->unserialize();
+var_dump($d->format("Y-m-d H:i:s.u"));
+var_dump($d->getTimezone()->getName());
 
 ?>
 --EXPECT--
@@ -82,3 +91,7 @@ bool(true)
 bool(false)
 string(0) ""
 NULL
+string(26) "2015-02-19 14:34:48.123456"
+string(13) "Asia/Shanghai"
+string(26) "2015-02-19 14:34:48.123456"
+string(3) "UTC"

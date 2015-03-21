@@ -79,12 +79,12 @@ typedef struct {
 
 static void hprose_real_reader_refer_set(void *_this, zval *val) {
     hprose_real_reader_refer *refer = (hprose_real_reader_refer *)_this;
+    Z_ADDREF_P(val);
     add_next_index_zval(refer->ref, val);
 }
 static zval * hprose_real_reader_refer_read(void *_this, int32_t index) {
     hprose_real_reader_refer *refer = (hprose_real_reader_refer *)_this;
     zval *result = php_array_get(refer->ref, index);
-    Z_ADDREF_P(result);
     return result;
 }
 
@@ -231,6 +231,89 @@ static zend_always_inline double hprose_reader_read_double(hprose_reader *_this 
     }
 }
 
+static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+#if PHP_MAJOR_VERSION < 7
+    zval *fmt, *t;
+    hprose_make_zval(fmt);
+    hprose_make_zval(t);
+#else
+    zval fmt, t;
+#endif
+    hprose_bytes_io *tmp = hprose_bytes_io_new();
+    hprose_bytes_io_read_to(_this->stream, tmp, 8);
+    char tag = hprose_bytes_io_getc(_this->stream);
+    if (tag == HPROSE_TAG_TIME) {
+        hprose_bytes_io_read_to(_this->stream, tmp, 6);
+        tag = hprose_bytes_io_getc(_this->stream);
+        if (tag == HPROSE_TAG_POINT) {
+            hprose_bytes_io_read_to(_this->stream, tmp, 3);
+            tag = hprose_bytes_io_getc(_this->stream);
+            if ((tag >= '0') && (tag <= '9')) {
+                hprose_bytes_io_write_char(tmp, tag);
+                hprose_bytes_io_read_to(_this->stream, tmp, 2);
+                tag = hprose_bytes_io_getc(_this->stream);
+                if ((tag >= '0') && (tag <= '9')) {
+                    hprose_bytes_io_skip(_this->stream, 2);
+                    tag = hprose_bytes_io_getc(_this->stream);
+                }
+            }
+            else {
+                hprose_bytes_io_write(tmp, "000", 3);
+            }
+        }
+        else {
+            hprose_bytes_io_write(tmp, "000000", 6);
+        }
+    }
+    else {
+        hprose_bytes_io_write(tmp, "000000000000", 12);
+    }
+#if PHP_MAJOR_VERSION < 7
+    ZVAL_LITERAL_STRINGL(fmt, "YmdHisu");
+    ZVAL_STRINGL(t, tmp->buf, tmp->len, 0);
+    if (tag == HPROSE_TAG_UTC) {
+        zval *params[] = { fmt, t, NULL, NULL };
+        zval *timezone, *utc;
+        hprose_make_zval(timezone);
+        hprose_make_zval(utc);
+        ZVAL_LITERAL_STRINGL(utc, "UTC");
+        call_php_function("timezone_open", timezone, 1, &utc);
+        zval_ptr_dtor(&utc);
+        params[2] = timezone;
+        call_php_function("date_create_from_format", return_value, 3, &params[0]);
+        zval_ptr_dtor(&timezone);
+    }
+    else {
+        zval *params[] = { fmt, t, NULL };
+        call_php_function("date_create_from_format", return_value, 2, &params[0]);
+    }
+    efree(t);
+#else
+    ZVAL_LITERAL_STRINGL(&fmt, "YmdHisu");
+    ZVAL_STRINGL(&t, tmp->buf, tmp->len);
+    if (tag == HPROSE_TAG_UTC) {
+        zval timezone, utc;
+        ZVAL_LITERAL_STRINGL(&utc, "UTC");
+        zval *params[] = { &utc, NULL, NULL, NULL };
+        call_php_function("timezone_open", &timezone, 1, &params[0]);
+        zval_ptr_dtor(&utc);
+        params[0] = &fmt;
+        params[1] = &t;
+        params[2] = &timezone;
+        call_php_function("date_create_from_format", return_value, 3, &params[0]);
+        zval_ptr_dtor(&timezone);
+    }
+    else {
+        zval *params[] = { &fmt, &t, NULL };
+        call_php_function("date_create_from_format", return_value, 2, &params[0]);
+    }
+    zval_ptr_dtor(&t);
+#endif
+    zval_ptr_dtor(&fmt);
+    hprose_bytes_io_free(tmp);
+    _this->refer->handlers->set(_this->refer, return_value);
+}
+
 static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     char tag = hprose_bytes_io_getc(_this->stream);
     switch (tag) {
@@ -262,7 +345,44 @@ static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_
         case HPROSE_TAG_EMPTY: RETURN_EMPTY_STRING();
         case HPROSE_TAG_TRUE: RETURN_TRUE;
         case HPROSE_TAG_FALSE: RETURN_FALSE;
+        case HPROSE_TAG_DATE: {
+            hprose_reader_read_datetime_without_tag(_this, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_TIME: {
 
+        }
+        case HPROSE_TAG_BYTES: {
+
+        }
+        case HPROSE_TAG_UTF8CHAR: {
+
+        }
+        case HPROSE_TAG_STRING: {
+
+        }
+        case HPROSE_TAG_GUID: {
+
+        }
+        case HPROSE_TAG_LIST: {
+
+        }
+        case HPROSE_TAG_MAP: {
+
+        }
+        case HPROSE_TAG_CLASS: {
+
+        }
+        case HPROSE_TAG_OBJECT: {
+
+        }
+        case HPROSE_TAG_REF: {
+
+        }
+        case HPROSE_TAG_ERROR: {
+
+        }
+        default: unexpected_tag(tag, NULL TSRMLS_CC);
     }
 }
 
