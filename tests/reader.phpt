@@ -11,7 +11,7 @@ class User {
 }
 date_default_timezone_set('Asia/Shanghai');
 $bytes = new HproseBytesIO();
-$writer = new HproseWriter($bytes, true);
+$writer = new HproseWriter($bytes);
 $rawreader = new HproseReader($bytes);
 $writer->serialize(0);
 $writer->serialize(1);
@@ -38,10 +38,13 @@ $date = new DateTime('2015-02-19T14:34:48.123456');
 $writer->serialize($date);
 $writer->serialize(new DateTime('2015-02-19T14:34:48.123456',
                                  new DateTimeZone('UTC')));
-$bytes->write("T123456.123456Z");
 $writer->serialize($date);
-//$writer->serialize("我");
-//$writer->serialize("🆚");
+$writer->serialize("我");
+$writer->serialize("🆚");
+$writer->serialize("Hello World! 你好，中国！");
+$writer->serialize("Hello World! 你好，中国！");
+$bytes->write("T123456.123456Z");
+$bytes->write('g"550e8400-e29b-41d4-a716-446655440000"');
 
 var_dump($rawreader->unserialize());
 var_dump($rawreader->unserialize());
@@ -73,10 +76,14 @@ var_dump($d->getTimezone()->getName());
 $d = $rawreader->unserialize();
 var_dump($d->format("Y-m-d H:i:s.u"));
 var_dump($d->getTimezone()->getName());
+var_dump($rawreader->unserialize());
+var_dump($rawreader->unserialize());
+var_dump($rawreader->unserialize());
+var_dump($rawreader->unserialize());
 $d = $rawreader->unserialize();
 var_dump($d->format("Y-m-d H:i:s.u"));
 var_dump($d->getTimezone()->getName());
-
+var_dump($rawreader->unserialize());
 ?>
 --EXPECT--
 int(0)
@@ -104,7 +111,12 @@ string(26) "2015-02-19 14:34:48.123456"
 string(13) "Asia/Shanghai"
 string(26) "2015-02-19 14:34:48.123456"
 string(3) "UTC"
-string(26) "1970-01-01 12:34:56.123456"
-string(3) "UTC"
 string(26) "2015-02-19 14:34:48.123456"
 string(13) "Asia/Shanghai"
+string(3) "我"
+string(4) "🆚"
+string(31) "Hello World! 你好，中国！"
+string(31) "Hello World! 你好，中国！"
+string(26) "1970-01-01 12:34:56.123456"
+string(3) "UTC"
+string(36) "550e8400-e29b-41d4-a716-446655440000"
