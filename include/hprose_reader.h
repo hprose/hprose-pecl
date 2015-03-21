@@ -85,6 +85,7 @@ static void hprose_real_reader_refer_set(void *_this, zval *val) {
 static zval * hprose_real_reader_refer_read(void *_this, int32_t index) {
     hprose_real_reader_refer *refer = (hprose_real_reader_refer *)_this;
     zval *result = php_array_get(refer->ref, index);
+    Z_ADDREF_P(result);
     return result;
 }
 
