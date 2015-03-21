@@ -233,19 +233,28 @@ static zend_always_inline double hprose_reader_read_double(hprose_reader *_this 
 
 static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
 #if PHP_MAJOR_VERSION < 7
-    zval *fmt, *t;
-    hprose_make_zval(fmt);
+    zval *t;
     hprose_make_zval(t);
 #else
-    zval fmt, t;
+    zval t;
 #endif
     hprose_bytes_io *tmp = hprose_bytes_io_new();
-    hprose_bytes_io_read_to(_this->stream, tmp, 8);
+    hprose_bytes_io_read_to(_this->stream, tmp, 4);
+    hprose_bytes_io_write_char(tmp, '-');
+    hprose_bytes_io_read_to(_this->stream, tmp, 2);
+    hprose_bytes_io_write_char(tmp, '-');
+    hprose_bytes_io_read_to(_this->stream, tmp, 2);
     char tag = hprose_bytes_io_getc(_this->stream);
     if (tag == HPROSE_TAG_TIME) {
-        hprose_bytes_io_read_to(_this->stream, tmp, 6);
+        hprose_bytes_io_write_char(tmp, tag);
+        hprose_bytes_io_read_to(_this->stream, tmp, 2);
+        hprose_bytes_io_write_char(tmp, ':');
+        hprose_bytes_io_read_to(_this->stream, tmp, 2);
+        hprose_bytes_io_write_char(tmp, ':');
+        hprose_bytes_io_read_to(_this->stream, tmp, 2);
         tag = hprose_bytes_io_getc(_this->stream);
         if (tag == HPROSE_TAG_POINT) {
+            hprose_bytes_io_write_char(tmp, tag);
             hprose_bytes_io_read_to(_this->stream, tmp, 3);
             tag = hprose_bytes_io_getc(_this->stream);
             if ((tag >= '0') && (tag <= '9')) {
@@ -257,59 +266,46 @@ static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_re
                     tag = hprose_bytes_io_getc(_this->stream);
                 }
             }
-            else {
-                hprose_bytes_io_write(tmp, "000", 3);
-            }
         }
-        else {
-            hprose_bytes_io_write(tmp, "000000", 6);
-        }
-    }
-    else {
-        hprose_bytes_io_write(tmp, "000000000000", 12);
     }
 #if PHP_MAJOR_VERSION < 7
-    ZVAL_LITERAL_STRINGL(fmt, "YmdHisu");
     ZVAL_STRINGL(t, tmp->buf, tmp->len, 0);
     if (tag == HPROSE_TAG_UTC) {
-        zval *params[] = { fmt, t, NULL, NULL };
+        zval *params[] = { t, NULL, NULL };
         zval *timezone, *utc;
         hprose_make_zval(timezone);
         hprose_make_zval(utc);
         ZVAL_LITERAL_STRINGL(utc, "UTC");
         call_php_function("timezone_open", timezone, 1, &utc);
         zval_ptr_dtor(&utc);
-        params[2] = timezone;
-        call_php_function("date_create_from_format", return_value, 3, &params[0]);
+        params[1] = timezone;
+        call_php_function("date_create", return_value, 2, &params[0]);
         zval_ptr_dtor(&timezone);
     }
     else {
-        zval *params[] = { fmt, t, NULL };
-        call_php_function("date_create_from_format", return_value, 2, &params[0]);
+        zval *params[] = { t, NULL };
+        call_php_function("date_create", return_value, 1, &params[0]);
     }
     efree(t);
 #else
-    ZVAL_LITERAL_STRINGL(&fmt, "YmdHisu");
     ZVAL_STRINGL(&t, tmp->buf, tmp->len);
     if (tag == HPROSE_TAG_UTC) {
         zval timezone, utc;
         ZVAL_LITERAL_STRINGL(&utc, "UTC");
-        zval *params[] = { &utc, NULL, NULL, NULL };
+        zval *params[] = { &utc, NULL, NULL };
         call_php_function("timezone_open", &timezone, 1, &params[0]);
         zval_ptr_dtor(&utc);
-        params[0] = &fmt;
-        params[1] = &t;
-        params[2] = &timezone;
-        call_php_function("date_create_from_format", return_value, 3, &params[0]);
+        params[0] = &t;
+        params[1] = &timezone;
+        call_php_function("date_create", return_value, 2, &params[0]);
         zval_ptr_dtor(&timezone);
     }
     else {
-        zval *params[] = { &fmt, &t, NULL };
-        call_php_function("date_create_from_format", return_value, 2, &params[0]);
+        zval *params[] = { &t, NULL };
+        call_php_function("date_create", return_value, 1, &params[0]);
     }
     zval_ptr_dtor(&t);
 #endif
-    zval_ptr_dtor(&fmt);
     hprose_bytes_io_free(tmp);
     _this->refer->handlers->set(_this->refer, return_value);
 }

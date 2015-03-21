@@ -34,9 +34,11 @@ $writer->serialize(true);
 $writer->serialize(false);
 $writer->serialize("");
 $writer->serialize(null);
-$writer->serialize(DateTime::createFromFormat('YmdHis.u', '20150219143448.123456'));
-$writer->serialize(DateTime::createFromFormat('YmdHis.u', '20150219143448.123456',
-                                                new DateTimeZone('UTC')));
+$date = new DateTime('2015-02-19T14:34:48.123456');
+$writer->serialize($date);
+$writer->serialize(new DateTime('2015-02-19T14:34:48.123456',
+                                 new DateTimeZone('UTC')));
+$writer->serialize($date);
 //$writer->serialize("我");
 //$writer->serialize("🆚");
 

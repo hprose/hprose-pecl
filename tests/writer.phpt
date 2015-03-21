@@ -39,10 +39,10 @@ echo $bytes . "\r\n";
 $bytes->close();
 unset($writer);
 $writer = new HproseWriter($bytes);
-$date = DateTime::createFromFormat('YmdHis.u', '20150219143448.123456');
+$date = new DateTime('2015-02-19T14:34:48.123456');
 $writer->serialize($date);
-$writer->serialize(DateTime::createFromFormat('YmdHis.u', '20150219143448.123456',
-                                                new DateTimeZone('UTC')));
+$writer->serialize(new DateTime('2015-02-19T14:34:48.123456',
+                                 new DateTimeZone('UTC')));
 $writer->serialize($date);
 $writer->serialize("Hello World! 你好，中国！");
 $writer->serialize("Hello World! 你好，中国！");
