@@ -258,6 +258,11 @@ static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_
             RETURN_DOUBLE(NAN);
         case HPROSE_TAG_INFINITY:
             RETURN_DOUBLE(hprose_reader_read_infinity_without_tag(_this));
+        case HPROSE_TAG_NULL: RETURN_NULL();
+        case HPROSE_TAG_EMPTY: RETURN_EMPTY_STRING();
+        case HPROSE_TAG_TRUE: RETURN_TRUE;
+        case HPROSE_TAG_FALSE: RETURN_FALSE;
+
     }
 }
 

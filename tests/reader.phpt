@@ -54,6 +54,10 @@ var_dump($rawreader->unserialize());
 var_dump($rawreader->unserialize());
 var_dump($rawreader->unserialize());
 var_dump($rawreader->unserialize());
+var_dump($rawreader->unserialize());
+var_dump($rawreader->unserialize());
+var_dump($rawreader->unserialize());
+var_dump($rawreader->unserialize());
 
 ?>
 --EXPECT--
@@ -74,3 +78,7 @@ float(3.1415926535898)
 float(NAN)
 float(-INF)
 float(INF)
+bool(true)
+bool(false)
+string(0) ""
+NULL
