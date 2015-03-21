@@ -233,7 +233,7 @@ static zend_always_inline double hprose_reader_read_double(hprose_reader *_this 
 
 static zend_always_inline void hprose_reader_read_ref(hprose_reader *_this, zval *return_value) {
     zval *val = _this->refer->handlers->read(_this->refer, hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_SEMICOLON));
-    RETURN_ZVAL(val, 0, 1);
+    RETURN_ZVAL(val, 1, 1);
 }
 
 static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
