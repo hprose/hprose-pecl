@@ -177,13 +177,11 @@ static zend_always_inline char * hprose_bytes_io_preaduntil_ex(hprose_bytes_io *
 #define hprose_bytes_io_preaduntil(_this, tag, len_ptr, persistent) hprose_bytes_io_preaduntil_ex((_this), (tag), (len_ptr), (persistent), 1)
 #define hprose_bytes_io_readuntil(_this, tag, len_ptr) hprose_bytes_io_preaduntil_ex((_this), (tag), (len_ptr), 0, 1)
 
-static zend_always_inline char * hprose_bytes_io_read_int(hprose_bytes_io *_this, char tag, int32_t *len_ptr, int32_t *num_ptr) {
+static zend_always_inline int32_t hprose_bytes_io_read_int(hprose_bytes_io *_this, char tag) {
     int32_t result = 0, p = _this->pos;
-    char *s, c = hprose_bytes_io_getc(_this);
+    char c = hprose_bytes_io_getc(_this);
     if (c == tag) {
-        *len_ptr = 0;
-        *num_ptr = 0;
-        return NULL;
+        return 0;
     }
     int32_t sign = 1;
     switch (c) {
@@ -195,9 +193,7 @@ static zend_always_inline char * hprose_bytes_io_read_int(hprose_bytes_io *_this
         result += (c - '0') * sign;
         c = hprose_bytes_io_getc(_this);
     }
-    *len_ptr = _this->pos - p - 1;
-    *num_ptr = result;
-    return pestrndup(_this->buf + p, *len_ptr, 0);
+    return result;
 }
 
 static zend_always_inline char * _hprose_bytes_io_read_pstring(hprose_bytes_io *_this, int32_t n, int32_t *len_ptr, zend_bool persistent TSRMLS_DC) {

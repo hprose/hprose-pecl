@@ -35,7 +35,7 @@ typedef struct {
     hprose_bytes_io *stream;
 } hprose_raw_reader;
 
-static zend_always_inline void unexcepted_tag(char tag, char *expectTags TSRMLS_DC) {
+static zend_always_inline void unexpected_tag(char tag, char *expectTags TSRMLS_DC) {
     if (tag && expectTags) {
         zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC, "Tag '%s' expected, but '%c' found in stream", expectTags, tag);
     }
@@ -123,7 +123,7 @@ static inline void __hprose_raw_reader_read_raw(hprose_raw_reader *_this, hprose
             _hprose_raw_reader_read_raw(_this, ostream);
             break;
         default:
-            unexcepted_tag(tag, NULL TSRMLS_CC);
+            unexpected_tag(tag, NULL TSRMLS_CC);
     }
 }
 

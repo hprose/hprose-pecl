@@ -71,7 +71,7 @@ typedef struct {
     zend_llist *ref;
     zval *sref;
     zval *oref;
-    int refcount;
+    int32_t refcount;
 } hprose_real_writer_refer;
 
 static zend_always_inline void hprose_real_writer_refer_write_ref(hprose_bytes_io *stream, int32_t index) {
@@ -552,7 +552,6 @@ static inline int32_t hprose_writer_write_class(hprose_writer *_this, char *alia
                 ZVAL_STRINGL(&prop, str + pos, len - pos);
             }
             hprose_writer_serialize(_this, &prop TSRMLS_CC);
-            //efree(str);
             zval_ptr_dtor(&prop);
 #endif
             zend_hash_move_forward_ex(ht, position);

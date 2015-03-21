@@ -26,7 +26,7 @@ $writer->serialize(9);
 $writer->serialize(-2147483648);
 $writer->serialize(2147483647);
 $writer->serialize(2147483648);
-$writer->serialize(3.14159265897932);
+$writer->serialize(3.1415926535898);
 $writer->serialize(log(-1));
 $writer->serialize(log(0));
 $writer->serialize(-log(0));
@@ -120,7 +120,7 @@ echo $rawreader->readRaw() . "\r\n";
 i-2147483648;
 i2147483647;
 l2147483648;
-d3.14159265897932;
+d3.1415926535898;
 N
 I-
 I+
