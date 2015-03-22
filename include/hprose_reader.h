@@ -583,8 +583,38 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
     _this->refer->handlers->set(_this->refer, return_value);
     if (entry->constructor &&
         entry->constructor->common.required_num_args == 0) {
-        zval retval;
-        call_php_method(return_value, "__construct", &retval, 0, NULL);
+        zval *retval_ptr = NULL;
+        zval ***params = safe_emalloc(sizeof(zval **), 0, 0);
+        zend_fcall_info fci;
+        zend_fcall_info_cache fcc;
+
+        fci.size = sizeof(fci);
+        fci.function_table = EG(function_table);
+        fci.function_name = NULL;
+        fci.symbol_table = NULL;
+#if PHP_API_VERSION < 20090626
+        fci.object_pp = &return_value;
+#else
+        fci.object_ptr = return_value;
+#endif
+        fci.retval_ptr_ptr = &retval_ptr;
+        fci.param_count = 0;
+        fci.params = params;
+        fci.no_separation = 1;
+
+        fcc.initialized = 1;
+        fcc.function_handler = entry->constructor;
+        fcc.calling_scope = EG(scope);
+#if PHP_API_VERSION < 20090626
+        fcc.object_pp = &return_value;
+#else
+        fcc.object_ptr = return_value;
+#endif
+        zend_call_function(&fci, &fcc TSRMLS_CC);
+        if (retval_ptr) {
+            zval_ptr_dtor(&retval_ptr);
+        }
+        efree(params);
     }
     if (i) {
         zend_hash_internal_pointer_reset(props_ht);
@@ -600,10 +630,11 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
     }
 #else
     zend_class_entry *entry = zend_lookup_class(Z_STR_P(class_name));
+    zend_function *constructor;
     object_init_ex(return_value, entry);
     _this->refer->handlers->set(_this->refer, return_value);
-    if (entry->constructor &&
-        entry->constructor->common.required_num_args == 0) {
+    constructor = Z_OBJ_HT_P(return_value)->get_constructor(Z_OBJ_P(return_value));
+    if (constructor && constructor->common.required_num_args == 0) {
         zval retval;
         zend_fcall_info fci;
         zend_fcall_info_cache fcc;
@@ -618,7 +649,7 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
         fci.no_separation = 1;
 
         fcc.initialized = 1;
-        fcc.function_handler = entry->constructor;
+        fcc.function_handler = constructor;
         fcc.calling_scope = EG(scope);
         fcc.called_scope = Z_OBJCE_P(return_value);
         fcc.object = Z_OBJ_P(return_value);
