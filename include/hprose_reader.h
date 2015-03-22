@@ -570,7 +570,7 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
     HashTable *props_ht = Z_ARRVAL_P(props);
     int32_t i = zend_hash_num_elements(props_ht);
 #if PHP_MAJOR_VERSION < 7
-    zend_class_entry *entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), ZEND_FETCH_CLASS_AUTO TSRMLS_CC);
+    zend_class_entry *entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC);
     object_init_ex(return_value, entry);
     if (zend_hash_exists(&entry->function_table, "__construct", sizeof("__construct"))) {
         zval *retval;
@@ -591,7 +591,7 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
         }
     }
 #else
-    zend_class_entry *entry = zend_fetch_class(Z_STR_P(class_name), ZEND_FETCH_CLASS_AUTO TSRMLS_CC);
+    zend_class_entry *entry = zend_fetch_class(Z_STR_P(class_name), ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC);
     object_init_ex(return_value, entry);
     if (zend_hash_str_exists(&entry->function_table, "__construct", sizeof("__construct") - 1)) {
         zval retval;
