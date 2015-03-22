@@ -12,7 +12,7 @@ class User {
 date_default_timezone_set('Asia/Shanghai');
 $bytes = new HproseBytesIO();
 $writer = new HproseWriter($bytes);
-$rawreader = new HproseReader($bytes);
+$reader = new HproseReader($bytes);
 $writer->serialize(0);
 $writer->serialize(1);
 $writer->serialize(2);
@@ -46,44 +46,57 @@ $writer->serialize("Hello World! 你好，中国！");
 $bytes->write("T123456.123456Z");
 $bytes->write('g"550e8400-e29b-41d4-a716-446655440000"');
 
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-$d = $rawreader->unserialize();
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+$d = $reader->unserialize();
 var_dump($d->format("Y-m-d H:i:s.u"));
 var_dump($d->getTimezone()->getName());
-$d = $rawreader->unserialize();
+$d = $reader->unserialize();
 var_dump($d->format("Y-m-d H:i:s.u"));
 var_dump($d->getTimezone()->getName());
-$d = $rawreader->unserialize();
+$d = $reader->unserialize();
 var_dump($d->format("Y-m-d H:i:s.u"));
 var_dump($d->getTimezone()->getName());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-var_dump($rawreader->unserialize());
-$d = $rawreader->unserialize();
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+$d = $reader->unserialize();
 var_dump($d->format("Y-m-d H:i:s.u"));
 var_dump($d->getTimezone()->getName());
-var_dump($rawreader->unserialize());
+var_dump($reader->unserialize());
+
+$bytes->reset();
+$writer->reset();
+$reader->reset();
+
+$writer->serialize(array(1,2,3,4,5));
+$writer->serialize(array("Apple", "Banana", "Cherry"));
+$writer->serialize(array("Apple"=>"苹果", "Banana"=>"香蕉", "Cherry"=>"樱桃"));
+
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+
 ?>
 --EXPECT--
 int(0)
@@ -120,3 +133,31 @@ string(31) "Hello World! 你好，中国！"
 string(26) "1970-01-01 12:34:56.123456"
 string(3) "UTC"
 string(36) "550e8400-e29b-41d4-a716-446655440000"
+array(5) {
+  [0]=>
+  int(1)
+  [1]=>
+  int(2)
+  [2]=>
+  int(3)
+  [3]=>
+  int(4)
+  [4]=>
+  int(5)
+}
+array(3) {
+  [0]=>
+  string(5) "Apple"
+  [1]=>
+  string(6) "Banana"
+  [2]=>
+  string(6) "Cherry"
+}
+array(3) {
+  ["Apple"]=>
+  string(6) "苹果"
+  ["Banana"]=>
+  string(6) "香蕉"
+  ["Cherry"]=>
+  string(6) "樱桃"
+}

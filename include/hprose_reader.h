@@ -392,7 +392,7 @@ static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader
     _this->refer->handlers->set(_this->refer, return_value);
 }
 
-static inline void hprose_reader_read_bytes_without_tag(hprose_reader *_this, zval *return_value) {
+static zend_always_inline void hprose_reader_read_bytes_without_tag(hprose_reader *_this, zval *return_value) {
     int32_t count = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_QUOTE);
     char *bytes = hprose_bytes_io_read(_this->stream, count);
     hprose_bytes_io_skip(_this->stream, 1);
@@ -400,13 +400,13 @@ static inline void hprose_reader_read_bytes_without_tag(hprose_reader *_this, zv
     _this->refer->handlers->set(_this->refer, return_value);
 }
 
-static inline void hprose_reader_read_utf8char_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+static zend_always_inline void hprose_reader_read_utf8char_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     int32_t len;
     char *uc = hprose_bytes_io_read_string(_this->stream, 1, &len);
     RETVAL_STRINGL_0(uc, len);
 }
 
-static inline void _hprose_reader_read_string_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+static zend_always_inline void _hprose_reader_read_string_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     int32_t count = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_QUOTE);
     int32_t len;
     char *str = hprose_bytes_io_read_string(_this->stream, count, &len);
@@ -414,17 +414,74 @@ static inline void _hprose_reader_read_string_without_tag(hprose_reader *_this, 
     RETVAL_STRINGL_0(str, len);
 }
 
-static inline void hprose_reader_read_string_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+static zend_always_inline void hprose_reader_read_string_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     _hprose_reader_read_string_without_tag(_this, return_value TSRMLS_CC);
     _this->refer->handlers->set(_this->refer, return_value);
 }
 
-static inline void hprose_reader_read_guid_without_tag(hprose_reader *_this, zval *return_value) {
+static zend_always_inline void hprose_reader_read_guid_without_tag(hprose_reader *_this, zval *return_value) {
     hprose_bytes_io_skip(_this->stream, 1);
     char *s = hprose_bytes_io_read(_this->stream, 36);
     hprose_bytes_io_skip(_this->stream, 1);
     RETVAL_STRINGL_0(s, 36);
     _this->refer->handlers->set(_this->refer, return_value);
+}
+
+static inline void hprose_reader_read_list_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+    int32_t i = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_OPENBRACE);
+    array_init(return_value);
+    _this->refer->handlers->set(_this->refer, return_value);
+    for (; i > 0; --i) {
+#if PHP_MAJOR_VERSION < 7
+        zval *val;
+        MAKE_STD_ZVAL(val);
+        hprose_reader_unserialize(_this, val TSRMLS_CC);
+        add_next_index_zval(return_value, val);
+#else
+        zval val;
+        hprose_reader_unserialize(_this, &val TSRMLS_CC);
+        add_next_index_zval(return_value, &val);
+        zval_ptr_dtor(&val);
+#endif
+    }
+    hprose_bytes_io_skip(_this->stream, 1);
+}
+
+static inline void hprose_reader_read_map_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+    int32_t i = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_OPENBRACE);
+    array_init(return_value);
+    _this->refer->handlers->set(_this->refer, return_value);
+    for (; i > 0; --i) {
+#if PHP_MAJOR_VERSION < 7
+        zval *key, *value;
+        MAKE_STD_ZVAL(key);
+        MAKE_STD_ZVAL(value);
+        hprose_reader_unserialize(_this, key TSRMLS_CC);
+        hprose_reader_unserialize(_this, value TSRMLS_CC);
+        if (Z_TYPE_P(key) == IS_LONG) {
+            add_index_zval(return_value, Z_LVAL_P(key), value);
+        }
+        else {
+            convert_to_string(key);
+            add_assoc_zval_ex(return_value, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, value);
+        }
+        zval_ptr_dtor(&key);
+#else
+        zval key, value;
+        hprose_reader_unserialize(_this, &key TSRMLS_CC);
+        hprose_reader_unserialize(_this, &value TSRMLS_CC);
+        if (Z_TYPE(key) == IS_LONG) {
+            add_index_zval(return_value, Z_LVAL(key), &value);
+        }
+        else {
+            convert_to_string(&key);
+            add_assoc_zval_ex(return_value, Z_STRVAL(key), Z_STRLEN(key), &value);
+        }
+        zval_ptr_dtor(&key);
+        zval_ptr_dtor(&value);
+#endif
+    }
+    hprose_bytes_io_skip(_this->stream, 1);
 }
 
 static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_value TSRMLS_DC) {
@@ -483,10 +540,12 @@ static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_
             return;
         }
         case HPROSE_TAG_LIST: {
-
+            hprose_reader_read_list_without_tag(_this, return_value TSRMLS_CC);
+            return;
         }
         case HPROSE_TAG_MAP: {
-
+            hprose_reader_read_map_without_tag(_this, return_value TSRMLS_CC);
+            return;
         }
         case HPROSE_TAG_CLASS: {
 
