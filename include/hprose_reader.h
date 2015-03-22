@@ -119,6 +119,7 @@ static zend_always_inline hprose_reader_refer * hprose_real_reader_refer_new() {
 typedef struct {
     hprose_bytes_io *stream;
     zval *classref;
+    zval *propsref;
     hprose_reader_refer *refer;
 } hprose_reader;
 
@@ -128,7 +129,9 @@ static zend_always_inline hprose_reader * hprose_reader_create(hprose_bytes_io *
     hprose_reader *_this = emalloc(sizeof(hprose_reader));
     _this->stream = stream;
     hprose_make_zval(_this->classref);
+    hprose_make_zval(_this->propsref);
     array_init(_this->classref);
+    array_init(_this->propsref);
     _this->refer = simple ? hprose_fake_reader_refer_new() : hprose_real_reader_refer_new();
     return _this;
 }
@@ -136,7 +139,9 @@ static zend_always_inline hprose_reader * hprose_reader_create(hprose_bytes_io *
 static zend_always_inline void hprose_reader_free(hprose_reader *_this) {
     _this->stream = NULL;
     hprose_zval_free(_this->classref);
+    hprose_zval_free(_this->propsref);
     _this->classref = NULL;
+    _this->propsref = NULL;
     _this->refer->handlers->free(_this->refer);
     _this->refer = NULL;
     efree(_this);
@@ -144,6 +149,7 @@ static zend_always_inline void hprose_reader_free(hprose_reader *_this) {
 
 static zend_always_inline void hprose_reader_reset(hprose_reader *_this) {
     zend_hash_clean(Z_ARRVAL_P(_this->classref));
+    zend_hash_clean(Z_ARRVAL_P(_this->propsref));
     _this->refer->handlers->reset(_this->refer);
 }
 
@@ -419,6 +425,48 @@ static zend_always_inline void hprose_reader_read_string_without_tag(hprose_read
     _this->refer->handlers->set(_this->refer, return_value);
 }
 
+static zend_always_inline void _hprose_reader_read_string(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+    char tag = hprose_bytes_io_getc(_this->stream);
+    switch (tag) {
+        case HPROSE_TAG_UTF8CHAR: {
+            hprose_reader_read_utf8char_without_tag(_this, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_STRING: {
+            hprose_reader_read_string_without_tag(_this, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_REF: {
+            hprose_reader_read_ref(_this, return_value);
+            convert_to_string(return_value);
+            return;
+        }
+        default: unexpected_tag(tag, NULL TSRMLS_CC);
+    }
+}
+
+static zend_always_inline void hprose_reader_read_string(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+    char tag = hprose_bytes_io_getc(_this->stream);
+    switch (tag) {
+        case HPROSE_TAG_NULL: RETURN_NULL();
+        case HPROSE_TAG_EMPTY: RETURN_EMPTY_STRING();
+        case HPROSE_TAG_UTF8CHAR: {
+            hprose_reader_read_utf8char_without_tag(_this, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_STRING: {
+            hprose_reader_read_string_without_tag(_this, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_REF: {
+            hprose_reader_read_ref(_this, return_value);
+            convert_to_string(return_value);
+            return;
+        }
+        default: unexpected_tag(tag, NULL TSRMLS_CC);
+    }
+}
+
 static zend_always_inline void hprose_reader_read_guid_without_tag(hprose_reader *_this, zval *return_value) {
     hprose_bytes_io_skip(_this->stream, 1);
     char *s = hprose_bytes_io_read(_this->stream, 36);
@@ -429,7 +477,7 @@ static zend_always_inline void hprose_reader_read_guid_without_tag(hprose_reader
 
 static inline void hprose_reader_read_list_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     int32_t i = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_OPENBRACE);
-    array_init(return_value);
+    array_init_size(return_value, i);
     _this->refer->handlers->set(_this->refer, return_value);
     for (; i > 0; --i) {
 #if PHP_MAJOR_VERSION < 7
@@ -449,7 +497,7 @@ static inline void hprose_reader_read_list_without_tag(hprose_reader *_this, zva
 
 static inline void hprose_reader_read_map_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     int32_t i = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_OPENBRACE);
-    array_init(return_value);
+    array_init_size(return_value, i);
     _this->refer->handlers->set(_this->refer, return_value);
     for (; i > 0; --i) {
 #if PHP_MAJOR_VERSION < 7
@@ -470,17 +518,97 @@ static inline void hprose_reader_read_map_without_tag(hprose_reader *_this, zval
         zval key, value;
         hprose_reader_unserialize(_this, &key TSRMLS_CC);
         hprose_reader_unserialize(_this, &value TSRMLS_CC);
-        if (Z_TYPE(key) == IS_LONG) {
-            add_index_zval(return_value, Z_LVAL(key), &value);
-        }
-        else {
-            convert_to_string(&key);
-            add_assoc_zval_ex(return_value, Z_STRVAL(key), Z_STRLEN(key), &value);
-        }
+        array_set_zval_key(Z_ARRVAL_P(return_value), &key, &value);
         zval_ptr_dtor(&key);
         zval_ptr_dtor(&value);
 #endif
     }
+    hprose_bytes_io_skip(_this->stream, 1);
+}
+
+static zend_always_inline void hprose_reader_read_class(hprose_reader *_this TSRMLS_DC) {
+    int32_t i = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_QUOTE);
+    int32_t alen, nlen;
+    char *alias = hprose_bytes_io_read_string(_this->stream, i, &alen);
+    char *name = hprose_class_manager_get_class(alias, alen, &nlen);
+    efree(alias);
+    hprose_bytes_io_skip(_this->stream, 1);
+    i = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_OPENBRACE);
+    do {
+#if PHP_MAJOR_VERSION < 7
+        zval *props;
+        MAKE_STD_ZVAL(props);
+        array_init_size(props, i);
+        for (; i > 0; --i) {
+            zval *prop;
+            MAKE_STD_ZVAL(prop);
+            _hprose_reader_read_string(_this, prop TSRMLS_CC);
+            add_next_index_zval(props, prop);
+        }
+        add_next_index_stringl(_this->classref, name, nlen, 0);
+        add_next_index_zval(_this->propsref, props);
+#else
+        zval props;
+        array_init_size(&props, i);
+        for (; i > 0; --i) {
+            zval prop;
+            _hprose_reader_read_string(_this, &prop TSRMLS_CC);
+            add_next_index_zval(&props, &prop);
+        }
+        add_next_index_stringl(_this->classref, name, nlen);
+        efree(name);
+        add_next_index_zval(_this->propsref, &props);
+#endif
+    } while(0);
+    hprose_bytes_io_skip(_this->stream, 1);
+}
+
+static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+    int32_t index = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_OPENBRACE);
+    zval *class_name = php_array_get(_this->classref, index);
+    zval *props = php_array_get(_this->propsref, index);
+    HashTable *props_ht = Z_ARRVAL_P(props);
+    int32_t i = zend_hash_num_elements(props_ht);
+#if PHP_MAJOR_VERSION < 7
+    zend_class_entry *entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), ZEND_FETCH_CLASS_SILENT TSRMLS_CC);
+    object_init_ex(return_value, entry);
+    if (zend_hash_exists(&entry->function_table, "__construct", sizeof("__construct"))) {
+        zval *retval;
+        MAKE_STD_ZVAL(retval);
+        call_php_method(return_value, "__construct", retval, 0, NULL);
+        zval_ptr_dtor(&retval);
+    }
+    if (i) {
+        zend_hash_internal_pointer_reset(props_ht);
+        for (; i > 0; --i) {
+            zval **e, *val;
+            zend_hash_get_current_data(props_ht, (void **)&e);
+            MAKE_STD_ZVAL(val);
+            hprose_reader_unserialize(_this, val TSRMLS_CC);
+            zend_update_property(entry, return_value, Z_STRVAL_PP(e), Z_STRLEN_PP(e), val TSRMLS_CC);
+            zval_ptr_dtor(&val);
+            zend_hash_move_forward(props_ht);
+        }
+    }
+#else
+    zend_class_entry *entry = zend_fetch_class(Z_STR_P(class_name), ZEND_FETCH_CLASS_SILENT TSRMLS_CC);
+    object_init_ex(return_value, entry);
+    if (zend_hash_str_exists(&entry->function_table, "__construct", sizeof("__construct") - 1)) {
+        zval retval;
+        call_php_method(return_value, "__construct", &retval, 0, NULL);
+        zval_ptr_dtor(&retval);
+    }
+    if (i) {
+        zend_hash_internal_pointer_reset(props_ht);
+        for (; i > 0; --i) {
+            zval *e = zend_hash_get_current_data(props_ht), val;
+            hprose_reader_unserialize(_this, &val TSRMLS_CC);
+            zend_update_property(entry, return_value, Z_STRVAL_P(e), Z_STRLEN_P(e), &val TSRMLS_CC);
+            zval_ptr_dtor(&val);
+            zend_hash_move_forward(props_ht);
+        }
+    }
+#endif
     hprose_bytes_io_skip(_this->stream, 1);
 }
 
@@ -548,10 +676,13 @@ static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_
             return;
         }
         case HPROSE_TAG_CLASS: {
-
+            hprose_reader_read_class(_this TSRMLS_CC);
+            hprose_reader_unserialize(_this, return_value TSRMLS_CC);
+            return;
         }
         case HPROSE_TAG_OBJECT: {
-
+            hprose_reader_read_object_without_tag(_this, return_value TSRMLS_CC);
+            return;
         }
         case HPROSE_TAG_REF: {
             hprose_reader_read_ref(_this, return_value);

@@ -5,9 +5,14 @@ Test that the Hprose\Reader class works.
 --FILE--
 <?php
 class User {
-    private $id = 1;
-    public $name = "默认用户";
-    public $age = 18;
+    private $id;
+    public $name;
+    public $age;
+    public function __construct() {
+        $this->id = 1;
+        $this->name = "默认用户";
+        $this->age = 12;
+    }
 }
 date_default_timezone_set('Asia/Shanghai');
 $bytes = new HproseBytesIO();
@@ -92,10 +97,22 @@ $reader->reset();
 $writer->serialize(array(1,2,3,4,5));
 $writer->serialize(array("Apple", "Banana", "Cherry"));
 $writer->serialize(array("Apple"=>"苹果", "Banana"=>"香蕉", "Cherry"=>"樱桃"));
+$stdobj = new stdClass();
+$stdobj->name = "张三";
+$stdobj->age = 18;
+$writer->serialize($stdobj);
+$writer->serialize(new User());
+$user = new User();
+$user->name = "张三";
+$user->age = 18;
+$writer->serialize($user);
 
 var_dump($reader->unserialize());
 var_dump($reader->unserialize());
 var_dump($reader->unserialize());
+var_dump($reader->unserialize());
+print_r($reader->unserialize());
+print_r($reader->unserialize());
 
 ?>
 --EXPECT--
@@ -161,3 +178,21 @@ array(3) {
   ["Cherry"]=>
   string(6) "樱桃"
 }
+array(2) {
+  ["name"]=>
+  string(6) "张三"
+  ["age"]=>
+  int(18)
+}
+User Object
+(
+    [id:User:private] => 1
+    [name] => 默认用户
+    [age] => 12
+)
+User Object
+(
+    [id:User:private] => 1
+    [name] => 张三
+    [age] => 18
+)
