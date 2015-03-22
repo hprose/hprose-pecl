@@ -8,11 +8,14 @@ class User {
     private $id;
     public $name;
     public $age;
-    public function __construct() {
+    public function __construct($name = "默认用户", $age = 12) {
         $this->id = 1;
-        $this->name = "默认用户";
-        $this->age = 12;
+        $this->name = $name;
+        $this->age = $age;
     }
+}
+class NoCtor {
+    public $name = "NoCtor";
 }
 date_default_timezone_set('Asia/Shanghai');
 $bytes = new HproseBytesIO();
@@ -102,15 +105,14 @@ $stdobj->name = "张三";
 $stdobj->age = 18;
 $writer->serialize($stdobj);
 $writer->serialize(new User());
-$user = new User();
-$user->name = "张三";
-$user->age = 18;
-$writer->serialize($user);
+$writer->serialize(new User("张三", 18));
+$writer->serialize(new NoCtor());
 
 var_dump($reader->unserialize());
 var_dump($reader->unserialize());
 var_dump($reader->unserialize());
 var_dump($reader->unserialize());
+print_r($reader->unserialize());
 print_r($reader->unserialize());
 print_r($reader->unserialize());
 
@@ -195,4 +197,8 @@ User Object
     [id:User:private] => 1
     [name] => 张三
     [age] => 18
+)
+NoCtor Object
+(
+    [name] => NoCtor
 )

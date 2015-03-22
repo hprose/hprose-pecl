@@ -572,7 +572,8 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
 #if PHP_MAJOR_VERSION < 7
     zend_class_entry *entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC);
     object_init_ex(return_value, entry);
-    if (zend_hash_exists(&entry->function_table, "__construct", sizeof("__construct"))) {
+    if (entry->constructor &&
+        entry->constructor->common.required_num_args == 0) {
         zval *retval;
         MAKE_STD_ZVAL(retval);
         call_php_method(return_value, "__construct", retval, 0, NULL);
@@ -593,7 +594,8 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
 #else
     zend_class_entry *entry = zend_fetch_class(Z_STR_P(class_name), ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC);
     object_init_ex(return_value, entry);
-    if (zend_hash_str_exists(&entry->function_table, "__construct", sizeof("__construct") - 1)) {
+    if (entry->constructor &&
+        entry->constructor->common.required_num_args == 0) {
         zval retval;
         call_php_method(return_value, "__construct", &retval, 0, NULL);
         zval_ptr_dtor(&retval);
