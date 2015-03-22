@@ -88,7 +88,11 @@ static void hprose_real_writer_refer_set(void *_this, zval *val) {
             add_assoc_long_ex(refer->sref, Z_STRVAL_P(val), Z_STRLEN_P(val), refer->refcount);
             break;
         case IS_OBJECT:
+#ifdef Z_TRY_ADDREF_P
+            Z_TRY_ADDREF_P(val);
+#else
             Z_ADDREF_P(val);
+#endif
             zend_llist_add_element(refer->ref, &val);
             key = object_hash(val);
             add_assoc_long_ex(refer->oref, key, 32, refer->refcount);

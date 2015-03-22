@@ -104,14 +104,20 @@ $stdobj = new stdClass();
 $stdobj->name = "张三";
 $stdobj->age = 18;
 $writer->serialize($stdobj);
-$writer->serialize(new User());
+$user = new User();
+$writer->serialize($user);
+$writer->serialize($user);
 $writer->serialize(new User("张三", 18));
-$writer->serialize(new NoCtor());
+$noctor = new NoCtor();
+$writer->serialize($noctor);
+$writer->serialize($noctor);
 
 var_dump($reader->unserialize());
 var_dump($reader->unserialize());
 var_dump($reader->unserialize());
 var_dump($reader->unserialize());
+print_r($reader->unserialize());
+print_r($reader->unserialize());
 print_r($reader->unserialize());
 print_r($reader->unserialize());
 print_r($reader->unserialize());
@@ -195,8 +201,18 @@ User Object
 User Object
 (
     [id:User:private] => 1
+    [name] => 默认用户
+    [age] => 12
+)
+User Object
+(
+    [id:User:private] => 1
     [name] => 张三
     [age] => 18
+)
+NoCtor Object
+(
+    [name] => NoCtor
 )
 NoCtor Object
 (

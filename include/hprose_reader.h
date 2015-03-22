@@ -79,13 +79,21 @@ typedef struct {
 
 static void hprose_real_reader_refer_set(void *_this, zval *val) {
     hprose_real_reader_refer *refer = (hprose_real_reader_refer *)_this;
+#ifdef Z_TRY_ADDREF_P
+    Z_TRY_ADDREF_P(val);
+#else
     Z_ADDREF_P(val);
+#endif
     add_next_index_zval(refer->ref, val);
 }
 static zval * hprose_real_reader_refer_read(void *_this, int32_t index) {
     hprose_real_reader_refer *refer = (hprose_real_reader_refer *)_this;
     zval *result = php_array_get(refer->ref, index);
+#ifdef Z_TRY_ADDREF_P
+    Z_TRY_ADDREF_P(result);
+#else
     Z_ADDREF_P(result);
+#endif
     return result;
 }
 
@@ -572,12 +580,11 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
 #if PHP_MAJOR_VERSION < 7
     zend_class_entry *entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC);
     object_init_ex(return_value, entry);
+    _this->refer->handlers->set(_this->refer, return_value);
     if (entry->constructor &&
         entry->constructor->common.required_num_args == 0) {
-        zval *retval;
-        MAKE_STD_ZVAL(retval);
-        call_php_method(return_value, "__construct", retval, 0, NULL);
-        zval_ptr_dtor(&retval);
+        zval retval;
+        call_php_method(return_value, "__construct", &retval, 0, NULL);
     }
     if (i) {
         zend_hash_internal_pointer_reset(props_ht);
@@ -592,12 +599,31 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
         }
     }
 #else
-    zend_class_entry *entry = zend_fetch_class(Z_STR_P(class_name), ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC);
+    zend_class_entry *entry = zend_lookup_class(Z_STR_P(class_name));
     object_init_ex(return_value, entry);
+    _this->refer->handlers->set(_this->refer, return_value);
     if (entry->constructor &&
         entry->constructor->common.required_num_args == 0) {
         zval retval;
-        call_php_method(return_value, "__construct", &retval, 0, NULL);
+        zend_fcall_info fci;
+        zend_fcall_info_cache fcc;
+        fci.size = sizeof(fci);
+        fci.function_table = EG(function_table);
+        ZVAL_UNDEF(&fci.function_name);
+        fci.symbol_table = NULL;
+        fci.object = Z_OBJ_P(return_value);
+        fci.retval = &retval;
+        fci.param_count = 0;
+        fci.params = NULL;
+        fci.no_separation = 1;
+
+        fcc.initialized = 1;
+        fcc.function_handler = entry->constructor;
+        fcc.calling_scope = EG(scope);
+        fcc.called_scope = Z_OBJCE_P(return_value);
+        fcc.object = Z_OBJ_P(return_value);
+
+        zend_call_function(&fci, &fcc);
         zval_ptr_dtor(&retval);
     }
     if (i) {
