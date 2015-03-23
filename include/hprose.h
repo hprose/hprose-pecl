@@ -643,23 +643,73 @@ static zend_always_inline int __call_php_function(zval *object, char *name, int3
 #endif /* PHP_MAJOR_VERSION < 7 */
 
 static zend_always_inline zend_function *__get_function_ptr(char *name, int32_t len TSRMLS_DC) {
-    char *lcname, *nsname;
+    char *fname, *lcname;
     zend_function *fptr;
-    lcname = zend_str_tolower_dup(name, len);
-    nsname = lcname;
-    if (lcname[0] == '\\') {
-        nsname = &lcname[1];
-        --len;
+    if ((fname = strstr(name, "::")) == NULL) {
+        char *nsname;
+        lcname = zend_str_tolower_dup(name, len);
+        nsname = lcname;
+        if (lcname[0] == '\\') {
+            nsname = &lcname[1];
+            --len;
+        }
+    #if PHP_MAJOR_VERSION < 7
+        if (zend_hash_find(EG(function_table), nsname, len + 1, (void **)&fptr) == FAILURE) {
+    #else
+        if ((fptr = zend_hash_str_find_ptr(EG(function_table), nsname, len)) == NULL) {
+    #endif
+            efree(lcname);
+            zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+                                    "Function %s() does not exist", name);
+            return NULL;
+        }
     }
+    else {
+        int32_t clen, flen;
 #if PHP_MAJOR_VERSION < 7
-    if (zend_hash_find(EG(function_table), nsname, len + 1, (void **)&fptr) == FAILURE) {
+        char *cname;
+        zend_class_entry **pce;
 #else
-    if ((fptr = zend_hash_str_find_ptr(EG(function_table), nsname, len)) == NULL) {
+        zend_string *cname;
 #endif
-        efree(lcname);
-        zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
-				"Function %s() does not exist", name);
-	return NULL;
+        zend_class_entry *ce;
+        clen = fname - name;
+#if PHP_MAJOR_VERSION < 7
+        cname = estrndup(name, clen);
+#else
+        cname = zend_string_init(name, clen, 0);
+#endif
+        flen = len - (clen + 2);
+        fname += 2;
+#if PHP_MAJOR_VERSION < 7
+        if (zend_lookup_class(cname, clen, &pce TSRMLS_CC) == FAILURE) {
+            zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+                                    "Class %s does not exist", cname);
+            efree(cname);
+            return NULL;
+        }
+        efree(cname);
+        ce = *pce;
+#else
+        if ((ce = zend_lookup_class(cname)) == NULL) {
+            zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+                                    "Class %s does not exist", cname->val);
+            zend_string_release(cname);
+            return NULL;
+        }
+        zend_string_release(cname);
+#endif
+        lcname = zend_str_tolower_dup(fname, flen);
+#if PHP_MAJOR_VERSION < 7
+        if (zend_hash_find(&ce->function_table, lcname, flen + 1, (void **) &fptr) == FAILURE) {
+#else
+        if ((fptr = zend_hash_str_find_ptr(&ce->function_table, lcname, flen)) == NULL) {
+#endif
+            efree(lcname);
+            zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+                                    "Method %s() does not exist", name);
+            return NULL;
+        }
     }
     efree(lcname);
     return fptr;
@@ -667,66 +717,6 @@ static zend_always_inline zend_function *__get_function_ptr(char *name, int32_t 
 
 // name is a symbol
 #define get_function_ptr(name) __get_function_ptr(#name, sizeof(#name) - 1 TSRMLS_CC)
-
-static zend_always_inline zend_function *__get_method_ptr(char *name, int32_t len TSRMLS_DC) {
-    char *fname, *lcname;
-    int32_t clen, flen;
-#if PHP_MAJOR_VERSION < 7
-    char *cname;
-    zend_class_entry **pce;
-#else
-    zend_string *cname;
-#endif
-    zend_class_entry *ce;
-    zend_function *mptr;
-    if ((fname = strstr(name, "::")) == NULL) {
-        zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
-                                "Invalid method name %s", name);
-        return NULL;
-    }
-    clen = fname - name;
-#if PHP_MAJOR_VERSION < 7
-    cname = estrndup(name, clen);
-#else
-    cname = zend_string_init(name, clen, 0);
-#endif
-    flen = len - (clen + 2);
-    fname += 2;
-#if PHP_MAJOR_VERSION < 7
-    if (zend_lookup_class(cname, clen, &pce TSRMLS_CC) == FAILURE) {
-        zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
-                                "Class %s does not exist", cname);
-        efree(cname);
-        return NULL;
-    }
-    efree(cname);
-    ce = *pce;
-#else
-    if ((ce = zend_lookup_class(cname)) == NULL) {
-        zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
-                                "Class %s does not exist", cname->val);
-        zend_string_release(cname);
-        return NULL;
-    }
-    zend_string_release(cname);
-#endif
-    lcname = zend_str_tolower_dup(fname, flen);
-#if PHP_MAJOR_VERSION < 7
-    if (zend_hash_find(&ce->function_table, lcname, flen + 1, (void **) &mptr) == FAILURE) {
-#else
-    if ((mptr = zend_hash_str_find_ptr(&ce->function_table, lcname, flen)) == NULL) {
-#endif
-        efree(lcname);
-        zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
-                                "Method %s() does not exist", name);
-        return NULL;
-    }
-    efree(lcname);
-    return mptr;
-}
-
-// classname and methodname are symbols
-#define get_method_ptr(classname, methodname) __get_method_ptr(#classname"::"#methodname, sizeof(#classname"::"#methodname) - 1 TSRMLS_CC)
 
 static int _zval_array_to_c_array(zval **arg, zval ****params TSRMLS_DC) {
     *(*params)++ = arg;
