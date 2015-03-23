@@ -100,6 +100,8 @@ typedef size_t length_t;
 #endif /* ZEND_DEBUG */
 #endif /* PHP_API_VERSION < 20090626 */
 
+#define STR_ARG(str) str, sizeof(str) - 1
+
 /**********************************************************\
 | int type definition                                      |
 \**********************************************************/
@@ -591,7 +593,7 @@ static zend_always_inline zend_bool __instanceof(zend_class_entry *ce, char *nam
 }
 
 // name must be a symbol
-#define instanceof(ce, name) __instanceof(ce, #name, sizeof(#name) - 1 TSRMLS_CC)
+#define instanceof(ce, name) __instanceof(ce, STR_ARG(#name) TSRMLS_CC)
 
 #if PHP_MAJOR_VERSION < 7
 #define hprose_make_zval(val)      MAKE_STD_ZVAL(val)
@@ -601,51 +603,12 @@ static zend_always_inline zend_bool __instanceof(zend_class_entry *ce, char *nam
 #define hprose_zval_free(val)      zval_ptr_dtor(val); efree(val);
 #endif
 
-static zend_always_inline int __call_php_function(zval *object, char *name, int32_t nlen, zval *retval_ptr, int32_t argc, zval *params[] TSRMLS_DC) {
-#if PHP_MAJOR_VERSION < 7
-    zval *method;
-    int result;
-    MAKE_STD_ZVAL(method);
-    ZVAL_STRINGL(method, name, nlen, 1);
-    if (object) {
-        result = call_user_function(NULL, &object, method, retval_ptr, argc, params TSRMLS_CC);
-    }
-    else {
-        result = call_user_function(CG(function_table), NULL, method, retval_ptr, argc, params TSRMLS_CC);
-    }
-#else /* PHP_MAJOR_VERSION < 7 */
-    zval method;
-    zval *_params = ecalloc(argc, sizeof(zval));
-    int i, result;
-    for (i = 0; i < argc; ++i) _params[i] = *params[i];
-    ZVAL_STRINGL(&method, name, nlen);
-    if (object) {
-        result = call_user_function(NULL, object, &method, retval_ptr, argc, _params);
-    }
-    else {
-        result = call_user_function(CG(function_table), NULL, &method, retval_ptr, argc, _params);
-    }
-    efree(_params);
-#endif /* PHP_MAJOR_VERSION < 7 */
-    zval_ptr_dtor(&method);
-    return result;
-}
-
-// name must be a literal constant string
-#define call_php_function(name, retval_ptr, argc, params) __call_php_function(NULL, name, sizeof(name) - 1, retval_ptr, argc, params TSRMLS_CC)
-#define call_php_method(object, name, retval_ptr, argc, params) __call_php_function(object, name, sizeof(name) - 1, retval_ptr, argc, params TSRMLS_CC)
-
-// s must be a literal constant string
-#if PHP_MAJOR_VERSION < 7
-#define ZVAL_LITERAL_STRINGL(val, s) ZVAL_STRINGL(val, s, sizeof(s) - 1, 1)
-#else /* PHP_MAJOR_VERSION < 7 */
-#define ZVAL_LITERAL_STRINGL(val, s) ZVAL_STRINGL(val, s, sizeof(s) - 1)
-#endif /* PHP_MAJOR_VERSION < 7 */
-
-static zend_always_inline zend_function *__get_function_ptr(char *name, int32_t len TSRMLS_DC) {
+static zend_always_inline zend_fcall_info_cache __get_fcall_info_cache(zval *obj, char *name, int32_t len TSRMLS_DC) {
+    zend_fcall_info_cache fcc = {0};
     char *fname, *lcname;
     zend_function *fptr;
-    if ((fname = strstr(name, "::")) == NULL) {
+
+    if (obj == NULL && (fname = strstr(name, "::")) == NULL) {
         char *nsname;
         lcname = zend_str_tolower_dup(name, len);
         nsname = lcname;
@@ -661,44 +624,82 @@ static zend_always_inline zend_function *__get_function_ptr(char *name, int32_t 
             efree(lcname);
             zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
                                     "Function %s() does not exist", name);
-            return NULL;
+            return fcc;
         }
+        fcc.function_handler = fptr;
+        fcc.calling_scope = EG(scope);
+#if PHP_MAJOR_VERSION < 7
+#if PHP_API_VERSION < 20090626
+        fcc.object_pp = NULL;
+#else
+        fcc.called_scope = NULL;
+        fcc.object_ptr = NULL;
+#endif
+#else
+        fcc.called_scope = NULL;
+        fcc.object = NULL;
+#endif
     }
     else {
-        int32_t clen, flen;
+        int32_t flen, clen;
+        zend_class_entry *ce;
 #if PHP_MAJOR_VERSION < 7
         char *cname;
         zend_class_entry **pce;
 #else
         zend_string *cname;
 #endif
-        zend_class_entry *ce;
-        clen = fname - name;
+        if (obj == NULL) {
+            clen = fname - name;
 #if PHP_MAJOR_VERSION < 7
-        cname = estrndup(name, clen);
+            cname = estrndup(name, clen);
 #else
-        cname = zend_string_init(name, clen, 0);
+            cname = zend_string_init(name, clen, 0);
 #endif
-        flen = len - (clen + 2);
-        fname += 2;
+            flen = len - (clen + 2);
+            fname += 2;
+        }
+        else if (Z_TYPE_P(obj) == IS_STRING) {
+            clen = Z_STRLEN_P(obj);
 #if PHP_MAJOR_VERSION < 7
-        if (zend_lookup_class(cname, clen, &pce TSRMLS_CC) == FAILURE) {
+            cname = estrndup(Z_STRVAL_P(obj), clen);
+#else
+            cname = zend_string_init(Z_STRVAL_P(obj), clen, 0);
+#endif
+            flen = len;
+            fname = name;
+            obj = NULL;
+        }
+        else if (Z_TYPE_P(obj) != IS_OBJECT) {
             zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
-                                    "Class %s does not exist", cname);
+                    "The parameter obj is expected to be either a string or an object");
+            return fcc;
+        }
+        if (obj == NULL) {
+#if PHP_MAJOR_VERSION < 7
+            if (zend_lookup_class(cname, clen, &pce TSRMLS_CC) == FAILURE) {
+                zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+                                        "Class %s does not exist", cname);
+                efree(cname);
+                return fcc;
+            }
             efree(cname);
-            return NULL;
-        }
-        efree(cname);
-        ce = *pce;
+            ce = *pce;
 #else
-        if ((ce = zend_lookup_class(cname)) == NULL) {
-            zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
-                                    "Class %s does not exist", cname->val);
+            if ((ce = zend_lookup_class(cname)) == NULL) {
+                zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+                                        "Class %s does not exist", cname->val);
+                zend_string_release(cname);
+                return fcc;
+            }
             zend_string_release(cname);
-            return NULL;
-        }
-        zend_string_release(cname);
 #endif
+        }
+        else {
+            ce = Z_OBJCE_P(obj);
+            fname = name;
+            flen = len;
+        }
         lcname = zend_str_tolower_dup(fname, flen);
 #if PHP_MAJOR_VERSION < 7
         if (zend_hash_find(&ce->function_table, lcname, flen + 1, (void **) &fptr) == FAILURE) {
@@ -707,23 +708,53 @@ static zend_always_inline zend_function *__get_function_ptr(char *name, int32_t 
 #endif
             efree(lcname);
             zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
-                                    "Method %s() does not exist", name);
-            return NULL;
+                                    "Method %s::%s() does not exist", ce->name, fname);
+            return fcc;
+        }
+        fcc.function_handler = fptr;
+        if (fptr->common.fn_flags & ZEND_ACC_STATIC) {
+#if PHP_API_VERSION < 20090626
+            fcc.calling_scope = NULL;
+            fcc.object_pp = NULL;
+#else
+            fcc.calling_scope = fptr->common.scope;
+            fcc.called_scope = ce;
+#if PHP_MAJOR_VERSION < 7
+            fcc.object_ptr = NULL;
+#else
+            fcc.object = NULL;
+#endif
+#endif
+	}
+        else {
+#if PHP_API_VERSION < 20090626
+            fcc.calling_scope = Z_OBJCE_P(obj);
+            fcc.object_pp = &obj;
+#else
+            fcc.calling_scope = Z_OBJCE_P(obj);
+            fcc.called_scope = ce;
+#if PHP_MAJOR_VERSION < 7
+            fcc.object_ptr = obj;
+#else
+            fcc.object = Z_OBJ_P(obj);
+#endif
+#endif
         }
     }
     efree(lcname);
-    return fptr;
+    fcc.initialized = 1;
+    return fcc;
 }
 
 // name is a symbol
-#define get_function_ptr(name) __get_function_ptr(#name, sizeof(#name) - 1 TSRMLS_CC)
+#define get_fcall_info_cache(obj, name) __get_fcall_info_cache(obj, STR_ARG(#name) TSRMLS_CC)
 
 static int _zval_array_to_c_array(zval **arg, zval ****params TSRMLS_DC) {
     *(*params)++ = arg;
     return ZEND_HASH_APPLY_KEEP;
 }
 
-static zend_always_inline void __function_invoke_args(zend_function *fptr, zval *return_value, zval *param_array TSRMLS_DC) {
+static zend_always_inline void __function_invoke_args(zend_fcall_info_cache fcc, zval *obj, zval *return_value, zval *param_array TSRMLS_DC) {
 #if PHP_MAJOR_VERSION < 7
     zval *retval_ptr = NULL;
     zval ***params = NULL;
@@ -735,36 +766,31 @@ static zend_always_inline void __function_invoke_args(zend_function *fptr, zval 
     int result;
     int argc;
     zend_fcall_info fci;
-    zend_fcall_info_cache fcc;
 
     argc = (param_array) ? zend_hash_num_elements(Z_ARRVAL_P(param_array)) : 0;
 
+    if (argc) {
 #if PHP_MAJOR_VERSION < 7
-    params = safe_emalloc(sizeof(zval **), argc, 0);
-    zend_hash_apply_with_argument(Z_ARRVAL_P(param_array), (apply_func_arg_t)_zval_array_to_c_array, &params TSRMLS_CC);
-    params -= argc;
+        params = safe_emalloc(sizeof(zval **), argc, 0);
+        zend_hash_apply_with_argument(Z_ARRVAL_P(param_array), (apply_func_arg_t)_zval_array_to_c_array, &params TSRMLS_CC);
+        params -= argc;
 #else
-    params = safe_emalloc(sizeof(zval), argc, 0);
-    argc = 0;
-    ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(param_array), val) {
-        ZVAL_COPY(&params[argc], val);
-        argc++;
-    } ZEND_HASH_FOREACH_END();
+        params = safe_emalloc(sizeof(zval), argc, 0);
+        argc = 0;
+        ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(param_array), val) {
+            ZVAL_COPY(&params[argc], val);
+            argc++;
+        } ZEND_HASH_FOREACH_END();
 #endif
+    }
 
     fci.size = sizeof(fci);
     fci.function_table = NULL;
 #if PHP_MAJOR_VERSION < 7
     fci.function_name = NULL;
-#if PHP_API_VERSION < 20090626
-    fci.object_pp = NULL;
-#else
-    fci.object_ptr = NULL;
-#endif
     fci.retval_ptr_ptr = &retval_ptr;
 #else
     ZVAL_UNDEF(&fci.function_name);
-    fci.object = NULL;
     fci.retval = &retval;
 #endif
     fci.symbol_table = NULL;
@@ -772,30 +798,40 @@ static zend_always_inline void __function_invoke_args(zend_function *fptr, zval 
     fci.params = params;
     fci.no_separation = 1;
 
-    fcc.initialized = 1;
-    fcc.function_handler = fptr;
-    fcc.calling_scope = EG(scope);
-#if PHP_MAJOR_VERSION < 7
+    if (obj != NULL && Z_TYPE_P(obj) == IS_OBJECT) {
 #if PHP_API_VERSION < 20090626
-    fcc.object_pp = NULL;
+        fci.object_pp = &obj;
+        fcc.object_pp = &obj;
+#elif PHP_MAJOR_VERSION < 7
+        fci.object_ptr = obj;
+        fcc.object_ptr = obj;
 #else
-    fcc.called_scope = NULL;
-    fcc.object_ptr = NULL;
+        fci.object = Z_OBJ_P(obj);
+        fcc.object = Z_OBJ_P(obj);
 #endif
+        fcc.calling_scope = Z_OBJCE_P(obj);
+    }
+    else {
+#if PHP_API_VERSION < 20090626
+        fci.object_pp = NULL;
+#elif PHP_MAJOR_VERSION < 7
+        fci.object_ptr = NULL;
 #else
-    fcc.called_scope = NULL;
-    fcc.object = NULL;
+        fci.object = NULL;
 #endif
+    }
 
 #if PHP_MAJOR_VERSION < 7
     result = zend_call_function(&fci, &fcc TSRMLS_CC);
 
-    efree(params);
+    if (argc) {
+        efree(params);
+    }
 
     if (result == FAILURE) {
         zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
                                 "Invocation of function %s() failed",
-                                fptr->common.function_name);
+                                fcc.function_handler->common.function_name);
         return;
     }
 
@@ -811,14 +847,17 @@ static zend_always_inline void __function_invoke_args(zend_function *fptr, zval 
     result = zend_call_function(&fci, &fcc);
 
     for (i = 0; i < argc; i++) {
-            zval_ptr_dtor(&params[i]);
+        zval_ptr_dtor(&params[i]);
     }
-    efree(params);
+    if (argc) {
+        efree(params);
+    }
+
 
     if (result == FAILURE) {
         zend_throw_exception_ex(zend_exception_get_default(), 0,
                                 "Invocation of function %s() failed",
-                                fptr->common.function_name->val);
+                                fcc.function_handler->common.function_name->val);
         return;
     }
 
@@ -833,7 +872,7 @@ static zend_always_inline void __function_invoke_args(zend_function *fptr, zval 
 #endif
 }
 
-static void __function_invoke(zend_function *fptr, zval *return_value TSRMLS_DC, const char *params_format, ...) {
+static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return_value TSRMLS_DC, const char *params_format, ...) {
 #if PHP_MAJOR_VERSION < 7
     zval *retval_ptr = NULL;
     zval ***params = NULL;
@@ -845,7 +884,6 @@ static void __function_invoke(zend_function *fptr, zval *return_value TSRMLS_DC,
     int result;
     int argc;
     zend_fcall_info fci;
-    zend_fcall_info_cache fcc;
 
     argc = strlen(params_format);
 
@@ -953,15 +991,9 @@ static void __function_invoke(zend_function *fptr, zval *return_value TSRMLS_DC,
     fci.function_table = NULL;
 #if PHP_MAJOR_VERSION < 7
     fci.function_name = NULL;
-#if PHP_API_VERSION < 20090626
-    fci.object_pp = NULL;
-#else
-    fci.object_ptr = NULL;
-#endif
     fci.retval_ptr_ptr = &retval_ptr;
 #else
     ZVAL_UNDEF(&fci.function_name);
-    fci.object = NULL;
     fci.retval = &retval;
 #endif
     fci.symbol_table = NULL;
@@ -969,20 +1001,28 @@ static void __function_invoke(zend_function *fptr, zval *return_value TSRMLS_DC,
     fci.params = params;
     fci.no_separation = 1;
 
-    fcc.initialized = 1;
-    fcc.function_handler = fptr;
-    fcc.calling_scope = EG(scope);
-#if PHP_MAJOR_VERSION < 7
+    if (obj != NULL && Z_TYPE_P(obj) == IS_OBJECT) {
 #if PHP_API_VERSION < 20090626
-    fcc.object_pp = NULL;
+        fci.object_pp = &obj;
+        fcc.object_pp = &obj;
+#elif PHP_MAJOR_VERSION < 7
+        fci.object_ptr = obj;
+        fcc.object_ptr = obj;
 #else
-    fcc.called_scope = NULL;
-    fcc.object_ptr = NULL;
+        fci.object = Z_OBJ_P(obj);
+        fcc.object = Z_OBJ_P(obj);
 #endif
+        fcc.calling_scope = Z_OBJCE_P(obj);
+    }
+    else {
+#if PHP_API_VERSION < 20090626
+        fci.object_pp = NULL;
+#elif PHP_MAJOR_VERSION < 7
+        fci.object_ptr = NULL;
 #else
-    fcc.called_scope = NULL;
-    fcc.object = NULL;
+        fci.object = NULL;
 #endif
+    }
 
 #if PHP_MAJOR_VERSION < 7
     result = zend_call_function(&fci, &fcc TSRMLS_CC);
@@ -996,12 +1036,14 @@ static void __function_invoke(zend_function *fptr, zval *return_value TSRMLS_DC,
         }
         efree(params[i]);
     }
-    efree(params);
+    if (argc) {
+        efree(params);
+    }
 
     if (result == FAILURE) {
         zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
                                 "Invocation of function %s() failed",
-                                fptr->common.function_name);
+                                fcc.function_handler->common.function_name);
         return;
     }
 
@@ -1017,14 +1059,17 @@ static void __function_invoke(zend_function *fptr, zval *return_value TSRMLS_DC,
     result = zend_call_function(&fci, &fcc);
 
     for (i = 0; i < argc; i++) {
-            zval_ptr_dtor(&params[i]);
+        zval_ptr_dtor(&params[i]);
     }
-    efree(params);
+
+    if (argc) {
+        efree(params);
+    }
 
     if (result == FAILURE) {
         zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0,
                                 "Invocation of function %s() failed",
-                                fptr->common.function_name->val);
+                                fcc.function_handler->common.function_name->val);
         return;
     }
 
@@ -1039,8 +1084,13 @@ static void __function_invoke(zend_function *fptr, zval *return_value TSRMLS_DC,
 #endif
 }
 
-#define function_invoke(name, return_value, params_format, ...) __function_invoke(get_function_ptr(name), return_value TSRMLS_CC, params_format, __VA_ARGS__)
-#define function_invoke_args(name, return_value, param_array) __function_invoke_args(get_function_ptr(name), return_value, param_array TSRMLS_CC)
+#define function_invoke_no_args(name, return_value) __function_invoke(get_fcall_info_cache(NULL, name), NULL, return_value TSRMLS_CC, "")
+#define function_invoke(name, return_value, params_format, ...) __function_invoke(get_fcall_info_cache(NULL, name), NULL, return_value TSRMLS_CC, params_format, __VA_ARGS__)
+#define function_invoke_args(name, return_value, param_array) __function_invoke_args(get_fcall_info_cache(NULL, name), NULL, return_value, param_array TSRMLS_CC)
+#define method_invoke_no_args(obj, name, return_value) __function_invoke(get_fcall_info_cache(obj, name), obj, return_value TSRMLS_CC, "")
+#define method_invoke(obj, name, return_value, params_format, ...) __function_invoke(get_fcall_info_cache(obj, name), obj, return_value TSRMLS_CC, params_format, __VA_ARGS__)
+#define method_invoke_args(obj, name, return_value, param_array) __function_invoke_args(get_fcall_info_cache(obj, name), obj, return_value, param_array TSRMLS_CC)
+
 
 /**********************************************************/
 END_EXTERN_C()

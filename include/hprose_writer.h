@@ -13,7 +13,7 @@
  *                                                        *
  * hprose writer for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 18, 2015                             *
+ * LastModified: Mar 23, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -299,36 +299,17 @@ static zend_always_inline void hprose_writer_write_bytes_with_ref(hprose_writer 
 }
 
 static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this, zval *val TSRMLS_DC) {
-#if PHP_MAJOR_VERSION < 7
-    zval *tmp, *fmt;
-    hprose_make_zval(tmp);
-    hprose_make_zval(fmt);
+    zval result;
     _this->refer->handlers->set(_this->refer, val);
-    call_php_method(val, "getOffset", tmp, 0, NULL);
-    if (Z_LVAL_P(tmp) == 0) {
-        ZVAL_LITERAL_STRINGL(fmt, "\\DYmd\\THis.u\\Z");
+    method_invoke_no_args(val, getOffset, &result);
+    if (Z_LVAL(result) == 0) {
+        method_invoke(val, format, &result, "s", STR_ARG("\\DYmd\\THis.u\\Z"));
     }
     else {
-        ZVAL_LITERAL_STRINGL(fmt, "\\DYmd\\THis.u;");
+        method_invoke(val, format, &result, "s", STR_ARG("\\DYmd\\THis.u;"));
     }
-    call_php_method(val, "format", tmp, 1, &fmt);
-    hprose_bytes_io_write(_this->stream, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
-#else
-    zval tmp, fmt;
-    zval *params[] = { &fmt, NULL };
-    _this->refer->handlers->set(_this->refer, val);
-    call_php_method(val, "getOffset", &tmp, 0, NULL);
-    if (Z_LVAL(tmp) == 0) {
-        ZVAL_LITERAL_STRINGL(&fmt, "\\DYmd\\THis.u\\Z");
-    }
-    else {
-        ZVAL_LITERAL_STRINGL(&fmt, "\\DYmd\\THis.u;");
-    }
-    call_php_method(val, "format", &tmp, 1, &params[0]);
-    hprose_bytes_io_write(_this->stream, Z_STRVAL(tmp), Z_STRLEN(tmp));
-#endif
-    zval_ptr_dtor(&fmt);
-    zval_ptr_dtor(&tmp);
+    hprose_bytes_io_write(_this->stream, Z_STRVAL(result), Z_STRLEN(result));
+    zval_dtor(&result);
 }
 
 static zend_always_inline void hprose_writer_write_datetime_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
@@ -413,7 +394,7 @@ static inline void hprose_writer_write_map(hprose_writer *_this, zval *val TSRML
     zval count;
     int32_t i;
     _this->refer->handlers->set(_this->refer, val);
-    call_php_method(val, "count", &count, 0, NULL);
+    method_invoke_no_args(val, count, &count);
     i = Z_LVAL(count);
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_MAP);
     if (i) {
@@ -421,32 +402,16 @@ static inline void hprose_writer_write_map(hprose_writer *_this, zval *val TSRML
     }
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
     if (i) {
-        zval tmp;
-        call_php_method(val, "rewind", &tmp, 0, NULL);
+        method_invoke_no_args(val, rewind, NULL);
         for (; i > 0; --i) {
-#if PHP_MAJOR_VERSION < 7
-            zval *key, *value;
-            hprose_make_zval(key);
-            hprose_make_zval(value);
-            call_php_method(val, "current", key, 0, NULL);
-            call_php_method(val, "offsetGet", value, 1, &key);
-            hprose_writer_serialize(_this, key TSRMLS_CC);
-            hprose_writer_serialize(_this, value TSRMLS_CC);
-#else /* PHP_MAJOR_VERSION < 7 */
-/*
-   The above code can also work well in PHP 7.
-   The following code is only for the purpose of optimization.
- */
             zval key, value;
-            zval *params[] = { &key, NULL };
-            call_php_method(val, "current", &key, 0, NULL);
-            call_php_method(val, "offsetGet", &value, 1, &params[0]);
+            method_invoke_no_args(val, current, &key);
+            method_invoke(val, offsetGet, &value, "z", &key);
             hprose_writer_serialize(_this, &key TSRMLS_CC);
             hprose_writer_serialize(_this, &value TSRMLS_CC);
-#endif /* PHP_MAJOR_VERSION < 7 */
-            zval_ptr_dtor(&key);
-            zval_ptr_dtor(&value);
-            call_php_method(val, "next", &tmp, 0, NULL);
+            zval_dtor(&key);
+            zval_dtor(&value);
+            method_invoke_no_args(val, next, NULL);
         }
     }
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
@@ -459,7 +424,7 @@ static inline void hprose_writer_write_list(hprose_writer *_this, zval *val TSRM
     zval count;
     int32_t i;
     _this->refer->handlers->set(_this->refer, val);
-    call_php_method(val, "count", &count, 0, NULL);
+    method_invoke_no_args(val, count, &count);
     i = Z_LVAL(count);
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_LIST);
     if (i) {
@@ -467,25 +432,13 @@ static inline void hprose_writer_write_list(hprose_writer *_this, zval *val TSRM
     }
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
     if (i) {
-        zval tmp;
-        call_php_method(val, "rewind", &tmp, 0, NULL);
+        method_invoke_no_args(val, rewind, NULL);
         for (; i > 0; --i) {
-#if PHP_MAJOR_VERSION < 7
-            zval *e;
-            hprose_make_zval(e);
-            call_php_method(val, "current", e, 0, NULL);
-            hprose_writer_serialize(_this, e TSRMLS_CC);
-#else /* PHP_MAJOR_VERSION < 7 */
-/*
-   The above code can also work well in PHP 7.
-   The following code is only for the purpose of optimization.
- */
             zval e;
-            call_php_method(val, "current", &e, 0, NULL);
+            method_invoke_no_args(val, current, &e);
             hprose_writer_serialize(_this, &e TSRMLS_CC);
-#endif /* PHP_MAJOR_VERSION < 7 */
-            zval_ptr_dtor(&e);
-            call_php_method(val, "next", &tmp, 0, NULL);
+            zval_dtor(&e);
+            method_invoke_no_args(val, next, NULL);
         }
     }
     hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
