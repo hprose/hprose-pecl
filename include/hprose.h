@@ -679,7 +679,7 @@ static zend_always_inline zend_function *__get_method_ptr(char *name, int32_t le
 #endif
     zend_class_entry *ce;
     zend_function *mptr;
-    if ((fname = strnstr(name, "::", len)) == NULL) {
+    if ((fname = strstr(name, "::")) == NULL) {
         zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
                                 "Invalid method name %s", name);
         return NULL;
@@ -843,7 +843,7 @@ static zend_always_inline void __function_invoke_args(zend_function *fptr, zval 
 #endif
 }
 
-static zend_always_inline void __function_invoke(zend_function *fptr, zval *return_value TSRMLS_DC, const char *params_format, ...) {
+static void __function_invoke(zend_function *fptr, zval *return_value TSRMLS_DC, const char *params_format, ...) {
 #if PHP_MAJOR_VERSION < 7
     zval *retval_ptr = NULL;
     zval ***params = NULL;
