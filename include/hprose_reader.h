@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 23, 2015                             *
+ * LastModified: Mar 24, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -166,6 +166,9 @@ static zend_always_inline long hprose_reader_read_integer_without_tag(hprose_rea
 }
 
 static zend_always_inline long hprose_reader_read_integer(hprose_reader *_this TSRMLS_DC) {
+    char expected_tags[] = {'0', '1', '2', '3', '4',
+                            '5', '6', '7', '8', '9',
+                            HPROSE_TAG_INTEGER, '\0'};
     char tag = hprose_bytes_io_getc(_this->stream);
     switch (tag) {
         case '0': return 0;
@@ -180,7 +183,7 @@ static zend_always_inline long hprose_reader_read_integer(hprose_reader *_this T
         case '9': return 9;
         case HPROSE_TAG_INTEGER:
             return hprose_reader_read_integer_without_tag(_this);
-        default: unexpected_tag(tag, NULL TSRMLS_CC); return 0;
+        default: unexpected_tag(tag, expected_tags TSRMLS_CC); return 0;
     }
 }
 
@@ -189,6 +192,10 @@ static zend_always_inline char * hprose_reader_read_long_without_tag(hprose_read
 }
 
 static zend_always_inline char * hprose_reader_read_long(hprose_reader *_this, int32_t *len_ptr TSRMLS_DC) {
+    char expected_tags[] = {'0', '1', '2', '3', '4',
+                            '5', '6', '7', '8', '9',
+                            HPROSE_TAG_INTEGER,
+                            HPROSE_TAG_LONG, '\0'};
     char tag = hprose_bytes_io_getc(_this->stream);
     switch (tag) {
         case '0': *len_ptr = 1; return estrndup("0", 1);
@@ -204,7 +211,7 @@ static zend_always_inline char * hprose_reader_read_long(hprose_reader *_this, i
         case HPROSE_TAG_INTEGER:
         case HPROSE_TAG_LONG:
             return hprose_reader_read_long_without_tag(_this, len_ptr);
-        default: unexpected_tag(tag, NULL TSRMLS_CC); return 0;
+        default: unexpected_tag(tag, expected_tags TSRMLS_CC); return 0;
     }
 }
 
@@ -221,6 +228,13 @@ static zend_always_inline double hprose_reader_read_infinity_without_tag(hprose_
 }
 
 static zend_always_inline double hprose_reader_read_double(hprose_reader *_this TSRMLS_DC) {
+    char expected_tags[] = {'0', '1', '2', '3', '4',
+                            '5', '6', '7', '8', '9',
+                            HPROSE_TAG_INTEGER,
+                            HPROSE_TAG_LONG,
+                            HPROSE_TAG_DOUBLE,
+                            HPROSE_TAG_NAN,
+                            HPROSE_TAG_INFINITY, '\0'};
     char tag = hprose_bytes_io_getc(_this->stream);
     switch (tag) {
         case '0': return 0;
@@ -242,7 +256,18 @@ static zend_always_inline double hprose_reader_read_double(hprose_reader *_this 
             return NAN;
         case HPROSE_TAG_INFINITY:
             return hprose_reader_read_infinity_without_tag(_this);
-        default: unexpected_tag(tag, NULL TSRMLS_CC); return 0;
+        default: unexpected_tag(tag, expected_tags TSRMLS_CC); return 0;
+    }
+}
+
+static zend_always_inline zend_bool hprose_reader_read_boolean(hprose_reader *_this TSRMLS_DC) {
+    char expected_tags[] = {HPROSE_TAG_TRUE,
+                            HPROSE_TAG_FALSE, '\0'};
+    char tag = hprose_bytes_io_getc(_this->stream);
+    switch (tag) {
+        case HPROSE_TAG_TRUE: return 1;
+        case HPROSE_TAG_FALSE: return 0;
+        default: unexpected_tag(tag, expected_tags TSRMLS_CC); return 0;
     }
 }
 
@@ -360,6 +385,9 @@ static zend_always_inline void hprose_reader_read_string_without_tag(hprose_read
 }
 
 static zend_always_inline void _hprose_reader_read_string(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+    char expected_tags[] = {HPROSE_TAG_UTF8CHAR,
+                            HPROSE_TAG_STRING,
+                            HPROSE_TAG_REF, '\0'};
     char tag = hprose_bytes_io_getc(_this->stream);
     switch (tag) {
         case HPROSE_TAG_UTF8CHAR: {
@@ -375,11 +403,16 @@ static zend_always_inline void _hprose_reader_read_string(hprose_reader *_this, 
             convert_to_string(return_value);
             return;
         }
-        default: unexpected_tag(tag, NULL TSRMLS_CC);
+        default: unexpected_tag(tag, expected_tags TSRMLS_CC);
     }
 }
 
 static zend_always_inline void hprose_reader_read_string(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+    char expected_tags[] = {HPROSE_TAG_NULL,
+                            HPROSE_TAG_EMPTY,
+                            HPROSE_TAG_UTF8CHAR,
+                            HPROSE_TAG_STRING,
+                            HPROSE_TAG_REF, '\0'};
     char tag = hprose_bytes_io_getc(_this->stream);
     switch (tag) {
         case HPROSE_TAG_NULL: RETURN_NULL();
@@ -397,7 +430,7 @@ static zend_always_inline void hprose_reader_read_string(hprose_reader *_this, z
             convert_to_string(return_value);
             return;
         }
-        default: unexpected_tag(tag, NULL TSRMLS_CC);
+        default: unexpected_tag(tag, expected_tags TSRMLS_CC);
     }
 }
 
@@ -429,6 +462,25 @@ static inline void hprose_reader_read_list_without_tag(hprose_reader *_this, zva
     hprose_bytes_io_skip(_this->stream, 1);
 }
 
+static zend_always_inline void hprose_reader_read_list(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+    char expected_tags[] = {HPROSE_TAG_NULL,
+                            HPROSE_TAG_LIST,
+                            HPROSE_TAG_REF, '\0'};
+    char tag = hprose_bytes_io_getc(_this->stream);
+    switch (tag) {
+        case HPROSE_TAG_NULL: RETURN_NULL();
+        case HPROSE_TAG_LIST: {
+            hprose_reader_read_list_without_tag(_this, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_REF: {
+            hprose_reader_read_ref(_this, return_value);
+            return;
+        }
+        default: unexpected_tag(tag, expected_tags TSRMLS_CC);
+    }
+}
+
 static inline void hprose_reader_read_map_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     int32_t i = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_OPENBRACE);
     array_init_size(return_value, i);
@@ -458,6 +510,25 @@ static inline void hprose_reader_read_map_without_tag(hprose_reader *_this, zval
 #endif
     }
     hprose_bytes_io_skip(_this->stream, 1);
+}
+
+static zend_always_inline void hprose_reader_read_map(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+    char expected_tags[] = {HPROSE_TAG_NULL,
+                            HPROSE_TAG_MAP,
+                            HPROSE_TAG_REF, '\0'};
+    char tag = hprose_bytes_io_getc(_this->stream);
+    switch (tag) {
+        case HPROSE_TAG_NULL: RETURN_NULL();
+        case HPROSE_TAG_MAP: {
+            hprose_reader_read_map_without_tag(_this, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_REF: {
+            hprose_reader_read_ref(_this, return_value);
+            return;
+        }
+        default: unexpected_tag(tag, expected_tags TSRMLS_CC);
+    }
 }
 
 static zend_always_inline void hprose_reader_read_class(hprose_reader *_this TSRMLS_DC) {
@@ -672,7 +743,10 @@ static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_
             return;
         }
         case HPROSE_TAG_ERROR: {
-
+            _hprose_reader_read_string(_this, return_value TSRMLS_CC);
+            zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+                                    "%s", Z_STRVAL_P(return_value));
+            return;
         }
         default: unexpected_tag(tag, NULL TSRMLS_CC);
     }

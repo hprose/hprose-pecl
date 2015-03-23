@@ -13,7 +13,7 @@
  *                                                        *
  * hprose raw reader for pecl header file.                *
  *                                                        *
- * LastModified: Mar 21, 2015                             *
+ * LastModified: Mar 24, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -35,9 +35,9 @@ typedef struct {
     hprose_bytes_io *stream;
 } hprose_raw_reader;
 
-static zend_always_inline void unexpected_tag(char tag, char *expectTags TSRMLS_DC) {
-    if (tag && expectTags) {
-        zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC, "Tag '%s' expected, but '%c' found in stream", expectTags, tag);
+static zend_always_inline void unexpected_tag(char tag, char *expected_tags TSRMLS_DC) {
+    if (tag && expected_tags) {
+        zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC, "Tag '%s' expected, but '%c' found in stream", expected_tags, tag);
     }
     else if (tag) {
         zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC, "Unexpected serialize tag '%c' in stream", tag);
