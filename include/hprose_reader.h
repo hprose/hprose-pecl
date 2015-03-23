@@ -510,7 +510,6 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
     if (entry->constructor &&
         entry->constructor->common.required_num_args == 0) {
         zval *retval_ptr = NULL;
-        zval ***params = safe_emalloc(sizeof(zval **), 0, 0);
         zend_fcall_info fci;
         zend_fcall_info_cache fcc;
 
@@ -525,7 +524,7 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
 #endif
         fci.retval_ptr_ptr = &retval_ptr;
         fci.param_count = 0;
-        fci.params = params;
+        fci.params = NULL;
         fci.no_separation = 1;
 
         fcc.initialized = 1;
@@ -540,7 +539,6 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
         if (retval_ptr) {
             zval_ptr_dtor(&retval_ptr);
         }
-        efree(params);
     }
     if (i) {
         zend_hash_internal_pointer_reset(props_ht);
