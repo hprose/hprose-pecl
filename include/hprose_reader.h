@@ -285,7 +285,7 @@ static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_re
     }
     if (tag == HPROSE_TAG_UTC) {
         zval timezone;
-        function_invoke(timezone_open, &timezone, "s", "UTC", sizeof("UTC") - 1);
+        function_invoke(timezone_open, &timezone, "s", STR_ARG("UTC"));
         function_invoke(date_create, return_value, "sz", tmp->buf, tmp->len, &timezone);
     }
     else {
@@ -322,7 +322,7 @@ static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader
     }
     if (tag == HPROSE_TAG_UTC) {
         zval timezone;
-        function_invoke(timezone_open, &timezone, "s", "UTC", sizeof("UTC") - 1);
+        function_invoke(timezone_open, &timezone, "s", STR_ARG("UTC"));
         function_invoke(date_create, return_value, "sz", tmp->buf, tmp->len, &timezone);
     }
     else {
