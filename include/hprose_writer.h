@@ -653,16 +653,16 @@ static inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRML
             break;
         case IS_OBJECT: {
             zend_class_entry *ce = Z_OBJCE_P(val);
-            if (instanceof(ce, "DateTime")) {
+            if (instanceof(ce, DateTime)) {
                 hprose_writer_write_datetime_with_ref(_this, val TSRMLS_CC);
             }
-            else if (instanceof(ce, "SplObjectStorage")) {
+            else if (instanceof(ce, SplObjectStorage)) {
                 hprose_writer_write_map_with_ref(_this, val TSRMLS_CC);
             }
-            else if (instanceof(ce, "Traversable")) {
+            else if (instanceof(ce, Traversable)) {
                 hprose_writer_write_list_with_ref(_this, val TSRMLS_CC);
             }
-            else if (instanceof(ce, "stdClass")) {
+            else if (instanceof(ce, stdClass)) {
                 hprose_writer_write_stdclass_with_ref(_this, val TSRMLS_CC);
             }
             else {

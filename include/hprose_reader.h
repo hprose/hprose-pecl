@@ -9,11 +9,11 @@
 
 /**********************************************************\
  *                                                        *
- * hprose_raw_reader.h                                    *
+ * hprose_reader.h                                        *
  *                                                        *
- * hprose raw reader for pecl header file.                *
+ * hprose reader for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 21, 2015                             *
+ * LastModified: Mar 23, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -253,12 +253,6 @@ static zend_always_inline void hprose_reader_read_ref(hprose_reader *_this, zval
 
 static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     char tag;
-#if PHP_MAJOR_VERSION < 7
-    zval *t;
-    hprose_make_zval(t);
-#else
-    zval t;
-#endif
     hprose_bytes_io *tmp = hprose_bytes_io_new();
     hprose_bytes_io_read_to(_this->stream, tmp, 4);
     hprose_bytes_io_write_char(tmp, '-');
@@ -289,57 +283,20 @@ static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_re
             }
         }
     }
-#if PHP_MAJOR_VERSION < 7
-    ZVAL_STRINGL(t, tmp->buf, tmp->len, 0);
     if (tag == HPROSE_TAG_UTC) {
-        zval *params[] = { t, NULL, NULL };
-        zval *timezone, *utc;
-        hprose_make_zval(timezone);
-        hprose_make_zval(utc);
-        ZVAL_LITERAL_STRINGL(utc, "UTC");
-        call_php_function("timezone_open", timezone, 1, &utc);
-        zval_ptr_dtor(&utc);
-        params[1] = timezone;
-        call_php_function("date_create", return_value, 2, &params[0]);
-        zval_ptr_dtor(&timezone);
+        zval timezone;
+        function_invoke(timezone_open, &timezone, "s", "UTC", sizeof("UTC") - 1);
+        function_invoke(date_create, return_value, "sz", tmp->buf, tmp->len, &timezone);
     }
     else {
-        zval *params[] = { t, NULL };
-        call_php_function("date_create", return_value, 1, &params[0]);
+        function_invoke(date_create, return_value, "s", tmp->buf, tmp->len);
     }
-    efree(t);
-#else
-    ZVAL_STRINGL(&t, tmp->buf, tmp->len);
-    if (tag == HPROSE_TAG_UTC) {
-        zval *params[] = { NULL, NULL, NULL };
-        zval timezone, utc;
-        ZVAL_LITERAL_STRINGL(&utc, "UTC");
-        params[0] = &utc;
-        call_php_function("timezone_open", &timezone, 1, &params[0]);
-        zval_ptr_dtor(&utc);
-        params[0] = &t;
-        params[1] = &timezone;
-        call_php_function("date_create", return_value, 2, &params[0]);
-        zval_ptr_dtor(&timezone);
-    }
-    else {
-        zval *params[] = { &t, NULL };
-        call_php_function("date_create", return_value, 1, &params[0]);
-    }
-    zval_ptr_dtor(&t);
-#endif
     hprose_bytes_io_free(tmp);
     _this->refer->handlers->set(_this->refer, return_value);
 }
 
 static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     char tag;
-#if PHP_MAJOR_VERSION < 7
-    zval *t;
-    hprose_make_zval(t);
-#else
-    zval t;
-#endif
     hprose_bytes_io *tmp = hprose_bytes_io_new();
     hprose_bytes_io_write(tmp, "1970-01-01", 10);
     hprose_bytes_io_write_char(tmp, HPROSE_TAG_TIME);
@@ -363,45 +320,14 @@ static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader
             }
         }
     }
-#if PHP_MAJOR_VERSION < 7
-    ZVAL_STRINGL(t, tmp->buf, tmp->len, 0);
     if (tag == HPROSE_TAG_UTC) {
-        zval *params[] = { t, NULL, NULL };
-        zval *timezone, *utc;
-        hprose_make_zval(timezone);
-        hprose_make_zval(utc);
-        ZVAL_LITERAL_STRINGL(utc, "UTC");
-        call_php_function("timezone_open", timezone, 1, &utc);
-        zval_ptr_dtor(&utc);
-        params[1] = timezone;
-        call_php_function("date_create", return_value, 2, &params[0]);
-        zval_ptr_dtor(&timezone);
+        zval timezone;
+        function_invoke(timezone_open, &timezone, "s", "UTC", sizeof("UTC") - 1);
+        function_invoke(date_create, return_value, "sz", tmp->buf, tmp->len, &timezone);
     }
     else {
-        zval *params[] = { t, NULL };
-        call_php_function("date_create", return_value, 1, &params[0]);
+        function_invoke(date_create, return_value, "s", tmp->buf, tmp->len);
     }
-    efree(t);
-#else
-    ZVAL_STRINGL(&t, tmp->buf, tmp->len);
-    if (tag == HPROSE_TAG_UTC) {
-        zval *params[] = { NULL, NULL, NULL };
-        zval timezone, utc;
-        ZVAL_LITERAL_STRINGL(&utc, "UTC");
-        params[0] = &utc;
-        call_php_function("timezone_open", &timezone, 1, &params[0]);
-        zval_ptr_dtor(&utc);
-        params[0] = &t;
-        params[1] = &timezone;
-        call_php_function("date_create", return_value, 2, &params[0]);
-        zval_ptr_dtor(&timezone);
-    }
-    else {
-        zval *params[] = { &t, NULL };
-        call_php_function("date_create", return_value, 1, &params[0]);
-    }
-    zval_ptr_dtor(&t);
-#endif
     hprose_bytes_io_free(tmp);
     _this->refer->handlers->set(_this->refer, return_value);
 }
