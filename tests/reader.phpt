@@ -122,6 +122,9 @@ print_r($reader->unserialize());
 print_r($reader->unserialize());
 print_r($reader->unserialize());
 
+$writer->serialize("测试继承的readRaw。");
+echo $reader->readRaw();
+
 ?>
 --EXPECT--
 int(0)
@@ -218,3 +221,4 @@ NoCtor Object
 (
     [name] => NoCtor
 )
+s13"测试继承的readRaw。"

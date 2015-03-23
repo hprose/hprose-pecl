@@ -78,7 +78,7 @@ HPROSE_OBJECT_NEW_END(reader)
 HPROSE_CLASS_ENTRY(reader)
 
 HPROSE_STARTUP_FUNCTION(reader) {
-    HPROSE_REGISTER_CLASS("Hprose", "Reader", reader);
+    HPROSE_REGISTER_CLASS_EX("Hprose", "Reader", reader, get_hprose_raw_reader_ce(), "HproseRawReader");
     HPROSE_REGISTER_CLASS_HANDLERS(reader);
     return SUCCESS;
 }
