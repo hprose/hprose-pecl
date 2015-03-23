@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl source file.                           *
  *                                                        *
- * LastModified: Mar 21, 2015                             *
+ * LastModified: Mar 23, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -50,9 +50,9 @@ ZEND_RSHUTDOWN_FUNCTION(hprose) {
 ZEND_MINFO_FUNCTION(hprose) {
     php_info_print_table_start();
     php_info_print_table_row(2, "hprose support", "enabled");
-    php_info_print_table_row(2, "hprose version", HPROSE_VERSION);
-    php_info_print_table_row(2, "hprose author", HPROSE_AUTHOR);
-    php_info_print_table_row(2, "hprose homepage", HPROSE_HOMEPAGE);
+    php_info_print_table_row(2, "hprose version", PHP_HPROSE_VERSION);
+    php_info_print_table_row(2, "hprose author", PHP_HPROSE_AUTHOR);
+    php_info_print_table_row(2, "hprose homepage", PHP_HPROSE_HOMEPAGE);
     php_info_print_table_end();
 }
 
@@ -84,13 +84,13 @@ ZEND_FUNCTION(hprose_unserialize) {
 ZEND_FUNCTION(hprose_info) {
     array_init(return_value);
 #if PHP_MAJOR_VERSION < 7
-    add_assoc_string(return_value, "ext_version", HPROSE_VERSION, 1);
-    add_assoc_string(return_value, "ext_build_date", HPROSE_BUILD_DATE, 1);
-    add_assoc_string(return_value, "ext_author", HPROSE_AUTHOR, 1);
+    add_assoc_string(return_value, "ext_version", PHP_HPROSE_VERSION, 1);
+    add_assoc_string(return_value, "ext_build_date", PHP_HPROSE_BUILD_DATE, 1);
+    add_assoc_string(return_value, "ext_author", PHP_HPROSE_AUTHOR, 1);
 #else
-    add_assoc_string(return_value, "ext_version", HPROSE_VERSION);
-    add_assoc_string(return_value, "ext_build_date", HPROSE_BUILD_DATE);
-    add_assoc_string(return_value, "ext_author", HPROSE_AUTHOR);
+    add_assoc_string(return_value, "ext_version", PHP_HPROSE_VERSION);
+    add_assoc_string(return_value, "ext_build_date", PHP_HPROSE_BUILD_DATE);
+    add_assoc_string(return_value, "ext_author", PHP_HPROSE_AUTHOR);
 #endif
 }
 
@@ -138,14 +138,14 @@ static ZEND_GSHUTDOWN_FUNCTION(hprose) {
 /* compiled module information */
 zend_module_entry hprose_module_entry = {
     STANDARD_MODULE_HEADER,
-    HPROSE_MODULE_NAME,            /* extension name */
+    PHP_HPROSE_MODULE_NAME,        /* extension name */
     hprose_functions,              /* function list */
     ZEND_MINIT(hprose),            /* process startup */
     ZEND_MSHUTDOWN(hprose),        /* process shutdown */
     ZEND_RINIT(hprose),            /* request startup */
     ZEND_RSHUTDOWN(hprose),        /* request shutdown */
     ZEND_MINFO(hprose),            /* extension info */
-    HPROSE_VERSION,                /* extension version */
+    PHP_HPROSE_VERSION,            /* extension version */
     ZEND_MODULE_GLOBALS(hprose),   /* globals descriptor */
     ZEND_GINIT(hprose),            /* globals ctor */
     ZEND_GSHUTDOWN(hprose),        /* globals dtor */
