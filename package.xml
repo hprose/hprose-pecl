@@ -47,7 +47,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
 		<active>yes</active>
 	</lead>
 	<date>2015-03-24</date>
-	<time>10:52:21</time>
+	<time>12:31:21</time>
 	<version>
 		<release>1.0.0 alpha</release>
 		<api>1.0.0 alpha</api>
@@ -77,6 +77,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
 				<file role="src" name="hprose_raw_reader.h" />
 				<file role="src" name="hprose_reader.h" />
 				<file role="src" name="hprose_formatter.h" />
+				<file role="src" name="hprose_result_mode.h" />
 			</dir>
 			<dir name="src">
         			<file role="src" name="hprose_tags.c" />
@@ -86,6 +87,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
         			<file role="src" name="hprose_raw_reader.c" />
 				<file role="src" name="hprose_reader.c" />
 				<file role="src" name="hprose_formatter.c" />
+				<file role="src" name="hprose_result_mode.c" />
 			</dir>
 			<dir name="tests">
 				<file role="test" name="tags.phpt" />
@@ -95,6 +97,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
 				<file role="test" name="raw_reader.phpt" />
 				<file role="test" name="reader.phpt" />
 				<file role="test" name="formatter.phpt" />
+				<file role="test" name="result_mode.phpt" />
 			</dir>
 		</dir>
 	</contents>

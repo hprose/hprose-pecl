@@ -28,6 +28,7 @@ ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(raw_reader);
     HPROSE_STARTUP(reader);
     HPROSE_STARTUP(formatter);
+    HPROSE_STARTUP(result_mode);
     return SUCCESS;
 }
 
