@@ -31,6 +31,7 @@
 #include "hprose_writer.h"
 #include "hprose_raw_reader.h"
 #include "hprose_reader.h"
+#include "hprose_formatter.h"
 
 #include "ext/standard/info.h" /* for phpinfo() functions */
 

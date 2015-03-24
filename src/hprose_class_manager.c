@@ -13,7 +13,7 @@
  *                                                        *
  * hprose class manager for pecl source file.             *
  *                                                        *
- * LastModified: Mar 19, 2015                             *
+ * LastModified: Mar 24, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -102,7 +102,7 @@ ZEND_METHOD(hprose_class_manager, register) {
     hprose_class_manager_register(name, nlen, alias, alen);
 }
 
-ZEND_METHOD(hprose_class_manager, get_alias) {
+ZEND_METHOD(hprose_class_manager, getAlias) {
     char *name, *alias;
     length_t nlen;
     int32_t alen;
@@ -113,7 +113,7 @@ ZEND_METHOD(hprose_class_manager, get_alias) {
     RETURN_STRINGL_0(alias, alen);
 }
 
-ZEND_METHOD(hprose_class_manager, get_class) {
+ZEND_METHOD(hprose_class_manager, getClass) {
     char *name, *alias;
     int32_t nlen;
     length_t alen;
@@ -139,8 +139,8 @@ ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_class_manager_methods[] = {
     ZEND_ME(hprose_class_manager, register, hprose_class_manager_register_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
-    ZEND_MALIAS(hprose_class_manager, getAlias, get_alias, hprose_class_manager_get_alias_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
-    ZEND_MALIAS(hprose_class_manager, getClass, get_class, hprose_class_manager_get_class_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_class_manager, getAlias, hprose_class_manager_get_alias_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_class_manager, getClass, hprose_class_manager_get_class_arginfo, ZEND_ACC_STATIC | ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 

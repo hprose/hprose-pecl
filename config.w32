@@ -8,4 +8,5 @@ if (PHP_HPROSE != "no") {
     ADD_SOURCE("src/hprose_writer.c");
     ADD_SOURCE("src/hprose_raw_reader.c");
     ADD_SOURCE("src/hprose_reader.c");
+    ADD_SOURCE("src/hprose_formatter.c");
 }

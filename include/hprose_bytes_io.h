@@ -107,6 +107,17 @@ static zend_always_inline hprose_bytes_io *hprose_bytes_io_pcreate(const char *b
     return _this;
 }
 
+// only for read, don't call hprose_bytes_io_close or hprose_bytes_io_free on it, using efree to free it.
+static zend_always_inline hprose_bytes_io *hprose_bytes_io_create_readonly(const char *buf, int32_t len) {
+    hprose_bytes_io *_this = emalloc(sizeof(hprose_bytes_io));
+    _this->buf = (char *)buf;
+    _this->len = len;
+    _this->cap = len + 1;
+    _this->pos = 0;
+    _this->persistent = 0;
+    return _this;
+}
+
 #define hprose_bytes_io_create(buf, len) hprose_bytes_io_pcreate((buf), (len), 0)
 
 static zend_always_inline void hprose_bytes_io_close(hprose_bytes_io *_this) {

@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl source file.                           *
  *                                                        *
- * LastModified: Mar 23, 2015                             *
+ * LastModified: Mar 24, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -27,6 +27,7 @@ ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(writer);
     HPROSE_STARTUP(raw_reader);
     HPROSE_STARTUP(reader);
+    HPROSE_STARTUP(formatter);
     return SUCCESS;
 }
 
@@ -55,31 +56,6 @@ ZEND_MINFO_FUNCTION(hprose) {
     php_info_print_table_row(2, "hprose homepage", PHP_HPROSE_HOMEPAGE);
     php_info_print_table_end();
 }
-
-/* {{{ proto string hprose_serialize(mixed val, bool simple = false)
-   serialize php value to hprose format data  */
-ZEND_FUNCTION(hprose_serialize) {
-    zval *val;
-    zend_bool simple;
-
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|b", &val, &simple) == FAILURE) {
-        return;
-    }
-}
-/* }}} */
-
-/* {{{ proto mixed hprose_unserialize(string data, bool simple = false)
-    unserialize hprose format data to php value */
-ZEND_FUNCTION(hprose_unserialize) {
-    char *data;
-    int data_len;
-    zend_bool simple;
-
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &data, &data_len, &simple) == FAILURE) {
-        return;
-    }
-}
-/* }}} */
 
 ZEND_FUNCTION(hprose_info) {
     array_init(return_value);

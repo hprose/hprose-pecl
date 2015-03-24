@@ -456,7 +456,6 @@ static inline void hprose_reader_read_list_without_tag(hprose_reader *_this, zva
         zval val;
         hprose_reader_unserialize(_this, &val TSRMLS_CC);
         add_next_index_zval(return_value, &val);
-        zval_ptr_dtor(&val);
 #endif
     }
     hprose_bytes_io_skip(_this->stream, 1);
