@@ -365,11 +365,15 @@ zend_class_entry *get_hprose_##type_name##_ce() {   \
 \**********************************************************/
 
 #if PHP_MAJOR_VERSION < 7
+#define ZVAL_STRINGL_0(v, s, l) ZVAL_STRINGL(v, s, l, 0)
+#define ZVAL_STRINGL_1(v, s, l) ZVAL_STRINGL(v, s, l, 1)
 #define RETVAL_STRINGL_0(s, l) RETVAL_STRINGL(s, l, 0)
 #define RETVAL_STRINGL_1(s, l) RETVAL_STRINGL(s, l, 1)
 #define RETURN_STRINGL_0(s, l) RETURN_STRINGL(s, l, 0)
 #define RETURN_STRINGL_1(s, l) RETURN_STRINGL(s, l, 1)
 #else  /* PHP_MAJOR_VERSION < 7 */
+#define ZVAL_STRINGL_0(v, s, l) ZVAL_STRINGL(v, s, l); efree(s);
+#define ZVAL_STRINGL_1(v, s, l) ZVAL_STRINGL(v, s, l)
 #define RETVAL_STRINGL_0(s, l) RETVAL_STRINGL(s, l); efree(s);
 #define RETVAL_STRINGL_1(s, l) RETVAL_STRINGL(s, l)
 #define RETURN_STRINGL_0(s, l) RETVAL_STRINGL_0(s, l); return;
