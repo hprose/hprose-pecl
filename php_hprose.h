@@ -34,6 +34,7 @@
 #include "hprose_formatter.h"
 #include "hprose_result_mode.h"
 #include "hprose_filter.h"
+#include "hprose_client.h"
 
 #include "ext/standard/info.h" /* for phpinfo() functions */
 

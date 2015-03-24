@@ -11,4 +11,5 @@ if (PHP_HPROSE != "no") {
     ADD_SOURCE("src/hprose_formatter.c");
     ADD_SOURCE("src/hprose_result_mode.c");
     ADD_SOURCE("src/hprose_filter.c");
+    ADD_SOURCE("src/hprose_client.c");
 }

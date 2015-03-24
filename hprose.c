@@ -30,6 +30,8 @@ ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(formatter);
     HPROSE_STARTUP(result_mode);
     HPROSE_STARTUP(filter);
+    HPROSE_STARTUP(proxy);
+    HPROSE_STARTUP(client);
     return SUCCESS;
 }
 
