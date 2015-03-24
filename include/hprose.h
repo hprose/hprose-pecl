@@ -1114,7 +1114,7 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
 #define method_invoke(obj, name, return_value, params_format, ...) __function_invoke(get_fcall_info_cache(obj, name), obj, return_value TSRMLS_CC, params_format, __VA_ARGS__)
 #define method_invoke_args(obj, name, return_value, param_array) __function_invoke_args(get_fcall_info_cache(obj, name), obj, return_value, param_array TSRMLS_CC)
 
-static zend_always_inline zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *return_value TSRMLS_DC, const char *params_format, ...) {
+static zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *return_value TSRMLS_DC, const char *params_format, ...) {
     zend_function *constructor;
     zend_class_entry *entry;
 #if PHP_MAJOR_VERSION < 7
