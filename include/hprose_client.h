@@ -32,7 +32,7 @@ HPROSE_STARTUP_FUNCTION(proxy);
 HPROSE_STARTUP_FUNCTION(client);
 
 typedef struct _hprose_client {
-    struct _hprose_client *client;
+    zval *client;
     char *ns;
     char *url;
     zend_bool simple;
@@ -40,7 +40,7 @@ typedef struct _hprose_client {
 } hprose_client;
 
 typedef struct {
-    hprose_client *client;
+    zval *client;
     char *ns;
 } hprose_proxy;
 
