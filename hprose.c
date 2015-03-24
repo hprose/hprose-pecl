@@ -29,6 +29,7 @@ ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(reader);
     HPROSE_STARTUP(formatter);
     HPROSE_STARTUP(result_mode);
+    HPROSE_STARTUP(filter);
     return SUCCESS;
 }
 

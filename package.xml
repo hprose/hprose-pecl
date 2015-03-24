@@ -78,6 +78,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
 				<file role="src" name="hprose_reader.h" />
 				<file role="src" name="hprose_formatter.h" />
 				<file role="src" name="hprose_result_mode.h" />
+				<file role="src" name="hprose_filter.h" />
 			</dir>
 			<dir name="src">
         			<file role="src" name="hprose_tags.c" />
@@ -88,6 +89,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
 				<file role="src" name="hprose_reader.c" />
 				<file role="src" name="hprose_formatter.c" />
 				<file role="src" name="hprose_result_mode.c" />
+				<file role="src" name="hprose_filter.c" />
 			</dir>
 			<dir name="tests">
 				<file role="test" name="tags.phpt" />

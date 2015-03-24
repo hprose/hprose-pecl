@@ -252,19 +252,30 @@ static zend_object_value php_hprose_##type_name##_new(      \
 }                                                                           \
 
 #if PHP_API_VERSION < 20090626
+
+#define HPROSE_REGISTER_INTERFACE(ns, name, type_name)                          \
+    zend_class_entry ce;                                                        \
+    INIT_CLASS_ENTRY(ce, ns name, hprose_##type_name##_methods)                 \
+    hprose_##type_name##_ce = zend_register_internal_interface(&ce TSRMLS_CC);  \
+
 #define HPROSE_REGISTER_CLASS_EX(ns, name, type_name, parent_ce, parent_name)                               \
     zend_class_entry ce;                                                                                    \
     INIT_CLASS_ENTRY(ce, ns name, hprose_##type_name##_methods)                                             \
     hprose_##type_name##_ce = zend_register_internal_class_ex(&ce, parent_ce, parent_name TSRMLS_CC);       \
 
 #else /* PHP_API_VERSION < 20090626 */
+
+#define HPROSE_REGISTER_INTERFACE(ns, name, type_name)                          \
+    zend_class_entry ce;                                                        \
+    INIT_CLASS_ENTRY(ce, ns name, hprose_##type_name##_methods)                 \
+    hprose_##type_name##_ce = zend_register_internal_interface(&ce TSRMLS_CC);  \
+    zend_register_class_alias(ns "\\" name, hprose_##type_name##_ce);           \
+
 #define HPROSE_REGISTER_CLASS_EX(ns, name, type_name, parent_ce, parent_name)                               \
     zend_class_entry ce;                                                                                    \
     INIT_CLASS_ENTRY(ce, ns name, hprose_##type_name##_methods)                                             \
     hprose_##type_name##_ce = zend_register_internal_class_ex(&ce, parent_ce, parent_name TSRMLS_CC);       \
     zend_register_class_alias(ns "\\" name, hprose_##type_name##_ce);                                       \
-
-
 
 #endif /* PHP_API_VERSION < 20090626 */
 
@@ -309,11 +320,17 @@ static zend_object *php_hprose_##type_name##_new(zend_class_entry *ce) {        
     return &intern->std;                                    \
 }                                                           \
 
-#define HPROSE_REGISTER_CLASS_EX(ns, name, type_name, parent_ce, parent_name)                                \
-    zend_class_entry ce;                                                                                     \
-    INIT_NS_CLASS_ENTRY(ce, ns, name, hprose_##type_name##_methods)                                          \
-    hprose_##type_name##_ce = zend_register_internal_class_ex(&ce, parent_ce);                               \
-    zend_register_class_alias(ns name, hprose_##type_name##_ce);                                             \
+#define HPROSE_REGISTER_INTERFACE(ns, name, type_name)                  \
+    zend_class_entry ce;                                                \
+    INIT_NS_CLASS_ENTRY(ce, ns, name, hprose_##type_name##_methods)     \
+    hprose_##type_name##_ce = zend_register_internal_interface(&ce);    \
+    zend_register_class_alias(ns name, hprose_##type_name##_ce);        \
+
+#define HPROSE_REGISTER_CLASS_EX(ns, name, type_name, parent_ce, parent_name)   \
+    zend_class_entry ce;                                                        \
+    INIT_NS_CLASS_ENTRY(ce, ns, name, hprose_##type_name##_methods)             \
+    hprose_##type_name##_ce = zend_register_internal_class_ex(&ce, parent_ce);  \
+    zend_register_class_alias(ns name, hprose_##type_name##_ce);                \
 
 #define HPROSE_REGISTER_CLASS(ns, name, type_name) HPROSE_REGISTER_CLASS_EX(ns, name, type_name, NULL, NULL)
 

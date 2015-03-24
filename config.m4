@@ -13,7 +13,8 @@ if test "$PHP_HPROSE" != "no"; then
     src/hprose_raw_reader.c \
     src/hprose_reader.c \
     src/hprose_formatter.c \
-    src/hprose_result_mode.c"
+    src/hprose_result_mode.c \
+    src/hprose_filter.c"
   PHP_NEW_EXTENSION(hprose, hprose.c $HPROSE_SOURCES, $ext_shared)
   PHP_ADD_INCLUDE([$ext_srcdir/include])
   PHP_SUBST(HPROSE_SHARED_LIBADD)

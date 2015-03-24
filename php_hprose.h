@@ -33,6 +33,7 @@
 #include "hprose_reader.h"
 #include "hprose_formatter.h"
 #include "hprose_result_mode.h"
+#include "hprose_filter.h"
 
 #include "ext/standard/info.h" /* for phpinfo() functions */
 
