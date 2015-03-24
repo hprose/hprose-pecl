@@ -172,10 +172,11 @@ ZEND_METHOD(hprose_client, __construct) {
     intern->_this = emalloc(sizeof(hprose_client));
     intern->_this->client = getThis();
     intern->_this->ns = "";
-    intern->_this->url = url;
     intern->_this->simple = 0;
     hprose_make_zval(intern->_this->filters);
     array_init(intern->_this->filters);
+    
+    zend_update_property_stringl(get_hprose_client_ce(), getThis(), STR_ARG("url"), url, len TSRMLS_CC);    
 }
 
 ZEND_METHOD(hprose_client, __destruct) {
@@ -217,5 +218,6 @@ HPROSE_CLASS_ENTRY(client)
 HPROSE_STARTUP_FUNCTION(client) {
     HPROSE_REGISTER_CLASS_EX("Hprose", "Client", client, get_hprose_proxy_ce(), "HproseProxy");
     HPROSE_REGISTER_CLASS_HANDLERS(client);
+    zend_declare_property_stringl(hprose_client_ce, STR_ARG("url"), STR_ARG(""), ZEND_ACC_PROTECTED TSRMLS_CC);
     return SUCCESS;
 }

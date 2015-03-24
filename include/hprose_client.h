@@ -34,7 +34,6 @@ HPROSE_STARTUP_FUNCTION(client);
 typedef struct _hprose_client {
     zval *client;
     char *ns;
-    char *url;
     zend_bool simple;
     zval *filters;
 } hprose_client;
