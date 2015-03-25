@@ -111,12 +111,11 @@ static zend_always_inline void hprose_client_do_input(zval *client, zval *respon
                     break;
                 case HPROSE_TAG_ARGUMENT: {
                     zval _args;
-                    int32_t n, n1, n2, i;
+                    int32_t n, i;
                     hprose_reader_reset(reader);
                     hprose_reader_read_list(reader, &_args TSRMLS_CC);
-                    n1 = zend_hash_num_elements(Z_ARRVAL_P(args));
-                    n2 = zend_hash_num_elements(Z_ARRVAL(_args));
-                    n = (n1 < n2) ? n1 : n2;
+                    n = MIN(zend_hash_num_elements(Z_ARRVAL_P(args)),
+                            zend_hash_num_elements(Z_ARRVAL(_args)));
                     for (i = 0; i < n; ++i) {
                         zval *val = php_array_get(&_args, i);
                         add_index_zval(args, i, val);
@@ -135,14 +134,14 @@ static zend_always_inline void hprose_client_do_input(zval *client, zval *respon
                     hprose_reader_read_string(reader, &errstr TSRMLS_CC);
                     zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C),
                                             0 TSRMLS_CC,
-                        "%s", Z_STRVAL(errstr));
+                                            "%s", Z_STRVAL(errstr));
                     zval_dtor(&errstr);
                     break;
                 }
                 default:
                     zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C),
                                             0 TSRMLS_CC,
-                        "Wrong Response:\r\n%s", Z_STRVAL_P(response));
+                                            "Wrong Response:\r\n%s", Z_STRVAL_P(response));
                     break;
             }
         }
@@ -150,7 +149,11 @@ static zend_always_inline void hprose_client_do_input(zval *client, zval *respon
 }
 
 static zend_always_inline void hprose_client_sync_invoke(zval *client, char *name, int32_t len, zval *args, zend_bool byref, int mode, zend_bool simple, zval *return_value TSRMLS_DC) {
-
+    zval context;
+    object_init(&context);
+    
+    //zend_update_property_stringl(get_hprose_client_ce(), getThis(), STR_ARG("url"), url, len TSRMLS_CC);    
+    
 }
 
 static zend_always_inline void hprose_client_async_invoke(zval *client, char *name, int32_t len, zval *args, zend_bool byref, int mode, zend_bool simple, zval *callback TSRMLS_DC) {
@@ -299,7 +302,7 @@ ZEND_METHOD(hprose_client, __construct) {
     hprose_make_zval(intern->_this->filters);
     array_init(intern->_this->filters);
     
-    zend_update_property_stringl(get_hprose_client_ce(), getThis(), STR_ARG("url"), url, len TSRMLS_CC);    
+    zend_update_property_stringl(get_hprose_client_ce(), getThis(), ZEND_STRL("url"), url, len TSRMLS_CC);    
 }
 
 ZEND_METHOD(hprose_client, __destruct) {
@@ -342,7 +345,7 @@ HPROSE_CLASS_ENTRY(client)
 HPROSE_STARTUP_FUNCTION(client) {
     HPROSE_REGISTER_CLASS_EX("Hprose", "Client", client, get_hprose_proxy_ce(), "HproseProxy");
     HPROSE_REGISTER_CLASS_HANDLERS(client);
-    zend_declare_property_stringl(hprose_client_ce, STR_ARG("url"), STR_ARG(""), ZEND_ACC_PROTECTED TSRMLS_CC);
+    zend_declare_property_stringl(hprose_client_ce, ZEND_STRL("url"), ZEND_STRL(""), ZEND_ACC_PROTECTED TSRMLS_CC);
     hprose_client_ce->ce_flags |= ZEND_ACC_EXPLICIT_ABSTRACT_CLASS;
     return SUCCESS;
 }

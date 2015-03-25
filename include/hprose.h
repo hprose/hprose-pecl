@@ -100,8 +100,6 @@ typedef size_t length_t;
 #endif /* ZEND_DEBUG */
 #endif /* PHP_API_VERSION < 20090626 */
 
-#define STR_ARG(str) str, sizeof(str) - 1
-
 /**********************************************************\
 | int type definition                                      |
 \**********************************************************/
@@ -620,7 +618,7 @@ static zend_always_inline zend_bool __instanceof(zend_class_entry *ce, char *nam
 }
 
 // name must be a symbol
-#define instanceof(ce, name) __instanceof(ce, STR_ARG(#name) TSRMLS_CC)
+#define instanceof(ce, name) __instanceof(ce, ZEND_STRL(#name) TSRMLS_CC)
 
 #if PHP_MAJOR_VERSION < 7
 #define hprose_make_zval(val)      MAKE_STD_ZVAL(val)
@@ -774,7 +772,7 @@ static zend_always_inline zend_fcall_info_cache __get_fcall_info_cache(zval *obj
 }
 
 // name is a symbol
-#define get_fcall_info_cache(obj, name) __get_fcall_info_cache(obj, STR_ARG(#name) TSRMLS_CC)
+#define get_fcall_info_cache(obj, name) __get_fcall_info_cache(obj, ZEND_STRL(#name) TSRMLS_CC)
 
 static int _zval_array_to_c_array(zval **arg, zval ****params TSRMLS_DC) {
     *(*params)++ = arg;
@@ -1329,8 +1327,8 @@ static zend_class_entry *__create_php_object(char *class_name, int32_t len, zval
     return entry;
 }
 
-#define create_php_object_no_args(name, return_value) __create_php_object(STR_ARG(#name), return_value TSRMLS_CC, "")
-#define create_php_object(name, return_value, params_format, ...) __create_php_object(STR_ARG(#name), return_value TSRMLS_CC, params_format, __VA_ARGS__)
+#define create_php_object_no_args(name, return_value) __create_php_object(ZEND_STRL(#name), return_value TSRMLS_CC, "")
+#define create_php_object(name, return_value, params_format, ...) __create_php_object(ZEND_STRL(#name), return_value TSRMLS_CC, params_format, __VA_ARGS__)
 
 /**********************************************************/
 END_EXTERN_C()

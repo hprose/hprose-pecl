@@ -303,10 +303,10 @@ static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this
     _this->refer->handlers->set(_this->refer, val);
     method_invoke_no_args(val, getOffset, &result);
     if (Z_LVAL(result) == 0) {
-        method_invoke(val, format, &result, "s", STR_ARG("\\DYmd\\THis.u\\Z"));
+        method_invoke(val, format, &result, "s", ZEND_STRL("\\DYmd\\THis.u\\Z"));
     }
     else {
-        method_invoke(val, format, &result, "s", STR_ARG("\\DYmd\\THis.u;"));
+        method_invoke(val, format, &result, "s", ZEND_STRL("\\DYmd\\THis.u;"));
     }
     hprose_bytes_io_write(_this->stream, Z_STRVAL(result), Z_STRLEN(result));
     zval_dtor(&result);
