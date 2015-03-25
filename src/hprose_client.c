@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl source file.                    *
  *                                                        *
- * LastModified: Mar 24, 2015                             *
+ * LastModified: Mar 26, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -25,17 +25,14 @@
 #include "hprose_result_mode.h"
 #include "hprose_client.h"
 
-static zend_always_inline void hprose_client_do_output(zval *client, zval *name, zval *args, zend_bool byref, zend_bool *simple, zval *context, zval *return_value TSRMLS_DC) {
+static zend_always_inline void hprose_client_do_output(zval *client, zval *name, zval *args, zend_bool byref, zend_bool simple, zval *context, zval *return_value TSRMLS_DC) {
     hprose_client *_this = HPROSE_GET_OBJECT_P(client, client)->_this;
     hprose_bytes_io *stream = hprose_bytes_io_new();
     hprose_writer *writer;
     HashTable *ht;
     int32_t i;
-    if (simple) {
-        simple = &(_this->simple);
-    }
     hprose_bytes_io_write_char(stream, HPROSE_TAG_CALL);
-    writer = hprose_writer_create(stream, *simple);
+    writer = hprose_writer_create(stream, simple);
     hprose_writer_write_string(writer, name);
     if (zend_hash_num_elements(Z_ARRVAL_P(args)) > 0 || byref) {
         hprose_writer_reset(writer);
@@ -132,32 +129,100 @@ static zend_always_inline void hprose_client_do_input(zval *client, zval *respon
                     hprose_reader_reset(reader);
                     zval errstr;
                     hprose_reader_read_string(reader, &errstr TSRMLS_CC);
-                    zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C),
-                                            0 TSRMLS_CC,
+                    zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                             "%s", Z_STRVAL(errstr));
                     zval_dtor(&errstr);
-                    break;
+                    return;
                 }
                 default:
-                    zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C),
-                                            0 TSRMLS_CC,
+                    zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                             "Wrong Response:\r\n%s", Z_STRVAL_P(response));
-                    break;
+                    return;
             }
         }
     }
 }
 
 static zend_always_inline void hprose_client_sync_invoke(zval *client, char *name, int32_t len, zval *args, zend_bool byref, int mode, zend_bool simple, zval *return_value TSRMLS_DC) {
-    zval context;
+    zval context, request, response, _name, *userdata;
     object_init(&context);
-    
-    //zend_update_property_stringl(get_hprose_client_ce(), getThis(), STR_ARG("url"), url, len TSRMLS_CC);    
-    
+    hprose_make_zval(userdata);
+    add_property_zval_ex(&context, ZEND_STRS("client"), client TSRMLS_CC);
+    add_property_zval_ex(&context, ZEND_STRS("userdata"), userdata TSRMLS_CC);
+    ZVAL_STRINGL_1(&_name, name, len);
+    hprose_client_do_output(client, &_name, args, byref, simple, &context, &request TSRMLS_CC);
+    zval_dtor(&_name);
+    method_invoke(client, sendAndReceive, &response, "z", &request);
+    zval_dtor(&request);
+    hprose_client_do_input(client, &response, args, mode, &context, return_value TSRMLS_CC);
+    zval_dtor(&response);
+    hprose_zval_free(userdata);
+    zval_dtor(&context);
 }
 
 static zend_always_inline void hprose_client_async_invoke(zval *client, char *name, int32_t len, zval *args, zend_bool byref, int mode, zend_bool simple, zval *callback TSRMLS_DC) {
-    
+    zval *context, request, _name, *userdata, *use;
+    hprose_make_zval(context);
+    object_init(context);
+    hprose_make_zval(userdata);
+    add_property_zval_ex(context, ZEND_STRS("client"), client TSRMLS_CC);
+    add_property_zval_ex(context, ZEND_STRS("userdata"), userdata TSRMLS_CC);
+    ZVAL_STRINGL_1(&_name, name, len);
+    hprose_client_do_output(client, &_name, args, byref, simple, context, &request TSRMLS_CC);
+    zval_dtor(&_name);
+    hprose_make_zval(use);
+    array_init(use);
+    add_next_index_zval(use, args);
+    add_next_index_zval(use, context);
+    add_next_index_zval(use, callback);
+    add_next_index_long(use, mode);
+    method_invoke(client, asyncSendAndReceive, NULL, "zz", &request, use);
+    zval_dtor(&request);
+}
+
+static zend_always_inline void hprose_client_send_and_receive_callback(zval *client, zval *response, zval *err, zval *use TSRMLS_DC) {
+    zval *args = php_array_get(use, 0);
+    zval *context = php_array_get(use, 1);
+    zval *callback = php_array_get(use, 2);
+    zend_fcall_info_cache fcc = _get_fcall_info_cache(callback TSRMLS_CC);
+    uint32_t n = fcc.function_handler->common.num_args;
+    zval *result;
+    hprose_make_zval(result);
+    ZVAL_NULL(result);
+    long mode;
+    php_array_get_long(use, 3, &mode);
+    if (n == 3) {
+        if (err == NULL) {
+            hprose_client_do_input(client, response, args, mode, context, result TSRMLS_CC);
+            if (EG(exception)) {
+#if PHP_MAJOR_VERSION < 7
+                err = EG(exception);
+                Z_ADDREF_P(err);
+                SEPARATE_ZVAL(&err);
+                zend_clear_exception(TSRMLS_C);
+#else
+                ZVAL_OBJ(err, EG(exception));
+                Z_ADDREF_P(err);
+                SEPARATE_ZVAL(err);
+                zend_clear_exception();
+#endif
+            }
+        }
+        callable_invoke(callback, NULL, "zzz", result, args, err);
+    }
+    else {
+        if (err != NULL) {
+            zend_throw_exception_object(err TSRMLS_CC);
+            return;
+        }
+        hprose_client_do_input(client, response, args, mode, context, result TSRMLS_CC);
+        switch (n) {
+            case 0: callable_invoke_no_args(callback, NULL);
+            case 1: callable_invoke(callback, NULL, "z", result);
+            case 2: callable_invoke(callback, NULL, "zz", result, args);
+        }
+    }
+    hprose_zval_free(result);
 }
 
 ZEND_METHOD(hprose_proxy, __construct) {
@@ -170,8 +235,7 @@ ZEND_METHOD(hprose_proxy, __construct) {
         return;
     }
     if (!client || !instanceof(ce, HproseClient)) {
-        zend_throw_exception(zend_exception_get_default(TSRMLS_C),
-                             "client must be an instance of HproseClient.", 0 TSRMLS_CC);
+        zend_throw_exception(NULL, "client must be an instance of HproseClient.", 0 TSRMLS_CC);
         return;
     }
     intern->_this = emalloc(sizeof(hprose_proxy));
@@ -314,6 +378,41 @@ ZEND_METHOD(hprose_client, __destruct) {
     }
 }
 
+ZEND_METHOD(hprose_client, sendAndReceive) {
+    zend_throw_exception(NULL, "This client can't support synchronous invoke.", 0 TSRMLS_CC);
+}
+
+ZEND_METHOD(hprose_client, asyncSendAndReceive) {
+    zend_throw_exception(NULL, "This client can't support asynchronous invoke.", 0 TSRMLS_CC);
+}
+
+ZEND_METHOD(hprose_client, sendAndReceiveCallback) {
+    zval *response, *err, *use;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zoa", &response, &err, &use) == FAILURE) {
+        return;
+    }
+    hprose_client_send_and_receive_callback(getThis(), response, err, use TSRMLS_CC);
+}
+
+ZEND_METHOD(hprose_client, useService) {
+    char *url = "", *ns = "";
+    length_t url_len = 0, ns_len = 0;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ss", &url, &url_len, &ns, &ns_len) == FAILURE) {
+        return;
+    }
+    if (url && url_len > 0) {
+        zend_update_property_stringl(get_hprose_client_ce(), getThis(), ZEND_STRL("url"), url, url_len TSRMLS_CC);
+    }
+    if (ns && ns_len > 0) {
+        ns = estrndup(ns, ns_len + 1);
+        ns[ns_len] = '_';
+        create_php_object(HproseProxy, return_value, "zs", getThis(), ns, ns_len + 1);
+        efree(ns);
+    }
+    else {
+        create_php_object(HproseProxy, return_value, "z", getThis());
+    }
+}
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_client_construct_arginfo, 0, 0, 0)
     ZEND_ARG_INFO(0, url)
@@ -322,9 +421,33 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(hprose_client_void_arginfo, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_client_send_and_receive_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, request)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_client_async_send_and_receive_arginfo, 0, 0, 2)
+    ZEND_ARG_INFO(0, request)
+    ZEND_ARG_ARRAY_INFO(0, use, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_client_send_and_receive_callback_arginfo, 0, 0, 3)
+    ZEND_ARG_INFO(0, response)
+    ZEND_ARG_OBJ_INFO(0, err, Exception, 1)
+    ZEND_ARG_ARRAY_INFO(0, use, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_client_use_service_arginfo, 0, 0, 0)
+    ZEND_ARG_INFO(0, url)
+    ZEND_ARG_INFO(0, ns)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry hprose_client_methods[] = {
     ZEND_ME(hprose_client, __construct, hprose_client_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     ZEND_ME(hprose_client, __destruct, hprose_client_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
+    ZEND_ME(hprose_client, sendAndReceive, hprose_client_send_and_receive_arginfo, ZEND_ACC_PROTECTED)
+    ZEND_ME(hprose_client, asyncSendAndReceive, hprose_client_async_send_and_receive_arginfo, ZEND_ACC_PROTECTED)
+    ZEND_ME(hprose_client, sendAndReceiveCallback, hprose_client_send_and_receive_callback_arginfo, ZEND_ACC_PROTECTED)
+    ZEND_ME(hprose_client, useService, hprose_client_use_service_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 

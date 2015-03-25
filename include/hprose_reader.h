@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 24, 2015                             *
+ * LastModified: Mar 26, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -52,7 +52,7 @@ typedef struct {
 static void hprose_fake_reader_refer_set(void *_this, zval *val) {}
 static zval * hprose_fake_reader_refer_read(void *_this, int32_t index) {
     TSRMLS_FETCH();
-    zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+    zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
             "Unexpected serialize tag '%c' in stream", HPROSE_TAG_REF);
     return NULL;
 }
@@ -674,7 +674,7 @@ static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_
         }
         case HPROSE_TAG_ERROR: {
             _hprose_reader_read_string(_this, return_value TSRMLS_CC);
-            zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+            zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                     "%s", Z_STRVAL_P(return_value));
             return;
         }

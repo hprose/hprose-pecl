@@ -13,7 +13,7 @@
  *                                                        *
  * hprose writer for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 23, 2015                             *
+ * LastModified: Mar 26, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -643,8 +643,7 @@ static inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRML
             break;
         }
         default:
-            zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C),
-                    0 TSRMLS_CC,
+            zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                     "Not support to serialize this data: %d", Z_TYPE_P(val));
             break;
     }

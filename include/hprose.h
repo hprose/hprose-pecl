@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl header file.                           *
  *                                                        *
- * LastModified: Mar 23, 2015                             *
+ * LastModified: Mar 26, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -23,6 +23,9 @@
 
 #include "php.h"
 #include "zend_exceptions.h"
+#if PHP_API_VERSION >= 20090626
+#include "zend_closures.h"
+#endif
 
 BEGIN_EXTERN_C()
 
@@ -647,7 +650,7 @@ static zend_always_inline zend_fcall_info_cache __get_fcall_info_cache(zval *obj
         if ((fptr = zend_hash_str_find_ptr(EG(function_table), nsname, len)) == NULL) {
     #endif
             efree(lcname);
-            zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+            zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                     "Function %s() does not exist", name);
             return fcc;
         }
@@ -665,6 +668,22 @@ static zend_always_inline zend_fcall_info_cache __get_fcall_info_cache(zval *obj
         fcc.object = NULL;
 #endif
     }
+#if PHP_API_VERSION >= 20090626
+    else if (obj && Z_TYPE_P(obj) == IS_OBJECT &&
+             instanceof_function(Z_OBJCE_P(obj), zend_ce_closure TSRMLS_CC) &&
+             (fptr = (zend_function*)zend_get_closure_method_def(obj TSRMLS_CC)) != NULL) {
+        Z_ADDREF_P(obj);
+        fcc.function_handler = fptr;
+        fcc.calling_scope = EG(scope);
+#if PHP_MAJOR_VERSION < 7
+        fcc.called_scope = NULL;
+        fcc.object_ptr = NULL;
+#else
+        fcc.called_scope = NULL;
+        fcc.object = NULL;
+#endif
+    }
+#endif
     else {
         int32_t flen, clen;
         zend_class_entry *ce;
@@ -696,14 +715,14 @@ static zend_always_inline zend_fcall_info_cache __get_fcall_info_cache(zval *obj
             obj = NULL;
         }
         else if (Z_TYPE_P(obj) != IS_OBJECT) {
-            zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+            zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                     "The parameter obj is expected to be either a string or an object");
             return fcc;
         }
         if (obj == NULL) {
 #if PHP_MAJOR_VERSION < 7
             if (zend_lookup_class(cname, clen, &pce TSRMLS_CC) == FAILURE) {
-                zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+                zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                         "Class %s does not exist", cname);
                 efree(cname);
                 return fcc;
@@ -712,7 +731,7 @@ static zend_always_inline zend_fcall_info_cache __get_fcall_info_cache(zval *obj
             ce = *pce;
 #else
             if ((ce = zend_lookup_class(cname)) == NULL) {
-                zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+                zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                         "Class %s does not exist", cname->val);
                 zend_string_release(cname);
                 return fcc;
@@ -732,7 +751,7 @@ static zend_always_inline zend_fcall_info_cache __get_fcall_info_cache(zval *obj
         if ((fptr = zend_hash_str_find_ptr(&ce->function_table, lcname, flen)) == NULL) {
 #endif
             efree(lcname);
-            zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+            zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                     "Method %s::%s() does not exist", ce->name, fname);
             return fcc;
         }
@@ -769,6 +788,18 @@ static zend_always_inline zend_fcall_info_cache __get_fcall_info_cache(zval *obj
     efree(lcname);
     fcc.initialized = 1;
     return fcc;
+}
+
+static zend_always_inline zend_fcall_info_cache _get_fcall_info_cache(zval *callable TSRMLS_DC) {
+    switch (Z_TYPE_P(callable)) {
+        case IS_ARRAY: {
+            zval *obj = php_array_get(callable, 0);
+            zval *name = php_array_get(callable, 1);
+            return __get_fcall_info_cache(obj, Z_STRVAL_P(name), Z_STRLEN_P(name) TSRMLS_CC);
+        }
+        case IS_STRING: return __get_fcall_info_cache(NULL, Z_STRVAL_P(callable), Z_STRLEN_P(callable) TSRMLS_CC);
+        default: return __get_fcall_info_cache(callable, "", 0 TSRMLS_CC);
+    }
 }
 
 // name is a symbol
@@ -854,7 +885,7 @@ static zend_always_inline void __function_invoke_args(zend_fcall_info_cache fcc,
     }
 
     if (result == FAILURE) {
-        zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+        zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                 "Invocation of function %s() failed",
                                 fcc.function_handler->common.function_name);
         return;
@@ -880,7 +911,7 @@ static zend_always_inline void __function_invoke_args(zend_fcall_info_cache fcc,
 
 
     if (result == FAILURE) {
-        zend_throw_exception_ex(zend_exception_get_default(), 0,
+        zend_throw_exception_ex(NULL, 0,
                                 "Invocation of function %s() failed",
                                 fcc.function_handler->common.function_name->val);
         return;
@@ -957,7 +988,7 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
                 }
                 default:
                     zend_throw_exception_ex(
-                            zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+                            NULL, 0 TSRMLS_CC,
                             "Unsupported type:%c in function_invoke",
                             params_format[i]);
                     return;
@@ -1002,7 +1033,7 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
                 }
                 default:
                     zend_throw_exception_ex(
-                            zend_exception_get_default(), 0,
+                            NULL, 0,
                             "Unsupported type:%c in function_invoke",
                             params_format[i]);
                     return;
@@ -1066,7 +1097,7 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
     }
 
     if (result == FAILURE) {
-        zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+        zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                 "Invocation of function %s() failed",
                                 fcc.function_handler->common.function_name);
         return;
@@ -1092,7 +1123,7 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
     }
 
     if (result == FAILURE) {
-        zend_throw_exception_ex(zend_exception_get_default(TSRMLS_C), 0,
+        zend_throw_exception_ex(NULL, 0,
                                 "Invocation of function %s() failed",
                                 fcc.function_handler->common.function_name->val);
         return;
@@ -1115,6 +1146,9 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
 #define method_invoke_no_args(obj, name, return_value) __function_invoke(get_fcall_info_cache(obj, name), obj, return_value TSRMLS_CC, "")
 #define method_invoke(obj, name, return_value, params_format, ...) __function_invoke(get_fcall_info_cache(obj, name), obj, return_value TSRMLS_CC, params_format, __VA_ARGS__)
 #define method_invoke_args(obj, name, return_value, param_array) __function_invoke_args(get_fcall_info_cache(obj, name), obj, return_value, param_array TSRMLS_CC)
+#define callable_invoke_no_args(callable, return_value) __function_invoke(_get_fcall_info_cache(callable TSRMLS_CC), NULL, return_value TSRMLS_CC, "")
+#define callable_invoke(callable, return_value, params_format, ...) __function_invoke(_get_fcall_info_cache(callable TSRMLS_CC), NULL, return_value TSRMLS_CC, params_format, __VA_ARGS__)
+#define callable_invoke_args(callable, return_value, param_array) __function_invoke_args(_get_fcall_info_cache(callable TSRMLS_CC), NULL, return_value, param_array TSRMLS_CC)
 
 static zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *return_value TSRMLS_DC, const char *params_format, ...) {
     zend_function *constructor;
@@ -1180,7 +1214,7 @@ static zend_class_entry *__create_php_object(char *class_name, int32_t len, zval
                 }
                 default:
                     zend_throw_exception_ex(
-                            zend_exception_get_default(TSRMLS_C), 0 TSRMLS_CC,
+                            NULL, 0 TSRMLS_CC,
                             "Unsupported type:%c in create_php_object",
                             params_format[i]);
                     return NULL;
@@ -1225,7 +1259,7 @@ static zend_class_entry *__create_php_object(char *class_name, int32_t len, zval
                 }
                 default:
                     zend_throw_exception_ex(
-                            zend_exception_get_default(), 0,
+                            NULL, 0,
                             "Unsupported type:%c in create_php_object",
                             params_format[i]);
                     return NULL;

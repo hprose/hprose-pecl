@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl header file.                  *
  *                                                        *
- * LastModified: Mar 21, 2015                             *
+ * LastModified: Mar 26, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -240,7 +240,7 @@ static zend_always_inline char * _hprose_bytes_io_read_pstring(hprose_bytes_io *
                 if (i < n) break;
                 /* fall through */
             default:
-                zend_throw_exception(zend_exception_get_default(TSRMLS_C), "bad utf-8 encoding", 0 TSRMLS_CC);
+                zend_throw_exception(NULL, "bad utf-8 encoding", 0 TSRMLS_CC);
                 break;
         }
     }
@@ -455,7 +455,7 @@ static zend_always_inline void _hprose_bytes_io_read_string_to(hprose_bytes_io *
                 if (i < n) break;
                 /* fall through */
             default:
-                zend_throw_exception(zend_exception_get_default(TSRMLS_C), "bad utf-8 encoding", 0 TSRMLS_CC);
+                zend_throw_exception(NULL, "bad utf-8 encoding", 0 TSRMLS_CC);
                 break;
         }
     }
