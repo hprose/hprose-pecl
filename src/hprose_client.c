@@ -255,11 +255,7 @@ ZEND_METHOD(hprose_proxy, __construct) {
         return;
     }
     intern->_this = emalloc(sizeof(hprose_proxy));
-#if PHP_MAJOR_VERSION < 7
     Z_ADDREF_P(client);
-#else
-    Z_TRY_ADDREF_P(client);
-#endif
     intern->_this->client = client;
     intern->_this->ns = ns;
 }
@@ -268,9 +264,9 @@ ZEND_METHOD(hprose_proxy, __destruct) {
     HPROSE_OBJECT_INTERN(proxy);
     if (intern->_this) {
 #if PHP_MAJOR_VERSION < 7
-    zval_ptr_dtor(&(intern->_this->client));
+        zval_ptr_dtor(&(intern->_this->client));
 #else
-    zval_ptr_dtor(intern->_this->client);
+        zval_ptr_dtor(intern->_this->client);
 #endif
         efree(intern->_this);
         intern->_this = NULL;
@@ -540,7 +536,7 @@ ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_client_async_send_and_receive_arginfo, 0, 0, 2)
     ZEND_ARG_INFO(0, request)
-    ZEND_ARG_ARRAY_INFO(0, use, 0)
+    ZEND_ARG_INFO(0, use)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_client_send_and_receive_callback_arginfo, 0, 0, 3)
