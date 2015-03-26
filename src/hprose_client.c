@@ -107,31 +107,33 @@ static zend_always_inline void hprose_client_do_input(zval *client, zval *respon
                     }
                     break;
                 case HPROSE_TAG_ARGUMENT: {
-                    zval _args;
+                    zval *_args;
+                    hprose_make_zval(_args);
                     int32_t n, i;
                     hprose_reader_reset(reader);
-                    hprose_reader_read_list(reader, &_args TSRMLS_CC);
+                    hprose_reader_read_list(reader, _args TSRMLS_CC);
                     n = MIN(zend_hash_num_elements(Z_ARRVAL_P(args)),
-                            zend_hash_num_elements(Z_ARRVAL(_args)));
+                            zend_hash_num_elements(Z_ARRVAL_P(_args)));
                     for (i = 0; i < n; ++i) {
-                        zval *val = php_array_get(&_args, i);
-                        add_index_zval(args, i, val);
+                        zval *val = php_array_get(_args, i);
 #if PHP_MAJOR_VERSION < 7
                         Z_ADDREF_P(val);
 #else
                         Z_TRY_ADDREF_P(val);
-#endif
+#endif                        
+                        add_index_zval(args, i, val);
                     }
-                    zval_dtor(&_args);
+                    hprose_zval_free(_args);
                     break;
                 }
                 case HPROSE_TAG_ERROR: {
                     hprose_reader_reset(reader);
-                    zval errstr;
-                    hprose_reader_read_string(reader, &errstr TSRMLS_CC);
+                    zval *errstr;
+                    hprose_make_zval(errstr);
+                    hprose_reader_read_string(reader, errstr TSRMLS_CC);
                     zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
-                                            "%s", Z_STRVAL(errstr));
-                    zval_dtor(&errstr);
+                                            "%s", Z_STRVAL_P(errstr));
+                    hprose_zval_free(errstr);
                     return;
                 }
                 default:
@@ -144,40 +146,54 @@ static zend_always_inline void hprose_client_do_input(zval *client, zval *respon
 }
 
 static zend_always_inline void hprose_client_sync_invoke(zval *client, char *name, int32_t len, zval *args, zend_bool byref, int mode, zend_bool simple, zval *return_value TSRMLS_DC) {
-    zval context, request, response, _name, *userdata;
-    object_init(&context);
+    zval *context, *request, *response, *_name, *userdata;
+    hprose_make_zval(context);
+    hprose_make_zval(request);
+    hprose_make_zval(response);
+    hprose_make_zval(_name);
     hprose_make_zval(userdata);
-    add_property_zval_ex(&context, ZEND_STRS("client"), client TSRMLS_CC);
-    add_property_zval_ex(&context, ZEND_STRS("userdata"), userdata TSRMLS_CC);
-    ZVAL_STRINGL_1(&_name, name, len);
-    hprose_client_do_output(client, &_name, args, byref, simple, &context, &request TSRMLS_CC);
-    zval_dtor(&_name);
-    method_invoke(client, sendAndReceive, &response, "z", &request);
-    zval_dtor(&request);
-    hprose_client_do_input(client, &response, args, mode, &context, return_value TSRMLS_CC);
-    zval_dtor(&response);
-    hprose_zval_free(userdata);
-    zval_dtor(&context);
+    object_init(context);
+    object_init(userdata);
+    Z_ADDREF_P(client);
+    add_property_zval_ex(context, ZEND_STRS("client"), client TSRMLS_CC);
+    add_property_zval_ex(context, ZEND_STRS("userdata"), userdata TSRMLS_CC);
+    ZVAL_STRINGL_1(_name, name, len);
+    hprose_client_do_output(client, _name, args, byref, simple, context, request TSRMLS_CC);
+    hprose_zval_free(_name);
+    method_invoke(client, sendAndReceive, response, "z", request);
+    hprose_zval_free(request);
+    hprose_client_do_input(client, response, args, mode, context, return_value TSRMLS_CC);
+    hprose_zval_free(response);
+    hprose_zval_free(context);
 }
 
 static zend_always_inline void hprose_client_async_invoke(zval *client, char *name, int32_t len, zval *args, zend_bool byref, int mode, zend_bool simple, zval *callback TSRMLS_DC) {
-    zval *context, request, _name, *userdata, *use;
+    zval *context, *request, *_name, *userdata, *use;
     hprose_make_zval(context);
-    object_init(context);
+    hprose_make_zval(request);
+    hprose_make_zval(_name);
     hprose_make_zval(userdata);
+    hprose_make_zval(use);
+    object_init(context);
+    object_init(userdata);
+    array_init(use);
+    Z_ADDREF_P(client);
     add_property_zval_ex(context, ZEND_STRS("client"), client TSRMLS_CC);
     add_property_zval_ex(context, ZEND_STRS("userdata"), userdata TSRMLS_CC);
-    ZVAL_STRINGL_1(&_name, name, len);
-    hprose_client_do_output(client, &_name, args, byref, simple, context, &request TSRMLS_CC);
-    zval_dtor(&_name);
-    hprose_make_zval(use);
-    array_init(use);
+    ZVAL_STRINGL_1(_name, name, len);
+    hprose_client_do_output(client, _name, args, byref, simple, context, request TSRMLS_CC);
+    hprose_zval_free(_name);
+    Z_ADDREF_P(args);
+    Z_ADDREF_P(context);
+    Z_ADDREF_P(callback);
     add_next_index_zval(use, args);
     add_next_index_zval(use, context);
     add_next_index_zval(use, callback);
     add_next_index_long(use, mode);
-    method_invoke(client, asyncSendAndReceive, NULL, "zz", &request, use);
-    zval_dtor(&request);
+    method_invoke(client, asyncSendAndReceive, NULL, "zz", request, use);
+    hprose_zval_free(request);
+    hprose_zval_free(context);
+    hprose_zval_free(use);
 }
 
 static zend_always_inline void hprose_client_send_and_receive_callback(zval *client, zval *response, zval *err, zval *use TSRMLS_DC) {
@@ -387,7 +403,7 @@ ZEND_METHOD(hprose_client, asyncSendAndReceive) {
 
 ZEND_METHOD(hprose_client, sendAndReceiveCallback) {
     zval *response, *err, *use;
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zoa", &response, &err, &use) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz!a", &response, &err, &use) == FAILURE) {
         return;
     }
     hprose_client_send_and_receive_callback(getThis(), response, err, use TSRMLS_CC);
