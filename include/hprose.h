@@ -633,7 +633,7 @@ static zend_always_inline zend_bool __instanceof(zend_class_entry *ce, char *nam
 
 static zend_always_inline zend_fcall_info_cache __get_fcall_info_cache(zval *obj, char *name, int32_t len TSRMLS_DC) {
     zend_fcall_info_cache fcc = {0};
-    char *fname, *lcname;
+    char *fname, *lcname = NULL;
     zend_function *fptr;
 
     if (obj == NULL && (fname = strstr(name, "::")) == NULL) {
@@ -785,7 +785,9 @@ static zend_always_inline zend_fcall_info_cache __get_fcall_info_cache(zval *obj
 #endif
         }
     }
-    efree(lcname);
+    if (lcname) {
+        efree(lcname);
+    }
     fcc.initialized = 1;
     return fcc;
 }
@@ -983,7 +985,13 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
                 }
                 case 'z': {
                     zval *v = va_arg(ap, zval *);
-                    *params[i] = v;
+                    if (v) {
+                        *params[i] = v;
+                    }
+                    else {
+                        MAKE_STD_ZVAL(*params[i]);
+                        ZVAL_NULL(*params[i]);
+                    }
                     break;
                 }
                 default:
@@ -1028,7 +1036,12 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
                 }
                 case 'z': {
                     zval *v = va_arg(ap, zval *);
-                    ZVAL_COPY(&params[i], v);
+                    if (v) {
+                        ZVAL_COPY(&params[i], v);
+                    }
+                    else {
+                        ZVAL_NULL(&params[i]);
+                    }
                     break;
                 }
                 default:
@@ -1209,7 +1222,13 @@ static zend_class_entry *__create_php_object(char *class_name, int32_t len, zval
                 }
                 case 'z': {
                     zval *v = va_arg(ap, zval *);
-                    *params[i] = v;
+                    if (v) {
+                        *params[i] = v;
+                    }
+                    else {
+                        MAKE_STD_ZVAL(*params[i]);
+                        ZVAL_NULL(*params[i]);
+                    }
                     break;
                 }
                 default:
@@ -1254,7 +1273,12 @@ static zend_class_entry *__create_php_object(char *class_name, int32_t len, zval
                 }
                 case 'z': {
                     zval *v = va_arg(ap, zval *);
-                    ZVAL_COPY(&params[i], v);
+                    if (v) {
+                        ZVAL_COPY(&params[i], v);
+                    }
+                    else {
+                        ZVAL_NULL(&params[i]);
+                    }
                     break;
                 }
                 default:
