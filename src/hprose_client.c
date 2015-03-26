@@ -142,6 +142,8 @@ static zend_always_inline void hprose_client_do_input(zval *client, zval *respon
                     return;
             }
         }
+        hprose_reader_free(reader);
+        efree(stream);
     }
 }
 
@@ -233,9 +235,9 @@ static zend_always_inline void hprose_client_send_and_receive_callback(zval *cli
         }
         hprose_client_do_input(client, response, args, mode, context, result TSRMLS_CC);
         switch (n) {
-            case 0: callable_invoke_no_args(callback, NULL);
-            case 1: callable_invoke(callback, NULL, "z", result);
-            case 2: callable_invoke(callback, NULL, "zz", result, args);
+            case 0: callable_invoke_no_args(callback, NULL); break;
+            case 1: callable_invoke(callback, NULL, "z", result); break;
+            case 2: callable_invoke(callback, NULL, "zz", result, args); break;
         }
     }
     hprose_zval_free(result);
