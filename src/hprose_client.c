@@ -365,7 +365,6 @@ ZEND_METHOD(hprose_client, __construct) {
     intern->_this->simple = 0;
     hprose_make_zval(intern->_this->filters);
     array_init(intern->_this->filters);
-    
     zend_update_property_stringl(get_hprose_client_ce(), getThis(), ZEND_STRL("url"), url, len TSRMLS_CC);    
 }
 
@@ -414,6 +413,104 @@ ZEND_METHOD(hprose_client, useService) {
     }
 }
 
+ZEND_METHOD(hprose_client, invoke) {
+    HPROSE_THIS(client);
+    char *name;
+    length_t nlen;
+    zval *args = NULL, *callback = NULL;
+    zend_bool byref = 0;
+    zend_bool simple = _this->simple;
+    zend_bool null_args = 0;
+    long mode = HPROSE_RESULT_MODE_NORMAL;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|ablbz!", &name, &nlen, &args, &byref, &mode, &simple, &callback) == FAILURE) {
+        return;
+    }
+    if (args == NULL) {
+        hprose_make_zval(args);
+        array_init(args);
+        Z_ADDREF_P(args);
+        null_args = 1;
+    }
+#if PHP_API_VERSION < 20090626
+    if (callback && zend_is_callable(callback, 0, NULL)) {
+#else
+    if (callback && zend_is_callable(callback, 0, NULL TSRMLS_CC)) {
+#endif
+        hprose_client_async_invoke(getThis(), name, nlen, args, byref, mode, simple, callback TSRMLS_CC);
+    }
+    else {
+        hprose_client_sync_invoke(getThis(), name, nlen, args, byref, mode, simple, return_value TSRMLS_CC);        
+    }
+    if (null_args) {
+        hprose_zval_free(args);
+    }
+}
+
+ZEND_METHOD(hprose_client, getFilter) {
+    HPROSE_THIS(client);
+    if (zend_hash_num_elements(Z_ARRVAL_P(_this->filters))) {
+        zval *filter = php_array_get(_this->filters, 0);
+        RETURN_ZVAL(filter, 1, 0);
+    }
+    RETURN_NULL();
+}    
+
+ZEND_METHOD(hprose_client, setFilter) {
+    zval *filter = NULL;
+    HPROSE_THIS(client);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o!", &filter) == FAILURE) {
+        return;
+    }
+    zend_hash_clean(Z_ARRVAL_P(_this->filters));
+    if (filter) {
+        Z_ADDREF_P(filter);        
+        add_index_zval(_this->filters, 0, filter);
+    }
+}
+
+ZEND_METHOD(hprose_client, addFilter) {
+    zval *filter;
+    HPROSE_THIS(client);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &filter) == FAILURE) {
+        return;
+    }
+    Z_ADDREF_P(filter);        
+    add_index_zval(_this->filters, 0, filter);
+}
+
+ZEND_METHOD(hprose_client, removeFilter) {
+    zval *filter;
+    HPROSE_THIS(client);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &filter) == FAILURE) {
+        return;
+    }
+    zval i;
+    function_invoke(array_search, &i, "zz", filter, _this->filters);
+#if PHP_MAJOR_VERSION < 7
+    if ((Z_TYPE(i) == IS_BOOL && Z_BVAL(i) == 0) || Z_TYPE(i) == IS_NULL) {
+#else
+    if (Z_TYPE(i) == IS_FALSE || Z_TYPE(i) == IS_NULL) {
+#endif
+        RETURN_FALSE;
+    }
+    function_invoke(array_splice, _this->filters, "zzl", _this->filters, &i, 1);
+    RETURN_TRUE;
+}
+
+ZEND_METHOD(hprose_client, getSimple) {
+    HPROSE_THIS(client);
+    RETURN_BOOL(_this->simple);
+}    
+
+ZEND_METHOD(hprose_client, setSimple) {
+    zend_bool simple = 1;
+    HPROSE_THIS(client);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &simple) == FAILURE) {
+        return;
+    }
+    _this->simple = simple;
+}
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_client_construct_arginfo, 0, 0, 0)
     ZEND_ARG_INFO(0, url)
 ZEND_END_ARG_INFO()
@@ -441,6 +538,37 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_client_use_service_arginfo, 0, 0, 0)
     ZEND_ARG_INFO(0, ns)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_client_invoke_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, name)
+    ZEND_ARG_ARRAY_INFO(1, args, 0)
+    ZEND_ARG_INFO(0, byref)
+    ZEND_ARG_INFO(0, mode)
+    ZEND_ARG_INFO(0, simple)
+    ZEND_ARG_INFO(0, callback)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_client_get_filter_arginfo, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_client_set_filter_arginfo, 0, 0, 1)
+    ZEND_ARG_OBJ_INFO(0, filter, HproseFilter, 1)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_client_add_filter_arginfo, 0, 0, 1)
+    ZEND_ARG_OBJ_INFO(0, filter, HproseFilter, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_client_remove_filter_arginfo, 0, 0, 1)
+    ZEND_ARG_OBJ_INFO(0, filter, HproseFilter, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_client_get_simple_arginfo, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_client_set_simple_arginfo, 0, 0, 0)
+    ZEND_ARG_INFO(0, simple)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry hprose_client_methods[] = {
     ZEND_ME(hprose_client, __construct, hprose_client_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     ZEND_ME(hprose_client, __destruct, hprose_client_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
@@ -448,6 +576,13 @@ static zend_function_entry hprose_client_methods[] = {
     ZEND_ME(hprose_client, asyncSendAndReceive, hprose_client_async_send_and_receive_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_client, sendAndReceiveCallback, hprose_client_send_and_receive_callback_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_client, useService, hprose_client_use_service_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_client, invoke, hprose_client_invoke_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_client, getFilter, hprose_client_get_filter_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_client, setFilter, hprose_client_set_filter_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_client, addFilter, hprose_client_add_filter_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_client, removeFilter, hprose_client_remove_filter_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_client, getSimple, hprose_client_get_simple_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_client, setSimple, hprose_client_set_simple_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 
