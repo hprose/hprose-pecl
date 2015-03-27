@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 24, 2015                             *
+ * LastModified: Mar 27, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -32,14 +32,22 @@ HPROSE_STARTUP_FUNCTION(proxy);
 HPROSE_STARTUP_FUNCTION(client);
 
 typedef struct _hprose_client {
+#if PHP_MAJOR_VERSION < 7
     zval *client;
+#else
+    zend_object *client;
+#endif
     char *ns;
     zend_bool simple;
     zval *filters;
 } hprose_client;
 
 typedef struct {
+#if PHP_MAJOR_VERSION < 7
     zval *client;
+#else
+    zend_object *client;
+#endif
     char *ns;
 } hprose_proxy;
 
