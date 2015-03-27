@@ -162,9 +162,7 @@ static void __hprose_writer_refer_dtor(void *data) {
 #else
         zend_object **obj = (zend_object **)data;
         if (data) {
-            zval val;
-            ZVAL_OBJ(&val, *obj);
-            zval_ptr_dtor(&val);
+            OBJ_RELEASE(*obj);
         }
 #endif
 }
