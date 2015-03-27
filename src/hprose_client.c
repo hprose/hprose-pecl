@@ -300,8 +300,10 @@ ZEND_METHOD(hprose_proxy, __call) {
     int32_t n;
     hprose_bytes_io *_name = hprose_bytes_io_new();
     HPROSE_THIS(proxy);
+#if PHP_MAJOR_VERSION >= 7
     zval client;
     ZVAL_OBJ(&client, _this->client);
+#endif
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa", &name, &len, &args) == FAILURE) {
         return;
     }
@@ -318,8 +320,7 @@ ZEND_METHOD(hprose_proxy, __call) {
 #endif
 #if PHP_MAJOR_VERSION < 7
             zend_hash_index_del(Z_ARRVAL_P(args), n - 1);
-            zend_print_zval_r(callback, 0);
-            hprose_client_async_invoke(&client, _name->buf, _name->len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, callback TSRMLS_CC);
+            hprose_client_async_invoke(_this->client, _name->buf, _name->len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, callback TSRMLS_CC);
 #else
             zval _callback;
             ZVAL_COPY(&_callback, callback);
@@ -330,7 +331,11 @@ ZEND_METHOD(hprose_proxy, __call) {
             return;
         }
     }
+#if PHP_MAJOR_VERSION < 7
+    hprose_client_sync_invoke(_this->client, _name->buf, _name->len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, return_value TSRMLS_CC);
+#else
     hprose_client_sync_invoke(&client, _name->buf, _name->len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, return_value TSRMLS_CC);
+#endif
     hprose_bytes_io_free(_name);
 }
 
