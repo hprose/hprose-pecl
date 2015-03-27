@@ -81,7 +81,7 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
     }
     if (mode == HPROSE_RESULT_MODE_RAW_WITH_END_TAG) {
         // need to check
-        RETURN_ZVAL(response, 0, 0);
+        RETURN_ZVAL(response, 1, 0);
     }
     else if (mode == HPROSE_RESULT_MODE_RAW) {
         RETURN_STRINGL_1(Z_STRVAL_P(response), Z_STRLEN_P(response) - 1);
@@ -132,11 +132,15 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
                     zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                             "%s", Z_STRVAL_P(errstr));
                     hprose_zval_free(errstr);
+                    hprose_reader_free(reader);
+                    efree(stream);
                     return;
                 }
                 default:
                     zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                             "Wrong Response:\r\n%s", Z_STRVAL_P(response));
+                    hprose_reader_free(reader);
+                    efree(stream);
                     return;
             }
         }
@@ -155,7 +159,6 @@ static zend_always_inline void hprose_client_sync_invoke(zval *client, char *nam
     hprose_make_zval(userdata);
     object_init(context);
     object_init(userdata);
-    Z_ADDREF_P(client);
     add_property_zval_ex(context, ZEND_STRS("client"), client TSRMLS_CC);
     add_property_zval_ex(context, ZEND_STRS("userdata"), userdata TSRMLS_CC);
     ZVAL_STRINGL_1(_name, name, len);
@@ -166,6 +169,7 @@ static zend_always_inline void hprose_client_sync_invoke(zval *client, char *nam
     hprose_client_do_input(_this, response, args, mode, context, return_value TSRMLS_CC);
     hprose_zval_free(response);
     hprose_zval_free(context);
+    hprose_zval_free(userdata);
 }
 
 static zend_always_inline void hprose_client_async_invoke(zval *client, char *name, int32_t len, zval *args, zend_bool byref, int mode, zend_bool simple, zval *callback TSRMLS_DC) {
@@ -179,7 +183,6 @@ static zend_always_inline void hprose_client_async_invoke(zval *client, char *na
     object_init(context);
     object_init(userdata);
     array_init(use);
-    Z_ADDREF_P(client);
     add_property_zval_ex(context, ZEND_STRS("client"), client TSRMLS_CC);
     add_property_zval_ex(context, ZEND_STRS("userdata"), userdata TSRMLS_CC);
     ZVAL_STRINGL_1(_name, name, len);
@@ -201,6 +204,7 @@ static zend_always_inline void hprose_client_async_invoke(zval *client, char *na
     method_invoke(client, asyncSendAndReceive, NULL, "zz", request, use);
     hprose_zval_free(request);
     hprose_zval_free(context);
+    hprose_zval_free(userdata);
     hprose_zval_free(use);
 }
 
@@ -225,6 +229,7 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
                 SEPARATE_ZVAL(&err);
                 zend_clear_exception(TSRMLS_C);
                 callable_invoke(callback, NULL, "zzz", result, args, err);
+                efree(err);
 #else
                 zval e;
                 ZVAL_OBJ(&e, EG(exception));
@@ -245,6 +250,7 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
     else {
         if (err != NULL) {
             zend_throw_exception_object(err TSRMLS_CC);
+            hprose_zval_free(result);
             return;
         }
         hprose_client_do_input(_this, response, args, mode, context, result TSRMLS_CC);
@@ -326,6 +332,7 @@ ZEND_METHOD(hprose_proxy, __call) {
             ZVAL_COPY(&_callback, callback);
             zend_hash_index_del(Z_ARRVAL_P(args), n - 1);
             hprose_client_async_invoke(&client, _name->buf, _name->len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, &_callback TSRMLS_CC);
+            zval_ptr_dtor(&_callback);
 #endif
             hprose_bytes_io_free(_name);
             return;
@@ -423,6 +430,7 @@ ZEND_METHOD(hprose_client, __construct) {
 ZEND_METHOD(hprose_client, __destruct) {
     HPROSE_OBJECT_INTERN(client);
     if (intern->_this) {
+        intern->_this->client = NULL;
         hprose_zval_free(intern->_this->filters);
         efree(intern->_this);
         intern->_this = NULL;

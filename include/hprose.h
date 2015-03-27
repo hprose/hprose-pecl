@@ -672,7 +672,6 @@ static zend_always_inline zend_fcall_info_cache __get_fcall_info_cache(zval *obj
     else if (obj && Z_TYPE_P(obj) == IS_OBJECT &&
              instanceof_function(Z_OBJCE_P(obj), zend_ce_closure TSRMLS_CC) &&
              (fptr = (zend_function*)zend_get_closure_method_def(obj TSRMLS_CC)) != NULL) {
-        Z_ADDREF_P(obj);
         fcc.function_handler = fptr;
         fcc.calling_scope = EG(scope);
 #if PHP_MAJOR_VERSION < 7
@@ -986,6 +985,7 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
                 case 'z': {
                     zval *v = va_arg(ap, zval *);
                     if (v) {
+                        Z_ADDREF_P(v);
                         *params[i] = v;
                     }
                     else {
@@ -1097,12 +1097,10 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
     result = zend_call_function(&fci, &fcc TSRMLS_CC);
 
     for (i = 0; i < argc; i++) {
-        if (params_format[i] != 'z') {
-            if (params_format[i] == 's') {
-                ZVAL_EMPTY_STRING(*params[i]);
-            }
-            zval_ptr_dtor(params[i]);
+        if (params_format[i] == 's') {
+            ZVAL_EMPTY_STRING(*params[i]);
         }
+        zval_ptr_dtor(params[i]);
         efree(params[i]);
     }
     if (argc) {
@@ -1223,6 +1221,7 @@ static zend_class_entry *__create_php_object(char *class_name, int32_t len, zval
                 case 'z': {
                     zval *v = va_arg(ap, zval *);
                     if (v) {
+                        Z_ADDREF_P(v);
                         *params[i] = v;
                     }
                     else {
@@ -1326,12 +1325,10 @@ static zend_class_entry *__create_php_object(char *class_name, int32_t len, zval
         zend_call_function(&fci, &fcc TSRMLS_CC);
 
         for (i = 0; i < argc; i++) {
-            if (params_format[i] != 'z') {
-                if (params_format[i] == 's') {
-                    ZVAL_EMPTY_STRING(*params[i]);
-                }
-                zval_ptr_dtor(params[i]);
+            if (params_format[i] == 's') {
+                ZVAL_EMPTY_STRING(*params[i]);
             }
+            zval_ptr_dtor(params[i]);
             efree(params[i]);
         }
         if (argc) {
