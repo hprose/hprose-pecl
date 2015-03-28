@@ -80,7 +80,6 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
         }
     }
     if (mode == HPROSE_RESULT_MODE_RAW_WITH_END_TAG) {
-        // need to check
         RETURN_ZVAL(response, 1, 0);
     }
     else if (mode == HPROSE_RESULT_MODE_RAW) {
@@ -391,6 +390,11 @@ HPROSE_OBJECT_HANDLERS(proxy)
 
 HPROSE_OBJECT_FREE_BEGIN(proxy)
     if (intern->_this) {
+#if PHP_MAJOR_VERSION < 7
+        zval_ptr_dtor(&(intern->_this->client));
+#else
+        OBJ_RELEASE(intern->_this->client);
+#endif
         efree(intern->_this);
         intern->_this = NULL;
     }
@@ -651,6 +655,8 @@ HPROSE_OBJECT_HANDLERS(client)
 
 HPROSE_OBJECT_FREE_BEGIN(client)
     if (intern->_this) {
+        intern->_this->client = NULL;
+        hprose_zval_free(intern->_this->filters);
         efree(intern->_this);
         intern->_this = NULL;
     }

@@ -12,4 +12,5 @@ if (PHP_HPROSE != "no") {
     ADD_SOURCE("src/hprose_result_mode.c");
     ADD_SOURCE("src/hprose_filter.c");
     ADD_SOURCE("src/hprose_client.c");
+    ADD_SOURCE("src/hprose_service.c");
 }

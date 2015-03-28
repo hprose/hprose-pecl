@@ -32,6 +32,7 @@ ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(filter);
     HPROSE_STARTUP(proxy);
     HPROSE_STARTUP(client);
+    HPROSE_STARTUP(service);
     return SUCCESS;
 }
 
