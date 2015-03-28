@@ -31,7 +31,7 @@ zend_class_entry *get_hprose_client_ce();
 HPROSE_STARTUP_FUNCTION(proxy);
 HPROSE_STARTUP_FUNCTION(client);
 
-typedef struct _hprose_client {
+typedef struct {
 #if PHP_MAJOR_VERSION < 7
     zval *client;
 #else

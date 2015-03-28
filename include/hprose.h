@@ -870,11 +870,11 @@ static zend_always_inline void __function_invoke_args(zend_fcall_info_cache fcc,
     }
     else {
 #if PHP_API_VERSION < 20090626
-        fci.object_pp = NULL;
+        fci.object_pp = fcc.object_pp;
 #elif PHP_MAJOR_VERSION < 7
-        fci.object_ptr = NULL;
+        fci.object_ptr = fcc.object_ptr;
 #else
-        fci.object = NULL;
+        fci.object = fcc.object;
 #endif
     }
 
@@ -1085,11 +1085,11 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
     }
     else {
 #if PHP_API_VERSION < 20090626
-        fci.object_pp = NULL;
+        fci.object_pp = fcc.object_pp;
 #elif PHP_MAJOR_VERSION < 7
-        fci.object_ptr = NULL;
+        fci.object_ptr = fcc.object_ptr;
 #else
-        fci.object = NULL;
+        fci.object = fcc.object;
 #endif
     }
 
