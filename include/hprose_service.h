@@ -110,6 +110,7 @@ static zend_always_inline void hprose_service_input_filter(hprose_service *_this
             zval *filter = zend_hash_get_current_data(ht);
             method_invoke(filter, inputFilter, data, "zz", data, context);
 #endif
+            if (EG(exception)) return;
             zend_hash_move_backwards(ht);
         }
     }
@@ -129,6 +130,7 @@ static zend_always_inline void hprose_service_output_filter(hprose_service *_thi
             zval *filter = zend_hash_get_current_data(ht);
             method_invoke(filter, outputFilter, data, "zz", data, context);
 #endif
+            if (EG(exception)) return;
             zend_hash_move_forward(ht);
         }
     }
@@ -257,13 +259,21 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
                     zval *e = php_array_get(args, i);
 #if PHP_MAJOR_VERSION < 7
                     Z_ADDREF_P(e);
-#else
-                    Z_TRY_ADDREF_P(e);
-#endif
                     if (call->fcc.function_handler->common.arg_info[i].pass_by_reference) {
                         Z_SET_ISREF_P(e);
                     }
                     add_next_index_zval(_args, e);
+#else
+                    if (call->fcc.function_handler->common.arg_info[i].pass_by_reference) {
+                        zval r;
+                        ZVAL_NEW_REF(&r, e);
+                        add_next_index_zval(_args, &r);
+                    }
+                    else {
+                        Z_TRY_ADDREF_P(e);
+                        add_next_index_zval(_args, e);
+                    }
+#endif
                 }
                 hprose_zval_free(args);
                 args = _args;
@@ -324,7 +334,7 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
         }
         if (call->mode == HPROSE_RESULT_MODE_RAW_WITH_END_TAG) {
             convert_to_string(result);
-            RETVAL_ZVAL(result, 1, 1);
+            RETVAL_ZVAL(result, 0, 1);
             hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
             hprose_reader_free(reader);
             hprose_bytes_io_free(output);
@@ -362,9 +372,35 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
     hprose_bytes_io_putc(output, HPROSE_TAG_END);
     ZVAL_STRINGL_0(return_value, output->buf, output->len);
     efree(output);
-    hprose_service_output_filter(HPROSE_GET_OBJECT_P(service, service)->_this, return_value, context TSRMLS_CC);
+    hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
 }
 
+static zend_always_inline void hprose_service_do_function_list(zval *service, zval *context, zval *return_value TSRMLS_DC) {
+    hprose_service *_this = HPROSE_GET_OBJECT_P(service, service)->_this;
+    hprose_bytes_io *output = hprose_bytes_io_new();
+    hprose_writer *writer = hprose_writer_create(output, 1);
+    hprose_bytes_io_putc(output, HPROSE_TAG_FUNCTIONS);
+    hprose_writer_write_array(writer, _this->names TSRMLS_CC);
+    hprose_bytes_io_putc(output, HPROSE_TAG_END);
+    hprose_writer_free(writer);
+    ZVAL_STRINGL_0(return_value, output->buf, output->len);
+    efree(output);
+    hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
+}
+
+static zend_always_inline void hprose_service_default_handle(zval *service, zval *request, zval *context, zval *return_value TSRMLS_DC) {
+    hprose_service *_this = HPROSE_GET_OBJECT_P(service, service)->_this;
+    hprose_bytes_io *input;
+    zval *data;
+    convert_to_string(request);
+    ZVAL_ZVAL(data, request, 0, 0);
+    hprose_service_input_filter(_this, data, context TSRMLS_CC);
+    input = hprose_bytes_io_create_readonly(Z_STRVAL_P(data), Z_STRLEN_P(data));
+
+
+
+    efree(input);
+}
 END_EXTERN_C()
 
 #endif	/* HPROSE_SERVICE_H */

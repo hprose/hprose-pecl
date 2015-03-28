@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl source file.                    *
  *                                                        *
- * LastModified: Mar 28, 2015                             *
+ * LastModified: Mar 29, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -57,6 +57,7 @@ static zend_always_inline void hprose_client_do_output(hprose_client *_this, zva
             zval *filter = zend_hash_get_current_data(ht);
             method_invoke(filter, outputFilter, return_value, "zz", return_value, context);
 #endif
+            if (EG(exception)) return;
             zend_hash_move_forward(ht);
         }
     }
@@ -76,6 +77,7 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
             zval *filter = zend_hash_get_current_data(ht);
             method_invoke(filter, inputFilter, response, "zz", response, context);
 #endif
+            if (EG(exception)) return;
             zend_hash_move_backwards(ht);
         }
     }
@@ -152,7 +154,6 @@ static zend_always_inline void hprose_client_sync_invoke(zval *client, char *nam
     hprose_client *_this = HPROSE_GET_OBJECT_P(client, client)->_this;
     hprose_make_zval(context);
     hprose_make_zval(request);
-    hprose_make_zval(response);
     hprose_make_zval(_name);
     hprose_make_zval(userdata);
     object_init(context);
@@ -162,8 +163,21 @@ static zend_always_inline void hprose_client_sync_invoke(zval *client, char *nam
     ZVAL_STRINGL_1(_name, name, len);
     hprose_client_do_output(_this, _name, args, byref, simple, context, request TSRMLS_CC);
     hprose_zval_free(_name);
+    if (EG(exception)) {
+        hprose_zval_free(request);
+        hprose_zval_free(context);
+        hprose_zval_free(userdata);
+        return;
+    }
+    hprose_make_zval(response);
     method_invoke(client, sendAndReceive, response, "z", request);
     hprose_zval_free(request);
+    if (EG(exception)) {
+        hprose_zval_free(response);
+        hprose_zval_free(context);
+        hprose_zval_free(userdata);
+        return;
+    }
     hprose_client_do_input(_this, response, args, mode, context, return_value TSRMLS_CC);
     hprose_zval_free(response);
     hprose_zval_free(context);
@@ -177,15 +191,19 @@ static zend_always_inline void hprose_client_async_invoke(zval *client, char *na
     hprose_make_zval(request);
     hprose_make_zval(_name);
     hprose_make_zval(userdata);
-    hprose_make_zval(use);
     object_init(context);
     object_init(userdata);
-    array_init(use);
     add_property_zval_ex(context, ZEND_STRS("client"), client TSRMLS_CC);
     add_property_zval_ex(context, ZEND_STRS("userdata"), userdata TSRMLS_CC);
     ZVAL_STRINGL_1(_name, name, len);
     hprose_client_do_output(_this, _name, args, byref, simple, context, request TSRMLS_CC);
     hprose_zval_free(_name);
+    if (EG(exception)) {
+        hprose_zval_free(request);
+        hprose_zval_free(context);
+        hprose_zval_free(userdata);
+        return;
+    }
 #if PHP_MAJOR_VERSION < 7
     Z_ADDREF_P(args);
     Z_ADDREF_P(context);
@@ -195,6 +213,8 @@ static zend_always_inline void hprose_client_async_invoke(zval *client, char *na
     Z_TRY_ADDREF_P(context);
     Z_TRY_ADDREF_P(callback);
 #endif
+    hprose_make_zval(use);
+    array_init(use);
     add_next_index_zval(use, args);
     add_next_index_zval(use, context);
     add_next_index_zval(use, callback);
@@ -252,6 +272,10 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
             return;
         }
         hprose_client_do_input(_this, response, args, mode, context, result TSRMLS_CC);
+        if (EG(exception)) {
+            hprose_zval_free(result);
+            return;
+        }
         switch (n) {
             case 0: callable_invoke_no_args(callback, NULL); break;
             case 1: callable_invoke(callback, NULL, "z", result); break;

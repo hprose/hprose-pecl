@@ -599,10 +599,14 @@ static inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRML
         case IS_BOOL:
             hprose_writer_write_bool(_this, Z_BVAL_P(val)); break;
 #else /* PHP_MAJOR_VERSION < 7 */
+        case IS_UNDEF:
+            hprose_writer_write_null(_this); break;
         case IS_TRUE:
             hprose_writer_write_true(_this); break;
         case IS_FALSE:
             hprose_writer_write_false(_this); break;
+        case IS_REFERENCE:
+            hprose_writer_serialize(_this, &(Z_REF_P(val)->val)); break;
 #endif /* PHP_MAJOR_VERSION < 7 */
         case IS_ARRAY:
             if (is_list(val)) {
