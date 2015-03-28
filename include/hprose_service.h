@@ -22,6 +22,11 @@
 #define	HPROSE_SERVICE_H
 
 #include "hprose.h"
+#include "hprose_tags.h"
+#include "hprose_bytes_io.h"
+#include "hprose_writer.h"
+#include "hprose_reader.h"
+#include "hprose_result_mode.h"
 
 BEGIN_EXTERN_C()
 
@@ -388,18 +393,92 @@ static zend_always_inline void hprose_service_do_function_list(zval *service, zv
     hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
 }
 
+static zend_always_inline void hprose_service_catch_error(zval *service, zval *err, zval *context, zval *return_value TSRMLS_DC) {
+    hprose_bytes_io *estream = hprose_bytes_io_new();
+    zval *result;
+
+    hprose_make_zval(result);
+    method_invoke_no_args(err, getMessage, result);
+    convert_to_string(result);
+    hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
+    hprose_zval_free(result);
+
+    hprose_make_zval(result);
+    method_invoke_no_args(err, getFile, result);
+    convert_to_string(result);
+    hprose_bytes_io_write(estream, ZEND_STRL("\nfile: "));
+    hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
+    hprose_zval_free(result);
+
+    hprose_make_zval(result);
+    method_invoke_no_args(err, getLine, result);
+    convert_to_string(result);
+    hprose_bytes_io_write(estream, ZEND_STRL("\nline: "));
+    hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
+    hprose_zval_free(result);
+
+    hprose_make_zval(result);
+    method_invoke_no_args(err, getTraceAsString, result);
+    convert_to_string(result);
+    hprose_bytes_io_write(estream, ZEND_STRL("\ntrace: "));
+    hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
+    hprose_zval_free(result);
+
+    hprose_make_zval(result);
+    ZVAL_STRINGL_0(result, estream->buf, estream->len);
+    efree(estream);
+    hprose_service_send_error(service, result, context, return_value TSRMLS_CC);
+    hprose_zval_free(result);
+}
+
+static zend_always_inline zend_bool hprose_service_try_catch_error(zval *service, zval *context, zval *return_value TSRMLS_DC) {
+    if (EG(exception)) {
+#if PHP_MAJOR_VERSION < 7
+        zval *err = EG(exception);
+        Z_ADDREF_P(err);
+        SEPARATE_ZVAL(&err);
+        zend_clear_exception(TSRMLS_C);
+        hprose_service_catch_error(service, err, context, return_value TSRMLS_CC);
+#else
+        zval err;
+        ZVAL_OBJ(&err, EG(exception));
+        Z_ADDREF(err);
+        SEPARATE_ZVAL(&err);
+        zend_clear_exception();
+        hprose_service_catch_error(service, &err, context, return_value TSRMLS_CC);
+#endif
+        zval_ptr_dtor(&err);
+        return 1;
+    }
+    return 0;
+}
+
 static zend_always_inline void hprose_service_default_handle(zval *service, zval *request, zval *context, zval *return_value TSRMLS_DC) {
     hprose_service *_this = HPROSE_GET_OBJECT_P(service, service)->_this;
     hprose_bytes_io *input;
     zval *data;
+    hprose_make_zval(data);
     convert_to_string(request);
     ZVAL_ZVAL(data, request, 0, 0);
     hprose_service_input_filter(_this, data, context TSRMLS_CC);
+    if (hprose_service_try_catch_error(service, context, return_value TSRMLS_CC)) {
+        hprose_zval_free(data);
+        return;
+    }
     input = hprose_bytes_io_create_readonly(Z_STRVAL_P(data), Z_STRLEN_P(data));
-
-
-
+    switch (hprose_bytes_io_getc(input)) {
+        case HPROSE_TAG_CALL:
+            hprose_service_do_invoke(service, input, context, return_value TSRMLS_CC); break;
+        case HPROSE_TAG_END:
+            hprose_service_do_function_list(service, context, return_value TSRMLS_CC); break;
+        default:
+            zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
+                    "Wrong Request: \r\n%s", Z_STRVAL_P(request));
+            break;
+    }
     efree(input);
+    hprose_zval_free(data);
+    hprose_service_try_catch_error(service, context, return_value TSRMLS_CC);
 }
 END_EXTERN_C()
 
