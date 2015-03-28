@@ -247,7 +247,7 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
                 SEPARATE_ZVAL(&err);
                 zend_clear_exception(TSRMLS_C);
                 callable_invoke(callback, NULL, "zzz", result, args, err);
-                efree(err);
+                zval_ptr_dtor(&err);
 #else
                 zval e;
                 ZVAL_OBJ(&e, EG(exception));
@@ -255,6 +255,7 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
                 SEPARATE_ZVAL(&e);
                 zend_clear_exception();
                 callable_invoke(callback, NULL, "zzz", result, args, &e);
+                zval_ptr_dtor(&e);
 #endif
             }
             else {
