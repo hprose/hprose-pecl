@@ -270,7 +270,7 @@ static zend_always_inline void hprose_bytes_io_write(hprose_bytes_io *_this, con
     _this->buf[_this->len] = '\0';
 }
 
-static zend_always_inline void hprose_bytes_io_write_char(hprose_bytes_io *_this, char c) {
+static zend_always_inline void hprose_bytes_io_putc(hprose_bytes_io *_this, char c) {
     if (_this->len + 1 >= _this->cap) {
         _hprose_bytes_io_grow(_this, HPROSE_BYTES_IO_PREALLOC);
     }
@@ -280,7 +280,7 @@ static zend_always_inline void hprose_bytes_io_write_char(hprose_bytes_io *_this
 
 static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io *_this, int32_t num) {
     if (num >= 0 && num <= 9) {
-        hprose_bytes_io_write_char(_this, '0' + num);
+        hprose_bytes_io_putc(_this, '0' + num);
     }
     else if (num == INT32_MIN) {
         hprose_bytes_io_write(_this, HPROSE_INT32_MIN_STR, sizeof(HPROSE_INT32_MIN_STR) - 1);
@@ -306,7 +306,7 @@ static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io *_this,
 
 static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io *_this, int64_t num) {
     if (num >= 0 && num <= 9) {
-        hprose_bytes_io_write_char(_this, '0' + num);
+        hprose_bytes_io_putc(_this, '0' + num);
     }
     else if (num == INT64_MIN) {
         hprose_bytes_io_write(_this, HPROSE_INT64_MIN_STR, sizeof(HPROSE_INT64_MIN_STR) - 1);
@@ -332,7 +332,7 @@ static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io *_this
 
 static zend_always_inline void hprose_bytes_io_write_uint(hprose_bytes_io *_this, uint32_t num) {
     if (num <= 9) {
-        hprose_bytes_io_write_char(_this, '0' + num);
+        hprose_bytes_io_putc(_this, '0' + num);
     }
     else {
         char buf[32];
@@ -348,7 +348,7 @@ static zend_always_inline void hprose_bytes_io_write_uint(hprose_bytes_io *_this
 
 static zend_always_inline void hprose_bytes_io_write_ulong(hprose_bytes_io *_this, uint64_t num) {
     if (num <= 9) {
-        hprose_bytes_io_write_char(_this, '0' + num);
+        hprose_bytes_io_putc(_this, '0' + num);
     }
     else {
         char buf[32];
@@ -373,7 +373,7 @@ static zend_always_inline char * hprose_bytes_io_to_string(hprose_bytes_io *_thi
 }
 
 static zend_always_inline void hprose_bytes_io_getc_to(hprose_bytes_io *from, hprose_bytes_io *to) {
-    hprose_bytes_io_write_char(to, from->buf[from->pos++]);
+    hprose_bytes_io_putc(to, from->buf[from->pos++]);
 }
 
 static zend_always_inline void hprose_bytes_io_read_to(hprose_bytes_io *from, hprose_bytes_io *to, int32_t n) {
@@ -404,7 +404,7 @@ static zend_always_inline int32_t hprose_bytes_io_read_int_to(hprose_bytes_io *f
     char c = hprose_bytes_io_getc(from);
     if (c == tag) {
         if (include_tag) {
-            hprose_bytes_io_write_char(to, c);
+            hprose_bytes_io_putc(to, c);
         }
         return 0;
     }

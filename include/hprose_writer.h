@@ -13,7 +13,7 @@
  *                                                        *
  * hprose writer for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 26, 2015                             *
+ * LastModified: Mar 28, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -75,9 +75,9 @@ typedef struct {
 } hprose_real_writer_refer;
 
 static zend_always_inline void hprose_real_writer_refer_write_ref(hprose_bytes_io *stream, int32_t index) {
-    hprose_bytes_io_write_char(stream, HPROSE_TAG_REF);
+    hprose_bytes_io_putc(stream, HPROSE_TAG_REF);
     hprose_bytes_io_write_int(stream, index);
-    hprose_bytes_io_write_char(stream, HPROSE_TAG_SEMICOLON);
+    hprose_bytes_io_putc(stream, HPROSE_TAG_SEMICOLON);
 }
 
 static void hprose_real_writer_refer_set(void *_this, zval *val) {
@@ -221,38 +221,38 @@ static zend_always_inline void hprose_writer_reset(hprose_writer *_this) {
     _this->refer->handlers->reset(_this->refer);
 }
 
-#define hprose_writer_write_nan(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_NAN)
-#define hprose_writer_write_null(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_NULL)
-#define hprose_writer_write_true(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_TRUE)
-#define hprose_writer_write_false(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_FALSE)
+#define hprose_writer_write_nan(_this) hprose_bytes_io_putc((_this)->stream, HPROSE_TAG_NAN)
+#define hprose_writer_write_null(_this) hprose_bytes_io_putc((_this)->stream, HPROSE_TAG_NULL)
+#define hprose_writer_write_true(_this) hprose_bytes_io_putc((_this)->stream, HPROSE_TAG_TRUE)
+#define hprose_writer_write_false(_this) hprose_bytes_io_putc((_this)->stream, HPROSE_TAG_FALSE)
 #define hprose_writer_write_bool(_this, val) ((val) ? hprose_writer_write_true(_this) : hprose_writer_write_false(_this))
-#define hprose_writer_write_empty(_this) hprose_bytes_io_write_char((_this)->stream, HPROSE_TAG_EMPTY)
+#define hprose_writer_write_empty(_this) hprose_bytes_io_putc((_this)->stream, HPROSE_TAG_EMPTY)
 
 static zend_always_inline void hprose_writer_write_ulong(hprose_writer *_this, uint64_t i) {
     if (i <= 9) {
-        hprose_bytes_io_write_char(_this->stream, '0' + i);
+        hprose_bytes_io_putc(_this->stream, '0' + i);
     }
     else {
-        hprose_bytes_io_write_char(_this->stream, (i > INT32_MAX) ? HPROSE_TAG_LONG : HPROSE_TAG_INTEGER);
+        hprose_bytes_io_putc(_this->stream, (i > INT32_MAX) ? HPROSE_TAG_LONG : HPROSE_TAG_INTEGER);
         hprose_bytes_io_write_ulong(_this->stream, i);
-        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_SEMICOLON);
+        hprose_bytes_io_putc(_this->stream, HPROSE_TAG_SEMICOLON);
     }
 }
 
 static zend_always_inline void hprose_writer_write_long(hprose_writer *_this, int64_t i) {
     if (i >= 0 && i <= 9) {
-        hprose_bytes_io_write_char(_this->stream, '0' + i);
+        hprose_bytes_io_putc(_this->stream, '0' + i);
     }
     else {
-        hprose_bytes_io_write_char(_this->stream, (i > INT32_MAX || i < INT32_MIN) ? HPROSE_TAG_LONG : HPROSE_TAG_INTEGER);
+        hprose_bytes_io_putc(_this->stream, (i > INT32_MAX || i < INT32_MIN) ? HPROSE_TAG_LONG : HPROSE_TAG_INTEGER);
         hprose_bytes_io_write_long(_this->stream, i);
-        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_SEMICOLON);
+        hprose_bytes_io_putc(_this->stream, HPROSE_TAG_SEMICOLON);
     }
 }
 
 static zend_always_inline void hprose_writer_write_infinity(hprose_writer *_this, zend_bool positive) {
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_INFINITY);
-    hprose_bytes_io_write_char(_this->stream, (positive ? HPROSE_TAG_POS : HPROSE_TAG_NEG));
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_INFINITY);
+    hprose_bytes_io_putc(_this->stream, (positive ? HPROSE_TAG_POS : HPROSE_TAG_NEG));
 }
 
 static zend_always_inline void hprose_writer_write_double(hprose_writer *_this, double d) {
@@ -263,27 +263,27 @@ static zend_always_inline void hprose_writer_write_double(hprose_writer *_this, 
         hprose_writer_write_infinity(_this, d > 0);
     }
     else {
-        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_DOUBLE);
+        hprose_bytes_io_putc(_this->stream, HPROSE_TAG_DOUBLE);
         hprose_bytes_io_write_double(_this->stream, d);
-        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_SEMICOLON);
+        hprose_bytes_io_putc(_this->stream, HPROSE_TAG_SEMICOLON);
     }
 }
 
 static zend_always_inline void hprose_writer_write_utf8char(hprose_writer *_this, zval *val) {
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_UTF8CHAR);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_UTF8CHAR);
     hprose_bytes_io_write(_this->stream, Z_STRVAL_P(val), Z_STRLEN_P(val));
 }
 
 static zend_always_inline void hprose_writer_write_string(hprose_writer *_this, zval *val) {
     int32_t len = ustrlen(Z_STRVAL_P(val), Z_STRLEN_P(val));
     _this->refer->handlers->set(_this->refer, val);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_STRING);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_STRING);
     if (len) {
         hprose_bytes_io_write_int(_this->stream, len);
     }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_QUOTE);
     hprose_bytes_io_write(_this->stream, Z_STRVAL_P(val), Z_STRLEN_P(val));
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_QUOTE);
 }
 
 static zend_always_inline void hprose_writer_write_string_with_ref(hprose_writer *_this, zval *val) {
@@ -293,13 +293,13 @@ static zend_always_inline void hprose_writer_write_string_with_ref(hprose_writer
 static zend_always_inline void hprose_writer_write_bytes(hprose_writer *_this, zval *val) {
     int32_t len = Z_STRLEN_P(val);
     _this->refer->handlers->set(_this->refer, val);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_BYTES);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_BYTES);
     if (len) {
         hprose_bytes_io_write_int(_this->stream, len);
     }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_QUOTE);
     hprose_bytes_io_write(_this->stream, Z_STRVAL_P(val), len);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_QUOTE);
 }
 
 static zend_always_inline void hprose_writer_write_bytes_with_ref(hprose_writer *_this, zval *val) {
@@ -328,11 +328,11 @@ static inline void hprose_writer_write_array(hprose_writer *_this, zval *val TSR
     HashTable *ht = Z_ARRVAL_P(val);
     int32_t i = zend_hash_num_elements(ht);
     _this->refer->handlers->set(_this->refer, val);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_LIST);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_LIST);
     if (i) {
         hprose_bytes_io_write_int(_this->stream, i);
     }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_OPENBRACE);
     if (i) {
         zend_hash_internal_pointer_reset(ht);
         for (; i > 0; --i) {
@@ -347,16 +347,16 @@ static inline void hprose_writer_write_array(hprose_writer *_this, zval *val TSR
             zend_hash_move_forward(ht);
         }
     }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_CLOSEBRACE);
 }
 
 static inline void hprose_writer_write_hashtable(hprose_writer *_this, HashTable *ht TSRMLS_DC) {
     int32_t i = zend_hash_num_elements(ht);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_MAP);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_MAP);
     if (i) {
         hprose_bytes_io_write_int(_this->stream, i);
     }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_OPENBRACE);
     if (i) {
         HashPosition *position = emalloc(sizeof(HashPosition));
         memset(position, 0, sizeof(HashPosition));
@@ -390,7 +390,7 @@ static inline void hprose_writer_write_hashtable(hprose_writer *_this, HashTable
         }
         efree(position);
     }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_CLOSEBRACE);
 }
 
 static inline void hprose_writer_write_assoc_array(hprose_writer *_this, zval *val TSRMLS_DC) {
@@ -404,11 +404,11 @@ static inline void hprose_writer_write_map(hprose_writer *_this, zval *val TSRML
     _this->refer->handlers->set(_this->refer, val);
     method_invoke_no_args(val, count, &count);
     i = Z_LVAL(count);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_MAP);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_MAP);
     if (i) {
         hprose_bytes_io_write_int(_this->stream, i);
     }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_OPENBRACE);
     if (i) {
         method_invoke_no_args(val, rewind, NULL);
         for (; i > 0; --i) {
@@ -422,7 +422,7 @@ static inline void hprose_writer_write_map(hprose_writer *_this, zval *val TSRML
             method_invoke_no_args(val, next, NULL);
         }
     }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_CLOSEBRACE);
 }
 
 static inline void hprose_writer_write_map_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
@@ -434,11 +434,11 @@ static inline void hprose_writer_write_list(hprose_writer *_this, zval *val TSRM
     _this->refer->handlers->set(_this->refer, val);
     method_invoke_no_args(val, count, &count);
     i = Z_LVAL(count);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_LIST);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_LIST);
     if (i) {
         hprose_bytes_io_write_int(_this->stream, i);
     }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_OPENBRACE);
     if (i) {
         method_invoke_no_args(val, rewind, NULL);
         for (; i > 0; --i) {
@@ -449,7 +449,7 @@ static inline void hprose_writer_write_list(hprose_writer *_this, zval *val TSRM
             method_invoke_no_args(val, next, NULL);
         }
     }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_CLOSEBRACE);
 }
 static inline void hprose_writer_write_list_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
     if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_list(_this, val TSRMLS_CC);
@@ -463,7 +463,7 @@ static inline void hprose_writer_write_stdclass_with_ref(hprose_writer *_this, z
 }
 static inline int32_t hprose_writer_write_class(hprose_writer *_this, char *alias, int32_t len, HashTable *ht TSRMLS_DC) {
     int32_t i = zend_hash_num_elements(ht);
-    int32_t index = zend_hash_num_elements(Z_ARRVAL_P(_this->propsref));
+    int32_t index = Z_ARRLEN_P(_this->propsref);
 #if PHP_MAJOR_VERSION < 7
     zval *props;
     hprose_make_zval(props);
@@ -472,17 +472,17 @@ static inline int32_t hprose_writer_write_class(hprose_writer *_this, char *alia
     zval props;
     array_init(&props);
 #endif
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLASS);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_CLASS);
     hprose_bytes_io_write_int(_this->stream, len);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_QUOTE);
     hprose_bytes_io_write(_this->stream, alias, len);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_QUOTE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_QUOTE);
     if (i) {
         HashPosition *position = emalloc(sizeof(HashPosition));
         memset(position, 0, sizeof(HashPosition));
         zend_hash_internal_pointer_reset_ex(ht, position);
         hprose_bytes_io_write_int(_this->stream, i);
-        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
+        hprose_bytes_io_putc(_this->stream, HPROSE_TAG_OPENBRACE);
         for (; i > 0; --i) {
 #if PHP_MAJOR_VERSION < 7
             char *str;
@@ -522,11 +522,11 @@ static inline int32_t hprose_writer_write_class(hprose_writer *_this, char *alia
             zend_hash_move_forward_ex(ht, position);
         }
         efree(position);
-        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
+        hprose_bytes_io_putc(_this->stream, HPROSE_TAG_CLOSEBRACE);
     }
     else {
-        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
-        hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
+        hprose_bytes_io_putc(_this->stream, HPROSE_TAG_OPENBRACE);
+        hprose_bytes_io_putc(_this->stream, HPROSE_TAG_CLOSEBRACE);
     }
 #if PHP_MAJOR_VERSION < 7
     add_next_index_zval(_this->propsref, props);
@@ -560,9 +560,9 @@ static inline void hprose_writer_write_object(hprose_writer *_this, zval *val TS
     props_ht = Z_ARRVAL_P(props);
     int32_t i = zend_hash_num_elements(props_ht);
     _this->refer->handlers->set(_this->refer, val);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OBJECT);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_OBJECT);
     hprose_bytes_io_write_int(_this->stream, index);
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_OPENBRACE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_OPENBRACE);
     if (i) {
         zend_hash_internal_pointer_reset(props_ht);
         for (; i > 0; --i) {
@@ -579,7 +579,7 @@ static inline void hprose_writer_write_object(hprose_writer *_this, zval *val TS
             zend_hash_move_forward(props_ht);
         }
     }
-    hprose_bytes_io_write_char(_this->stream, HPROSE_TAG_CLOSEBRACE);
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_CLOSEBRACE);
 }
 static inline void hprose_writer_write_object_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
     if (!(_this->refer->handlers->write(_this->refer, _this->stream, val))) hprose_writer_write_object(_this, val TSRMLS_CC);

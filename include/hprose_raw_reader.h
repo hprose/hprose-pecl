@@ -67,7 +67,7 @@ static inline void hprose_raw_reader_read_complex_raw(hprose_raw_reader *_this, 
 #define _hprose_raw_reader_read_raw(_this, ostream) __hprose_raw_reader_read_raw(_this, ostream, hprose_bytes_io_getc(_this->stream) TSRMLS_CC)
 
 static inline void __hprose_raw_reader_read_raw(hprose_raw_reader *_this, hprose_bytes_io *ostream, char tag TSRMLS_DC) {
-    hprose_bytes_io_write_char(ostream, tag);
+    hprose_bytes_io_putc(ostream, tag);
     switch (tag) {
         case '0':
         case '1':
@@ -141,7 +141,7 @@ static zend_always_inline void hprose_raw_reader_read_datetime_raw(hprose_raw_re
     char tag;
     do {
         tag = hprose_bytes_io_getc(_this->stream);
-        hprose_bytes_io_write_char(ostream, tag);
+        hprose_bytes_io_putc(ostream, tag);
     } while (tag != HPROSE_TAG_SEMICOLON && tag != HPROSE_TAG_UTC);
 }
 
@@ -169,7 +169,7 @@ static zend_always_inline void hprose_raw_reader_read_complex_raw(hprose_raw_rea
     while ((tag = hprose_bytes_io_getc(_this->stream)) != HPROSE_TAG_CLOSEBRACE) {
         __hprose_raw_reader_read_raw(_this, ostream, tag TSRMLS_CC);
     }
-    hprose_bytes_io_write_char(ostream, tag);
+    hprose_bytes_io_putc(ostream, tag);
 }
 
 HPROSE_CLASS_BEGIN(raw_reader)

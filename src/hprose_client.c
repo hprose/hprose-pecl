@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl source file.                    *
  *                                                        *
- * LastModified: Mar 26, 2015                             *
+ * LastModified: Mar 28, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -30,10 +30,10 @@ static zend_always_inline void hprose_client_do_output(hprose_client *_this, zva
     hprose_writer *writer;
     HashTable *ht;
     int32_t i;
-    hprose_bytes_io_write_char(stream, HPROSE_TAG_CALL);
+    hprose_bytes_io_putc(stream, HPROSE_TAG_CALL);
     writer = hprose_writer_create(stream, simple);
     hprose_writer_write_string(writer, name);
-    if (zend_hash_num_elements(Z_ARRVAL_P(args)) > 0 || byref) {
+    if (Z_ARRLEN_P(args) > 0 || byref) {
         hprose_writer_reset(writer);
         hprose_writer_write_array(writer, args TSRMLS_CC);
         if (byref) {
@@ -41,7 +41,7 @@ static zend_always_inline void hprose_client_do_output(hprose_client *_this, zva
         }
     }
     hprose_writer_free(writer);
-    hprose_bytes_io_write_char(stream, HPROSE_TAG_END);
+    hprose_bytes_io_putc(stream, HPROSE_TAG_END);
     RETVAL_STRINGL_0(stream->buf, stream->len);
     efree(stream);
     ht = Z_ARRVAL_P(_this->filters);
@@ -109,8 +109,7 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
                     int32_t n, i;
                     hprose_reader_reset(reader);
                     hprose_reader_read_list(reader, _args TSRMLS_CC);
-                    n = MIN(zend_hash_num_elements(Z_ARRVAL_P(args)),
-                            zend_hash_num_elements(Z_ARRVAL_P(_args)));
+                    n = MIN(Z_ARRLEN_P(args), Z_ARRLEN_P(_args));
                     for (i = 0; i < n; ++i) {
                         zval *val = php_array_get(_args, i);
 #if PHP_MAJOR_VERSION < 7
@@ -314,7 +313,7 @@ ZEND_METHOD(hprose_proxy, __call) {
     }
     hprose_bytes_io_write(_name, _this->ns, strlen(_this->ns));
     hprose_bytes_io_write(_name, name, len);
-    n = zend_hash_num_elements(Z_ARRVAL_P(args));
+    n = Z_ARRLEN_P(args);
     if (n > 0) {
         zval *callback = php_array_get(args, n - 1);
         
@@ -355,7 +354,7 @@ ZEND_METHOD(hprose_proxy, __get) {
     }
     hprose_bytes_io_write(_name, _this->ns, strlen(_this->ns));
     hprose_bytes_io_write(_name, name, len);
-    hprose_bytes_io_write_char(_name, '-');
+    hprose_bytes_io_putc(_name, '-');
     create_php_object(HproseProxy, return_value, "zs", _this->client, _name->buf, (long)_name->len);
     hprose_bytes_io_free(_name);    
 }
@@ -513,7 +512,7 @@ ZEND_METHOD(hprose_client, invoke) {
 
 ZEND_METHOD(hprose_client, getFilter) {
     HPROSE_THIS(client);
-    if (zend_hash_num_elements(Z_ARRVAL_P(_this->filters))) {
+    if (Z_ARRLEN_P(_this->filters)) {
         zval *filter = php_array_get(_this->filters, 0);
         RETURN_ZVAL(filter, 1, 0);
     }

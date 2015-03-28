@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl header file.                           *
  *                                                        *
- * LastModified: Mar 26, 2015                             *
+ * LastModified: Mar 28, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -403,6 +403,10 @@ static zend_always_inline void * zend_hash_index_find_ptr(HashTable *ht, ulong h
 /**********************************************************\
 | array functions compatible PHP 7                         |
 \**********************************************************/
+
+#define Z_ARRLEN(v) zend_hash_num_elements(Z_ARRVAL(v))
+#define Z_ARRLEN_P(pv) zend_hash_num_elements(Z_ARRVAL_P(pv))
+#define Z_ARRLEN_PP(ppv) zend_hash_num_elements(Z_ARRVAL_PP(ppv))
 
 #if PHP_MAJOR_VERSION < 7
 
@@ -824,7 +828,7 @@ static zend_always_inline void __function_invoke_args(zend_fcall_info_cache fcc,
     int argc;
     zend_fcall_info fci;
 
-    argc = (param_array) ? zend_hash_num_elements(Z_ARRVAL_P(param_array)) : 0;
+    argc = (param_array) ? Z_ARRLEN_P(param_array) : 0;
 
     if (argc) {
 #if PHP_MAJOR_VERSION < 7

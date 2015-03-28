@@ -26,45 +26,6 @@
 #include "hprose_result_mode.h"
 #include "hprose_service.h"
 
-
-static zend_always_inline void hprose_service_input_filter(hprose_service *_this, zval *data, zval *context TSRMLS_DC) {
-    HashTable *ht = Z_ARRVAL_P(_this->filters);
-    int32_t i = zend_hash_num_elements(ht);
-    if (i) {
-        zend_hash_internal_pointer_end(ht);
-        for (; i > 0; --i) {
-#if PHP_MAJOR_VERSION < 7
-            zval **filter;
-            zend_hash_get_current_data(ht, (void **)&filter);
-            method_invoke(*filter, inputFilter, data, "zz", data, context);
-#else
-            zval *filter = zend_hash_get_current_data(ht);
-            method_invoke(filter, inputFilter, data, "zz", data, context);
-#endif
-            zend_hash_move_backwards(ht);
-        }
-    }
-}
-
-static zend_always_inline void hprose_service_output_filter(hprose_service *_this, zval *data, zval *context TSRMLS_DC) {
-    HashTable *ht = Z_ARRVAL_P(_this->filters);
-    int32_t i = zend_hash_num_elements(ht);
-    if (i) {
-        zend_hash_internal_pointer_reset(ht);
-        for (; i > 0; --i) {
-#if PHP_MAJOR_VERSION < 7
-            zval **filter;
-            zend_hash_get_current_data(ht, (void **)&filter);
-            method_invoke(*filter, outputFilter, data, "zz", data, context);
-#else
-            zval *filter = zend_hash_get_current_data(ht);
-            method_invoke(filter, outputFilter, data, "zz", data, context);
-#endif
-            zend_hash_move_forward(ht);
-        }
-    }
-}
-
 #if PHP_MAJOR_VERSION < 7
 static void hprose_service_remote_call_dtor(void *pDest) {
     hprose_remote_call **rc = (hprose_remote_call **)pDest;
@@ -108,7 +69,7 @@ ZEND_METHOD(hprose_service, __destruct) {
 
 ZEND_METHOD(hprose_service, getFilter) {
     HPROSE_THIS(service);
-    if (zend_hash_num_elements(Z_ARRVAL_P(_this->filters))) {
+    if (Z_ARRLEN_P(_this->filters)) {
         zval *filter = php_array_get(_this->filters, 0);
         RETURN_ZVAL(filter, 1, 0);
     }

@@ -280,25 +280,25 @@ static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_re
     char tag;
     hprose_bytes_io *tmp = hprose_bytes_io_new();
     hprose_bytes_io_read_to(_this->stream, tmp, 4);
-    hprose_bytes_io_write_char(tmp, '-');
+    hprose_bytes_io_putc(tmp, '-');
     hprose_bytes_io_read_to(_this->stream, tmp, 2);
-    hprose_bytes_io_write_char(tmp, '-');
+    hprose_bytes_io_putc(tmp, '-');
     hprose_bytes_io_read_to(_this->stream, tmp, 2);
     tag = hprose_bytes_io_getc(_this->stream);
     if (tag == HPROSE_TAG_TIME) {
-        hprose_bytes_io_write_char(tmp, tag);
+        hprose_bytes_io_putc(tmp, tag);
         hprose_bytes_io_read_to(_this->stream, tmp, 2);
-        hprose_bytes_io_write_char(tmp, ':');
+        hprose_bytes_io_putc(tmp, ':');
         hprose_bytes_io_read_to(_this->stream, tmp, 2);
-        hprose_bytes_io_write_char(tmp, ':');
+        hprose_bytes_io_putc(tmp, ':');
         hprose_bytes_io_read_to(_this->stream, tmp, 2);
         tag = hprose_bytes_io_getc(_this->stream);
         if (tag == HPROSE_TAG_POINT) {
-            hprose_bytes_io_write_char(tmp, tag);
+            hprose_bytes_io_putc(tmp, tag);
             hprose_bytes_io_read_to(_this->stream, tmp, 3);
             tag = hprose_bytes_io_getc(_this->stream);
             if ((tag >= '0') && (tag <= '9')) {
-                hprose_bytes_io_write_char(tmp, tag);
+                hprose_bytes_io_putc(tmp, tag);
                 hprose_bytes_io_read_to(_this->stream, tmp, 2);
                 tag = hprose_bytes_io_getc(_this->stream);
                 if ((tag >= '0') && (tag <= '9')) {
@@ -324,19 +324,19 @@ static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader
     char tag;
     hprose_bytes_io *tmp = hprose_bytes_io_new();
     hprose_bytes_io_write(tmp, "1970-01-01", 10);
-    hprose_bytes_io_write_char(tmp, HPROSE_TAG_TIME);
+    hprose_bytes_io_putc(tmp, HPROSE_TAG_TIME);
     hprose_bytes_io_read_to(_this->stream, tmp, 2);
-    hprose_bytes_io_write_char(tmp, ':');
+    hprose_bytes_io_putc(tmp, ':');
     hprose_bytes_io_read_to(_this->stream, tmp, 2);
-    hprose_bytes_io_write_char(tmp, ':');
+    hprose_bytes_io_putc(tmp, ':');
     hprose_bytes_io_read_to(_this->stream, tmp, 2);
     tag = hprose_bytes_io_getc(_this->stream);
     if (tag == HPROSE_TAG_POINT) {
-        hprose_bytes_io_write_char(tmp, tag);
+        hprose_bytes_io_putc(tmp, tag);
         hprose_bytes_io_read_to(_this->stream, tmp, 3);
         tag = hprose_bytes_io_getc(_this->stream);
         if ((tag >= '0') && (tag <= '9')) {
-            hprose_bytes_io_write_char(tmp, tag);
+            hprose_bytes_io_putc(tmp, tag);
             hprose_bytes_io_read_to(_this->stream, tmp, 2);
             tag = hprose_bytes_io_getc(_this->stream);
             if ((tag >= '0') && (tag <= '9')) {
