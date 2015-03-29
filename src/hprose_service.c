@@ -113,7 +113,7 @@ ZEND_METHOD(hprose_service, __destruct) {
 
 ZEND_METHOD(hprose_service, getErrorTypeString) {
     long e;
-    const char *err;
+    char *err;
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &e) == FAILURE) {
         return;
     }

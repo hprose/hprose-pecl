@@ -101,7 +101,7 @@ static zend_always_inline zend_bool is_magic_method(char *name, int32_t len) {
     return 0;
 }
 
-static zend_always_inline const char * get_error_type_string(long e) {
+static zend_always_inline char * get_error_type_string(long e) {
     switch (e) {
         case E_ERROR: return "Error";
         case E_WARNING: return "Warning";
