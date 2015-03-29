@@ -116,8 +116,10 @@ static zend_always_inline const char * get_error_type_string(long e) {
         case E_USER_NOTICE: return "User Notice";
         case E_STRICT: return "Runtime Notice";
         case E_RECOVERABLE_ERROR: return "Catchable Fatal Error";
+#if PHP_API_VERSION >= 20090626
         case E_DEPRECATED: return "Deprecated";
         case E_USER_DEPRECATED: return "User Deprecated";
+#endif
         default: return "Unknown Error";
     }
 }
