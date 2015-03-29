@@ -87,6 +87,14 @@ ZEND_METHOD(hprose_service, outputFilter) {
     hprose_service_output_filter(_this, return_value, context);
 }
 
+ZEND_METHOD(hprose_service, sendError) {
+    zval *err, *context;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &err, &context) == FAILURE) {
+        return;
+    }    
+    hprose_service_send_error(getThis(), err, context, return_value TSRMLS_CC);
+}
+
 ZEND_METHOD(hprose_service, getFilter) {
     HPROSE_THIS(service);
     if (Z_ARRLEN_P(_this->filters)) {
@@ -164,6 +172,11 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_service_filter_arginfo, 0, 0, 2)
     ZEND_ARG_INFO(0, context)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_send_error_arginfo, 0, 0, 2)
+    ZEND_ARG_INFO(0, error)
+    ZEND_ARG_INFO(0, context)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_get_filter_arginfo, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
@@ -189,8 +202,9 @@ ZEND_END_ARG_INFO()
 static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, __construct, hprose_service_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     ZEND_ME(hprose_service, __destruct, hprose_service_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
-    ZEND_ME(hprose_service, inputFilter, hprose_service_filter_arginfo, ZEND_ACC_PUBLIC)
-    ZEND_ME(hprose_service, outputFilter, hprose_service_filter_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_service, inputFilter, hprose_service_filter_arginfo, ZEND_ACC_PROTECTED)
+    ZEND_ME(hprose_service, outputFilter, hprose_service_filter_arginfo, ZEND_ACC_PROTECTED)
+    ZEND_ME(hprose_service, sendError, hprose_service_send_error_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, getFilter, hprose_service_get_filter_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, setFilter, hprose_service_set_filter_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, addFilter, hprose_service_add_filter_arginfo, ZEND_ACC_PUBLIC)
