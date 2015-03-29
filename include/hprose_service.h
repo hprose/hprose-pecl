@@ -147,14 +147,14 @@ static zend_always_inline void hprose_service_on_send_error(zval *service, zval 
 #if PHP_API_VERSION < 20090626
     if (on_send_error && zend_is_callable(on_send_error, 0, NULL)) {
 #else
-    if (on_send_error && zend_is_callable(on_send_error, 0, NULL TSRMLS_CC)) {
+    if (on_send_error && zend_is_callable(on_send_error, IS_CALLABLE_CHECK_SILENT, NULL TSRMLS_CC)) {
 #endif
         callable_invoke(on_send_error, NULL, "zz", err, context);
     }
 #else
     zval on_send_error;
     zend_read_property(get_hprose_service_ce(), service, ZEND_STRL("onSendError"), 1, &on_send_error);
-    if (zend_is_callable(&on_send_error, 0, NULL)) {
+    if (zend_is_callable(&on_send_error, IS_CALLABLE_CHECK_SILENT, NULL)) {
         callable_invoke(&on_send_error, NULL, "zz", err, context);
     }
 #endif
@@ -166,14 +166,14 @@ static zend_always_inline void hprose_service_on_before_invoke(zval *service, zv
 #if PHP_API_VERSION < 20090626
     if (on_before_invoke && zend_is_callable(on_before_invoke, 0, NULL)) {
 #else
-    if (on_before_invoke && zend_is_callable(on_before_invoke, 0, NULL TSRMLS_CC)) {
+    if (on_before_invoke && zend_is_callable(on_before_invoke, IS_CALLABLE_CHECK_SILENT, NULL TSRMLS_CC)) {
 #endif
         callable_invoke(on_before_invoke, NULL, "zzbz", name, args, byref, context);
     }
 #else
     zval on_before_invoke;
     zend_read_property(get_hprose_service_ce(), service, ZEND_STRL("onBeforeInvoke"), 1, &on_before_invoke);
-    if (zend_is_callable(&on_before_invoke, 0, NULL)) {
+    if (zend_is_callable(&on_before_invoke, IS_CALLABLE_CHECK_SILENT, NULL)) {
         callable_invoke(&on_before_invoke, NULL, "zzbz", name, args, byref, context);
     }
 #endif
@@ -185,14 +185,14 @@ static zend_always_inline void hprose_service_on_after_invoke(zval *service, zva
 #if PHP_API_VERSION < 20090626
     if (on_after_invoke && zend_is_callable(on_after_invoke, 0, NULL)) {
 #else
-    if (on_after_invoke && zend_is_callable(on_after_invoke, 0, NULL TSRMLS_CC)) {
+    if (on_after_invoke && zend_is_callable(on_after_invoke, IS_CALLABLE_CHECK_SILENT, NULL TSRMLS_CC)) {
 #endif
         callable_invoke(on_after_invoke, NULL, "zzbzz", name, args, byref, result, context);
     }
 #else
     zval on_after_invoke;
     zend_read_property(get_hprose_service_ce(), service, ZEND_STRL("onAfterInvoke"), 1, &on_after_invoke);
-    if (zend_is_callable(&on_after_invoke, 0, NULL)) {
+    if (zend_is_callable(&on_after_invoke, IS_CALLABLE_CHECK_SILENT, NULL)) {
         callable_invoke(&on_after_invoke, NULL, "zzbzz", name, args, byref, result, context);
     }
 #endif
