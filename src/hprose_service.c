@@ -111,24 +111,18 @@ ZEND_METHOD(hprose_service, __destruct) {
     }
 }
 
-ZEND_METHOD(hprose_service, inputFilter) {
-    zval *data, *context;
-    HPROSE_THIS(service);
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &data, &context) == FAILURE) {
+ZEND_METHOD(hprose_service, getErrorTypeString) {
+    long e;
+    const char *err;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &e) == FAILURE) {
         return;
     }
-    RETVAL_ZVAL(data, 0, 0);
-    hprose_service_input_filter(_this, return_value, context TSRMLS_CC);
-}
-
-ZEND_METHOD(hprose_service, outputFilter) {
-    zval *data, *context;
-    HPROSE_THIS(service);
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &data, &context) == FAILURE) {
-        return;
-    }
-    RETVAL_ZVAL(data, 0, 0);
-    hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
+    err = get_error_type_string(e);
+#if PHP_MAJOR_VERSION < 7
+    RETURN_STRING(err, 1);
+#else
+    RETURN_STRING(err);
+#endif
 }
 
 ZEND_METHOD(hprose_service, sendError) {
@@ -291,9 +285,8 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_void_arginfo, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(hprose_service_filter_arginfo, 0, 0, 2)
-    ZEND_ARG_INFO(0, data)
-    ZEND_ARG_INFO(0, context)
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_get_error_type_string_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, errno)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_send_error_arginfo, 0, 0, 2)
@@ -361,8 +354,7 @@ ZEND_END_ARG_INFO()
 static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, __construct, hprose_service_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     ZEND_ME(hprose_service, __destruct, hprose_service_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
-    ZEND_ME(hprose_service, inputFilter, hprose_service_filter_arginfo, ZEND_ACC_PROTECTED)
-    ZEND_ME(hprose_service, outputFilter, hprose_service_filter_arginfo, ZEND_ACC_PROTECTED)
+    ZEND_ME(hprose_service, getErrorTypeString, hprose_service_get_error_type_string_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, sendError, hprose_service_send_error_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, doInvoke, hprose_service_do_invoke_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, doFunctionList, hprose_service_do_function_list_arginfo, ZEND_ACC_PROTECTED)

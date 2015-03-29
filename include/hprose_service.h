@@ -101,6 +101,27 @@ static zend_always_inline zend_bool is_magic_method(char *name, int32_t len) {
     return 0;
 }
 
+static zend_always_inline const char * get_error_type_string(long e) {
+    switch (e) {
+        case E_ERROR: return "Error";
+        case E_WARNING: return "Warning";
+        case E_PARSE: return "Parse Error";
+        case E_NOTICE: return "Notice";
+        case E_CORE_ERROR: return "Core Error";
+        case E_CORE_WARNING: return "Core Warning";
+        case E_COMPILE_ERROR: return "Compile Error";
+        case E_COMPILE_WARNING: return "Compile Warning";
+        case E_USER_ERROR: return "User Error";
+        case E_USER_WARNING: return "User Warning";
+        case E_USER_NOTICE: return "User Notice";
+        case E_STRICT: return "Runtime Notice";
+        case E_RECOVERABLE_ERROR: return "Catchable Fatal Error";
+        case E_DEPRECATED: return "Deprecated";
+        case E_USER_DEPRECATED: return "User Deprecated";
+        default: return "Unknown Error";
+    }
+}
+
 static zend_always_inline void hprose_service_input_filter(hprose_service *_this, zval *data, zval *context TSRMLS_DC) {
     HashTable *ht = Z_ARRVAL_P(_this->filters);
     int32_t i = zend_hash_num_elements(ht);
