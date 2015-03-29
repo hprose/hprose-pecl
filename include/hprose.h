@@ -632,7 +632,7 @@ static zend_always_inline zend_bool __instanceof(zend_class_entry *ce, char *nam
 #define hprose_make_zval(val)      MAKE_STD_ZVAL(val)
 #define hprose_zval_free(val)      zval_ptr_dtor(&(val))
 #else
-#define hprose_make_zval(val)      val = emalloc(sizeof(zval)); ZVAL_NULL(val);
+#define hprose_make_zval(val)      val = emalloc(sizeof(zval));
 #define hprose_zval_free(val)      zval_ptr_dtor(val); efree(val);
 #endif
 

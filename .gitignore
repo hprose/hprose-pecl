@@ -41,3 +41,5 @@ tests/*.log
 tests/*.out
 tests/*.php
 tests/*.sh
+
+tmp-php.ini

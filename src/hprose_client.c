@@ -170,6 +170,7 @@ static zend_always_inline void hprose_client_sync_invoke(zval *client, char *nam
         return;
     }
     hprose_make_zval(response);
+    ZVAL_NULL(response);
     method_invoke(client, sendAndReceive, response, "z", request);
     hprose_zval_free(request);
     if (EG(exception)) {
