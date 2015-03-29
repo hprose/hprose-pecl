@@ -934,7 +934,7 @@ static zend_always_inline void __function_invoke_args(zend_fcall_info_cache fcc,
 #endif
 }
 
-static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return_value TSRMLS_DC, const char *params_format, ...) {
+static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return_value, zend_bool dtor TSRMLS_DC, const char *params_format, ...) {
 #if PHP_MAJOR_VERSION < 7
     zval *retval_ptr = NULL;
     zval ***params = NULL;
@@ -1121,6 +1121,9 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
 
     if (retval_ptr) {
         if (return_value) {
+            if (dtor) {
+                zval_dtor(return_value);
+            }
             COPY_PZVAL_TO_ZVAL(*return_value, retval_ptr);
         }
         else {
@@ -1147,6 +1150,9 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
 
     if (Z_TYPE(retval) != IS_UNDEF) {
         if (return_value) {
+            if (dtor) {
+                zval_ptr_dtor(return_value);
+            }
             ZVAL_COPY_VALUE(return_value, &retval);
         }
         else {
@@ -1156,14 +1162,20 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
 #endif
 }
 
-#define function_invoke_no_args(name, return_value) __function_invoke(get_fcall_info_cache(NULL, name), NULL, return_value TSRMLS_CC, "")
-#define function_invoke(name, return_value, params_format, ...) __function_invoke(get_fcall_info_cache(NULL, name), NULL, return_value TSRMLS_CC, params_format, __VA_ARGS__)
+#define function_invoke_no_args(name, return_value) __function_invoke(get_fcall_info_cache(NULL, name), NULL, return_value, 0 TSRMLS_CC, "")
+#define function_invoke_no_args_ex(name, return_value, dtor) __function_invoke(get_fcall_info_cache(NULL, name), NULL, return_value, dtor TSRMLS_CC, "")
+#define function_invoke(name, return_value, params_format, ...) __function_invoke(get_fcall_info_cache(NULL, name), NULL, return_value, 0 TSRMLS_CC, params_format, __VA_ARGS__)
+#define function_invoke_ex(name, return_value, dtor, params_format, ...) __function_invoke(get_fcall_info_cache(NULL, name), NULL, return_value, dtor TSRMLS_CC, params_format, __VA_ARGS__)
 #define function_invoke_args(name, return_value, param_array) __function_invoke_args(get_fcall_info_cache(NULL, name), NULL, return_value, param_array TSRMLS_CC)
-#define method_invoke_no_args(obj, name, return_value) __function_invoke(get_fcall_info_cache(obj, name), obj, return_value TSRMLS_CC, "")
-#define method_invoke(obj, name, return_value, params_format, ...) __function_invoke(get_fcall_info_cache(obj, name), obj, return_value TSRMLS_CC, params_format, __VA_ARGS__)
+#define method_invoke_no_args(obj, name, return_value) __function_invoke(get_fcall_info_cache(obj, name), obj, return_value, 0 TSRMLS_CC, "")
+#define method_invoke_no_args_ex(obj, name, return_value, dtor) __function_invoke(get_fcall_info_cache(obj, name), obj, return_value, dtor TSRMLS_CC, "")
+#define method_invoke(obj, name, return_value, params_format, ...) __function_invoke(get_fcall_info_cache(obj, name), obj, return_value, 0 TSRMLS_CC, params_format, __VA_ARGS__)
+#define method_invoke_ex(obj, name, return_value, dtor, params_format, ...) __function_invoke(get_fcall_info_cache(obj, name), obj, return_value, dtor TSRMLS_CC, params_format, __VA_ARGS__)
 #define method_invoke_args(obj, name, return_value, param_array) __function_invoke_args(get_fcall_info_cache(obj, name), obj, return_value, param_array TSRMLS_CC)
-#define callable_invoke_no_args(callable, return_value) __function_invoke(_get_fcall_info_cache(callable TSRMLS_CC), NULL, return_value TSRMLS_CC, "")
-#define callable_invoke(callable, return_value, params_format, ...) __function_invoke(_get_fcall_info_cache(callable TSRMLS_CC), NULL, return_value TSRMLS_CC, params_format, __VA_ARGS__)
+#define callable_invoke_no_args(callable, return_value) __function_invoke(_get_fcall_info_cache(callable TSRMLS_CC), NULL, return_value, 0 TSRMLS_CC, "")
+#define callable_invoke_no_args_ex(callable, return_value, dtor) __function_invoke(_get_fcall_info_cache(callable TSRMLS_CC), NULL, return_value, dtor TSRMLS_CC, "")
+#define callable_invoke(callable, return_value, params_format, ...) __function_invoke(_get_fcall_info_cache(callable TSRMLS_CC), NULL, return_value, 0 TSRMLS_CC, params_format, __VA_ARGS__)
+#define callable_invoke_ex(callable, return_value, dtor, params_format, ...) __function_invoke(_get_fcall_info_cache(callable TSRMLS_CC), NULL, return_value, dtor TSRMLS_CC, params_format, __VA_ARGS__)
 #define callable_invoke_args(callable, return_value, param_array) __function_invoke_args(_get_fcall_info_cache(callable TSRMLS_CC), NULL, return_value, param_array TSRMLS_CC)
 
 static zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *return_value TSRMLS_DC, const char *params_format, ...) {

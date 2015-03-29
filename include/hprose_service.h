@@ -133,10 +133,10 @@ static zend_always_inline void hprose_service_input_filter(hprose_service *_this
 #if PHP_MAJOR_VERSION < 7
             zval **filter;
             zend_hash_get_current_data(ht, (void **)&filter);
-            method_invoke(*filter, inputFilter, data, "zz", data, context);
+            method_invoke_ex(*filter, inputFilter, data, 1, "zz", data, context);
 #else
             zval *filter = zend_hash_get_current_data(ht);
-            method_invoke(filter, inputFilter, data, "zz", data, context);
+            method_invoke_ex(filter, inputFilter, data, 1, "zz", data, context);
 #endif
             if (EG(exception)) return;
             zend_hash_move_backwards(ht);
@@ -153,10 +153,10 @@ static zend_always_inline void hprose_service_output_filter(hprose_service *_thi
 #if PHP_MAJOR_VERSION < 7
             zval **filter;
             zend_hash_get_current_data(ht, (void **)&filter);
-            method_invoke(*filter, outputFilter, data, "zz", data, context);
+            method_invoke_ex(*filter, outputFilter, data, 1, "zz", data, context);
 #else
             zval *filter = zend_hash_get_current_data(ht);
-            method_invoke(filter, outputFilter, data, "zz", data, context);
+            method_invoke_ex(filter, outputFilter, data, 1, "zz", data, context);
 #endif
             if (EG(exception)) return;
             zend_hash_move_forward(ht);
