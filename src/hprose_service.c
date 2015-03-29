@@ -129,7 +129,28 @@ ZEND_METHOD(hprose_service, setDebugEnabled) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &debug) == FAILURE) {
         return;
     }
-    zend_update_property_bool(get_hprose_service_ce(), getThis(), ZEND_STRL("debug"), 0 TSRMLS_CC);
+    zend_update_property_bool(get_hprose_service_ce(), getThis(), ZEND_STRL("debug"), debug TSRMLS_CC);
+}
+
+ZEND_METHOD(hprose_service, getErrorTypes) {
+#if PHP_MAJOR_VERSION < 7
+    zval *_error_types = zend_read_property(get_hprose_service_ce(), getThis(), ZEND_STRL("error_types"), 1 TSRMLS_CC);
+    long error_types = Z_LVAL_P(_error_types);
+#else
+    zval _error_types;
+    long error_types;
+    zend_read_property(get_hprose_service_ce(), getThis(), ZEND_STRL("error_types"), 1, &_error_types);
+    error_types = Z_LVAL(_error_types);
+#endif
+    RETURN_LONG(error_types);
+}
+
+ZEND_METHOD(hprose_service, setErrorTypes) {
+    long error_types;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &error_types) == FAILURE) {
+        return;
+    }
+    zend_update_property_long(get_hprose_service_ce(), getThis(), ZEND_STRL("error_types"), error_types TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_service, getFilter) {
@@ -238,6 +259,13 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_service_set_debug_enabled_arginfo, 0, 0, 0)
     ZEND_ARG_INFO(0, enable)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_get_error_types_arginfo, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_set_error_types_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, error_types)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_get_filter_arginfo, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
@@ -275,6 +303,8 @@ static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, doFunctionList, hprose_service_do_function_list_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, isDebugEnabled, hprose_service_is_debug_enabled_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, setDebugEnabled, hprose_service_set_debug_enabled_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_service, getErrorTypes, hprose_service_get_error_types_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_service, setErrorTypes, hprose_service_set_error_types_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, getFilter, hprose_service_get_filter_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, setFilter, hprose_service_set_filter_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, addFilter, hprose_service_add_filter_arginfo, ZEND_ACC_PUBLIC)
