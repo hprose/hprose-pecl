@@ -26,15 +26,58 @@
 #include "hprose_result_mode.h"
 #include "hprose_service.h"
 
+static zend_always_inline void hprose_service_add_function(hprose_service *_this, zval *func, zval *alias, uint8_t mode, uint8_t simple TSRMLS_DC) {
+    zend_fcall_info_cache fcc = _get_fcall_info_cache(func TSRMLS_CC);
+    char *name;
+    int32_t len, i, n;
+    hprose_remote_call *call;
+    if (EG(exception)) {
+        return;
+    }
+    if (alias) {
+        convert_to_string(alias);
+    }
+    if (alias == NULL || Z_STRLEN_P(alias) == 0) {
+        switch (Z_TYPE_P(func)) {
+            case IS_STRING: alias = func; break;
+            case IS_ARRAY: alias = php_array_get(func, 1); break;
+            default: zend_throw_exception(NULL, "Argument func is not callable.", 0 TSRMLS_CC); return;
+        }
+    }
+    len = Z_STRLEN_P(alias);
+    name = zend_str_tolower_dup(Z_STRVAL_P(alias), len);
+    if (!zend_hash_str_exists(_this->calls, name, len)) {
+#if PHP_MAJOR_VERSION < 7
+        Z_ADDREF_P(alias);
+#else
+        Z_TRY_ADDREF_P(alias);
+#endif
+        add_next_index_zval(_this->names, alias);
+    }
+    call = emalloc(sizeof(hprose_remote_call));
+    call->fcc = fcc;
+    call->mode = mode;
+    call->simple = simple;
+    call->byref = 0;
+    n = call->fcc.function_handler->common.num_args;
+    for (i = 1; i <= n; ++i) {
+        if (fcc.function_handler->common.arg_info[i].pass_by_reference) {
+            call->byref = 1;
+            break;
+        }
+    }
+    zend_hash_str_update_ptr(_this->calls, name, len, call);
+}
+
 #if PHP_MAJOR_VERSION < 7
 static void hprose_service_remote_call_dtor(void *pDest) {
-    hprose_remote_call **rc = (hprose_remote_call **)pDest;
-    efree(*rc);
+    hprose_remote_call **call = (hprose_remote_call **)pDest;
+    efree(*call);
 }
 #else
 static void hprose_service_remote_call_dtor(zval *pDest) {
-    hprose_remote_call *rc = (hprose_remote_call *)Z_PTR_P(pDest);
-    efree(rc);
+    hprose_remote_call *call = (hprose_remote_call *)Z_PTR_P(pDest);
+    efree(call);
 }
 #endif
 
@@ -226,6 +269,20 @@ ZEND_METHOD(hprose_service, defaultHandle) {
     hprose_service_default_handle(getThis(), request, context, return_value TSRMLS_CC);
 }
 
+ZEND_METHOD(hprose_service, addFunction) {
+    zval *func, *alias = NULL, *_simple = NULL;
+    long mode = HPROSE_RESULT_MODE_NORMAL, simple = 2;
+    HPROSE_THIS(service);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|z!lz!", &func, &alias, &mode, &simple) == FAILURE) {
+        return;
+    }
+    if (_simple) {
+        convert_to_boolean(_simple);
+        simple = Z_BVAL_P(_simple);
+    }
+    hprose_service_add_function(_this, func, alias, mode, simple  TSRMLS_CC);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_construct_arginfo, 0, 0, 0)
     ZEND_ARG_INFO(0, url)
 ZEND_END_ARG_INFO()
@@ -293,6 +350,13 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_service_default_handle_arginfo, 0, 0, 2)
     ZEND_ARG_INFO(0, context)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_add_function_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, func)
+    ZEND_ARG_INFO(0, alias)
+    ZEND_ARG_INFO(0, mode)
+    ZEND_ARG_INFO(0, simple)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, __construct, hprose_service_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     ZEND_ME(hprose_service, __destruct, hprose_service_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
@@ -312,6 +376,7 @@ static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, getSimple, hprose_service_get_simple_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, setSimple, hprose_service_set_simple_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, defaultHandle, hprose_service_default_handle_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_service, addFunction, hprose_service_add_function_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 

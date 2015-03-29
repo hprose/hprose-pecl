@@ -264,12 +264,12 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
                     zval *e = php_array_get(args, i);
 #if PHP_MAJOR_VERSION < 7
                     Z_ADDREF_P(e);
-                    if (call->fcc.function_handler->common.arg_info[i].pass_by_reference) {
+                    if (call->fcc.function_handler->common.arg_info[i + 1].pass_by_reference) {
                         Z_SET_ISREF_P(e);
                     }
                     add_next_index_zval(_args, e);
 #else
-                    if (call->fcc.function_handler->common.arg_info[i].pass_by_reference) {
+                    if (call->fcc.function_handler->common.arg_info[i + 1].pass_by_reference) {
                         zval r;
                         ZVAL_NEW_REF(&r, e);
                         add_next_index_zval(_args, &r);

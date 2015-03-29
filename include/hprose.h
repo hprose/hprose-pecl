@@ -398,6 +398,7 @@ static zend_always_inline void * zend_hash_index_find_ptr(HashTable *ht, ulong h
     void **ppData;
     return (zend_hash_index_find(ht, h, (void **)&ppData) == FAILURE) ? NULL : *ppData;
 }
+#define zend_hash_str_exists(ht, key, len) zend_hash_exists((ht), (key), (len))
 #endif /* PHP_MAJOR_VERSION < 7 */
 
 /**********************************************************\
