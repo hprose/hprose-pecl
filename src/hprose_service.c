@@ -176,6 +176,14 @@ ZEND_METHOD(hprose_service, setSimple) {
     _this->simple = simple;
 }
 
+ZEND_METHOD(hprose_service, defaultHandle) {
+    zval *request, *context;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &request, &context) == FAILURE) {
+        return;
+    }    
+    hprose_service_default_handle(getThis(), request, context, return_value TSRMLS_CC);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_construct_arginfo, 0, 0, 0)
     ZEND_ARG_INFO(0, url)
 ZEND_END_ARG_INFO()
@@ -224,6 +232,11 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_service_set_simple_arginfo, 0, 0, 0)
     ZEND_ARG_INFO(0, simple)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_default_handle_arginfo, 0, 0, 2)
+    ZEND_ARG_INFO(0, request)
+    ZEND_ARG_INFO(0, context)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, __construct, hprose_service_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     ZEND_ME(hprose_service, __destruct, hprose_service_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
@@ -238,6 +251,7 @@ static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, removeFilter, hprose_service_remove_filter_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, getSimple, hprose_service_get_simple_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, setSimple, hprose_service_set_simple_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_service, defaultHandle, hprose_service_default_handle_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 
