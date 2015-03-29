@@ -103,6 +103,14 @@ ZEND_METHOD(hprose_service, doInvoke) {
     hprose_service_do_invoke(getThis(), HPROSE_GET_OBJECT_P(bytes_io, input)->_this, context, return_value TSRMLS_CC);
 }
 
+ZEND_METHOD(hprose_service, doFunctionList) {
+    zval *context;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &context) == FAILURE) {
+        return;
+    }    
+    hprose_service_do_function_list(getThis(), context, return_value TSRMLS_CC);
+}
+
 ZEND_METHOD(hprose_service, getFilter) {
     HPROSE_THIS(service);
     if (Z_ARRLEN_P(_this->filters)) {
@@ -190,6 +198,10 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_service_do_invoke_arginfo, 0, 0, 2)
     ZEND_ARG_INFO(0, context)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_do_function_list_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, context)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_get_filter_arginfo, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
@@ -219,6 +231,7 @@ static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, outputFilter, hprose_service_filter_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, sendError, hprose_service_send_error_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, doInvoke, hprose_service_do_invoke_arginfo, ZEND_ACC_PROTECTED)
+    ZEND_ME(hprose_service, doFunctionList, hprose_service_do_function_list_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, getFilter, hprose_service_get_filter_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, setFilter, hprose_service_set_filter_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, addFilter, hprose_service_add_filter_arginfo, ZEND_ACC_PUBLIC)
