@@ -74,7 +74,7 @@ ZEND_METHOD(hprose_service, inputFilter) {
         return;
     }
     RETVAL_ZVAL(data, 0, 0);
-    hprose_service_input_filter(_this, return_value, context);
+    hprose_service_input_filter(_this, return_value, context TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_service, outputFilter) {
@@ -84,7 +84,7 @@ ZEND_METHOD(hprose_service, outputFilter) {
         return;
     }
     RETVAL_ZVAL(data, 0, 0);
-    hprose_service_output_filter(_this, return_value, context);
+    hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_service, sendError) {
@@ -109,6 +109,27 @@ ZEND_METHOD(hprose_service, doFunctionList) {
         return;
     }    
     hprose_service_do_function_list(getThis(), context, return_value TSRMLS_CC);
+}
+
+ZEND_METHOD(hprose_service, isDebugEnabled) {
+#if PHP_MAJOR_VERSION < 7
+    zval *_debug = zend_read_property(get_hprose_service_ce(), getThis(), ZEND_STRL("debug"), 1 TSRMLS_CC);
+    zend_bool debug = Z_BVAL_P(_debug);
+#else
+    zval _debug;
+    zend_bool debug;
+    zend_read_property(get_hprose_service_ce(), getThis(), ZEND_STRL("debug"), 1, &_debug);
+    debug = (Z_TYPE(_debug) == IS_TRUE);
+#endif
+    RETURN_BOOL(debug);
+}
+
+ZEND_METHOD(hprose_service, setDebugEnabled) {
+    zend_bool debug = 1;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &debug) == FAILURE) {
+        return;
+    }
+    zend_update_property_bool(get_hprose_service_ce(), getThis(), ZEND_STRL("debug"), 0 TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_service, getFilter) {
@@ -210,6 +231,13 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_service_do_function_list_arginfo, 0, 0, 1)
     ZEND_ARG_INFO(0, context)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_is_debug_enabled_arginfo, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_set_debug_enabled_arginfo, 0, 0, 0)
+    ZEND_ARG_INFO(0, enable)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_get_filter_arginfo, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
@@ -245,6 +273,8 @@ static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, sendError, hprose_service_send_error_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, doInvoke, hprose_service_do_invoke_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, doFunctionList, hprose_service_do_function_list_arginfo, ZEND_ACC_PROTECTED)
+    ZEND_ME(hprose_service, isDebugEnabled, hprose_service_is_debug_enabled_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_service, setDebugEnabled, hprose_service_set_debug_enabled_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, getFilter, hprose_service_get_filter_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, setFilter, hprose_service_set_filter_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, addFilter, hprose_service_add_filter_arginfo, ZEND_ACC_PUBLIC)

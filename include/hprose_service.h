@@ -396,6 +396,15 @@ static zend_always_inline void hprose_service_do_function_list(zval *service, zv
 static zend_always_inline void hprose_service_catch_error(zval *service, zval *err, zval *context, zval *return_value TSRMLS_DC) {
     hprose_bytes_io *estream = hprose_bytes_io_new();
     zval *result;
+#if PHP_MAJOR_VERSION < 7
+    zval *_debug = zend_read_property(get_hprose_service_ce(), service, ZEND_STRL("debug"), 1 TSRMLS_CC);
+    zend_bool debug = Z_BVAL_P(_debug);
+#else
+    zval _debug;
+    zend_bool debug;
+    zend_read_property(get_hprose_service_ce(), service, ZEND_STRL("debug"), 1, &_debug);
+    debug = (Z_TYPE(_debug) == IS_TRUE);
+#endif
 
     hprose_make_zval(result);
     method_invoke_no_args(err, getMessage, result);
@@ -403,27 +412,28 @@ static zend_always_inline void hprose_service_catch_error(zval *service, zval *e
     hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
     hprose_zval_free(result);
 
-    hprose_make_zval(result);
-    method_invoke_no_args(err, getFile, result);
-    convert_to_string(result);
-    hprose_bytes_io_write(estream, ZEND_STRL("\nfile: "));
-    hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
-    hprose_zval_free(result);
+    if (debug) {
+        hprose_make_zval(result);
+        method_invoke_no_args(err, getFile, result);
+        convert_to_string(result);
+        hprose_bytes_io_write(estream, ZEND_STRL("\nfile: "));
+        hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
+        hprose_zval_free(result);
 
-    hprose_make_zval(result);
-    method_invoke_no_args(err, getLine, result);
-    convert_to_string(result);
-    hprose_bytes_io_write(estream, ZEND_STRL("\nline: "));
-    hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
-    hprose_zval_free(result);
+        hprose_make_zval(result);
+        method_invoke_no_args(err, getLine, result);
+        convert_to_string(result);
+        hprose_bytes_io_write(estream, ZEND_STRL("\nline: "));
+        hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
+        hprose_zval_free(result);
 
-    hprose_make_zval(result);
-    method_invoke_no_args(err, getTraceAsString, result);
-    convert_to_string(result);
-    hprose_bytes_io_write(estream, ZEND_STRL("\ntrace: "));
-    hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
-    hprose_zval_free(result);
-
+        hprose_make_zval(result);
+        method_invoke_no_args(err, getTraceAsString, result);
+        convert_to_string(result);
+        hprose_bytes_io_write(estream, ZEND_STRL("\ntrace: "));
+        hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
+        hprose_zval_free(result);
+    }
     hprose_make_zval(result);
     ZVAL_STRINGL_0(result, estream->buf, estream->len);
     efree(estream);
