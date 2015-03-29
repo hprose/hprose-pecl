@@ -346,6 +346,7 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
             args = _args;
         }
         hprose_make_zval(result);
+        ZVAL_NULL(result);
         __function_invoke_args(call->fcc, NULL, result, args TSRMLS_CC);
         if (EG(exception)) {
             hprose_reader_free(reader);
