@@ -199,15 +199,15 @@ static zend_always_inline void hprose_service_on_after_invoke(zval *service, zva
 }
 
 static zend_always_inline void hprose_service_send_error(zval *service, zval *err, zval *context, zval *return_value TSRMLS_DC) {
-    hprose_bytes_io *stream = hprose_bytes_io_new();
-    hprose_writer *writer = hprose_writer_create(stream, 1);
+    hprose_bytes_io *output = hprose_bytes_io_new();
+    hprose_writer *writer = hprose_writer_create(output, 1);
     hprose_service_on_send_error(service, err, context TSRMLS_CC);
-    hprose_bytes_io_putc(stream, HPROSE_TAG_ERROR);
+    hprose_bytes_io_putc(output, HPROSE_TAG_ERROR);
     hprose_writer_write_string(writer, err);
-    hprose_bytes_io_putc(stream, HPROSE_TAG_END);
+    hprose_bytes_io_putc(output, HPROSE_TAG_END);
     hprose_writer_free(writer);
-    ZVAL_STRINGL_0(return_value, stream->buf, stream->len);
-    efree(stream);
+    RETVAL_STRINGL_0(output->buf, output->len);
+    efree(output);
     hprose_service_output_filter(HPROSE_GET_OBJECT_P(service, service)->_this, return_value, context TSRMLS_CC);
 }
 
@@ -256,20 +256,22 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
                 tag = hprose_bytes_io_getc(input);
             }
             if (call->byref) {
-                int32_t i, n = MIN(Z_ARRLEN_P(args), call->fcc.function_handler->common.num_args);
                 zval *_args;
+                int32_t i;
+                int32_t count = Z_ARRLEN_P(args);
+                int32_t n = MIN(count, call->fcc.function_handler->common.num_args);
                 hprose_make_zval(_args);
-                array_init_size(_args, n);
+                array_init_size(_args, count);
                 for (i = 0; i < n; ++i) {
                     zval *e = php_array_get(args, i);
 #if PHP_MAJOR_VERSION < 7
                     Z_ADDREF_P(e);
-                    if (call->fcc.function_handler->common.arg_info[i + 1].pass_by_reference) {
+                    if (call->fcc.function_handler->common.arg_info[i].pass_by_reference) {
                         Z_SET_ISREF_P(e);
                     }
                     add_next_index_zval(_args, e);
 #else
-                    if (call->fcc.function_handler->common.arg_info[i + 1].pass_by_reference) {
+                    if (call->fcc.function_handler->common.arg_info[i].pass_by_reference) {
                         zval r;
                         ZVAL_NEW_REF(&r, e);
                         add_next_index_zval(_args, &r);
@@ -279,6 +281,10 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
                         add_next_index_zval(_args, e);
                     }
 #endif
+                }
+                for (i = n; i < count; ++i) {
+                    zval *e = php_array_get(args, i);
+                    add_next_index_zval(_args, e);
                 }
                 hprose_zval_free(args);
                 args = _args;
@@ -375,7 +381,7 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
     } while (tag == HPROSE_TAG_CALL);
     hprose_reader_free(reader);
     hprose_bytes_io_putc(output, HPROSE_TAG_END);
-    ZVAL_STRINGL_0(return_value, output->buf, output->len);
+    RETVAL_STRINGL_0(output->buf, output->len);
     efree(output);
     hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
 }
@@ -388,7 +394,7 @@ static zend_always_inline void hprose_service_do_function_list(zval *service, zv
     hprose_writer_write_array(writer, _this->names TSRMLS_CC);
     hprose_bytes_io_putc(output, HPROSE_TAG_END);
     hprose_writer_free(writer);
-    ZVAL_STRINGL_0(return_value, output->buf, output->len);
+    RETVAL_STRINGL_0(output->buf, output->len);
     efree(output);
     hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
 }

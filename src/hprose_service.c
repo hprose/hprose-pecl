@@ -60,13 +60,14 @@ static zend_always_inline void hprose_service_add_function(hprose_service *_this
     call->simple = simple;
     call->byref = 0;
     n = call->fcc.function_handler->common.num_args;
-    for (i = 1; i <= n; ++i) {
+    for (i = 0; i < n; ++i) {
         if (fcc.function_handler->common.arg_info[i].pass_by_reference) {
             call->byref = 1;
             break;
         }
     }
     zend_hash_str_update_ptr(_this->calls, name, len, call);
+    efree(name);
 }
 
 #if PHP_MAJOR_VERSION < 7
@@ -225,7 +226,7 @@ ZEND_METHOD(hprose_service, addFilter) {
         return;
     }
     Z_ADDREF_P(filter);        
-    add_index_zval(_this->filters, 0, filter);
+    add_next_index_zval(_this->filters, filter);
 }
 
 ZEND_METHOD(hprose_service, removeFilter) {

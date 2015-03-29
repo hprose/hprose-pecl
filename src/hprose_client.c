@@ -564,7 +564,7 @@ ZEND_METHOD(hprose_client, addFilter) {
         return;
     }
     Z_ADDREF_P(filter);        
-    add_index_zval(_this->filters, 0, filter);
+    add_next_index_zval(_this->filters, filter);
 }
 
 ZEND_METHOD(hprose_client, removeFilter) {
