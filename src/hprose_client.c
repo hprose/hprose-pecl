@@ -245,7 +245,7 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
                 Z_ADDREF_P(err);
                 SEPARATE_ZVAL(&err);
                 zend_clear_exception(TSRMLS_C);
-                callable_invoke(callback, NULL, "zzz", result, args, err);
+                __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zzz", result, args, err);
                 zval_ptr_dtor(&err);
 #else
                 zval e;
@@ -253,16 +253,16 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
                 Z_ADDREF(e);
                 SEPARATE_ZVAL(&e);
                 zend_clear_exception();
-                callable_invoke(callback, NULL, "zzz", result, args, &e);
+                __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zzz", result, args, &e);
                 zval_ptr_dtor(&e);
 #endif
             }
             else {
-                callable_invoke(callback, NULL, "zzz", result, args, NULL);
+                __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zzz", result, args, NULL);
             }
         }
         else {
-            callable_invoke(callback, NULL, "zzz", result, args, err);
+            __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zzz", result, args, err);
         }
     }
     else {
@@ -277,9 +277,9 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
             return;
         }
         switch (n) {
-            case 0: callable_invoke_no_args(callback, NULL); break;
-            case 1: callable_invoke(callback, NULL, "z", result); break;
-            case 2: callable_invoke(callback, NULL, "zz", result, args); break;
+            case 0: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, ""); break;
+            case 1: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "z", result); break;
+            case 2: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zz", result, args); break;
         }
     }
     hprose_zval_free(result);
