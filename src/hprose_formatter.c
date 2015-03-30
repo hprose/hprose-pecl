@@ -13,7 +13,7 @@
  *                                                        *
  * hprose formatter for pecl source file.                 *
  *                                                        *
- * LastModified: Mar 24, 2015                             *
+ * LastModified: Mar 30, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -25,13 +25,13 @@
 ZEND_FUNCTION(hprose_serialize) {
     zval *val;
     zend_bool simple = 0;
-    hprose_bytes_io *stream;
+    hprose_bytes_io stream;
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!|b", &val, &simple) == FAILURE) {
         return;
     }
-    stream = hprose_serialize(val, simple TSRMLS_CC);
-    RETVAL_STRINGL_0(stream->buf, stream->len);
-    efree(stream);
+    hprose_bytes_io_init(&stream, NULL, 0);
+    hprose_serialize(&stream, val, simple TSRMLS_CC);
+    RETVAL_STRINGL_0(stream.buf, stream.len);
 }
 /* }}} */
 
@@ -41,13 +41,12 @@ ZEND_FUNCTION(hprose_unserialize) {
     char *data;
     length_t len;
     zend_bool simple = 0;
-    hprose_bytes_io *stream;
+    hprose_bytes_io stream;
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &data, &len, &simple) == FAILURE) {
         return;
     }
-    stream = hprose_bytes_io_create_readonly(data, len);
-    hprose_unserialize(stream, simple, return_value TSRMLS_CC);
-    efree(stream);
+    hprose_bytes_io_init_readonly(&stream, data, len);
+    hprose_unserialize(&stream, simple, return_value TSRMLS_CC);
 }
 /* }}} */
 

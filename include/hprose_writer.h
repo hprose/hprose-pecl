@@ -193,18 +193,22 @@ typedef struct {
 
 static inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRMLS_DC);
 
-static zend_always_inline hprose_writer * hprose_writer_create(hprose_bytes_io *stream, zend_bool simple) {
-    hprose_writer *_this = emalloc(sizeof(hprose_writer));
+static zend_always_inline void hprose_writer_init(hprose_writer *_this, hprose_bytes_io *stream, zend_bool simple) {
     _this->stream = stream;
     hprose_make_zval(_this->classref);
     hprose_make_zval(_this->propsref);
     array_init(_this->classref);
     array_init(_this->propsref);
     _this->refer = simple ? hprose_fake_writer_refer_new() : hprose_real_writer_refer_new();
+}
+
+static zend_always_inline hprose_writer * hprose_writer_create(hprose_bytes_io *stream, zend_bool simple) {
+    hprose_writer *_this = emalloc(sizeof(hprose_writer));
+    hprose_writer_init(_this, stream, simple);
     return _this;
 }
 
-static zend_always_inline void hprose_writer_free(hprose_writer *_this) {
+static zend_always_inline void hprose_writer_destroy(hprose_writer *_this) {
     _this->stream = NULL;
     hprose_zval_free(_this->classref);
     hprose_zval_free(_this->propsref);
@@ -212,6 +216,10 @@ static zend_always_inline void hprose_writer_free(hprose_writer *_this) {
     _this->propsref = NULL;
     _this->refer->handlers->free(_this->refer);
     _this->refer = NULL;
+}
+
+static zend_always_inline void hprose_writer_free(hprose_writer *_this) {
+    hprose_writer_destroy(_this);
     efree(_this);
 }
 

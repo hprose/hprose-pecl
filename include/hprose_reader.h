@@ -133,18 +133,22 @@ typedef struct {
 
 static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_value TSRMLS_DC);
 
-static zend_always_inline hprose_reader * hprose_reader_create(hprose_bytes_io *stream, zend_bool simple) {
-    hprose_reader *_this = emalloc(sizeof(hprose_reader));
+static zend_always_inline void hprose_reader_init(hprose_reader *_this, hprose_bytes_io *stream, zend_bool simple) {
     _this->stream = stream;
     hprose_make_zval(_this->classref);
     hprose_make_zval(_this->propsref);
     array_init(_this->classref);
     array_init(_this->propsref);
     _this->refer = simple ? hprose_fake_reader_refer_new() : hprose_real_reader_refer_new();
+}
+
+static zend_always_inline hprose_reader * hprose_reader_create(hprose_bytes_io *stream, zend_bool simple) {
+    hprose_reader *_this = emalloc(sizeof(hprose_reader));
+    hprose_reader_init(_this, stream, simple);
     return _this;
 }
 
-static zend_always_inline void hprose_reader_free(hprose_reader *_this) {
+static zend_always_inline void hprose_reader_destroy(hprose_reader *_this) {
     _this->stream = NULL;
     hprose_zval_free(_this->classref);
     hprose_zval_free(_this->propsref);
@@ -152,6 +156,10 @@ static zend_always_inline void hprose_reader_free(hprose_reader *_this) {
     _this->propsref = NULL;
     _this->refer->handlers->free(_this->refer);
     _this->refer = NULL;
+}
+
+static zend_always_inline void hprose_reader_free(hprose_reader *_this) {
+    hprose_reader_destroy(_this);
     efree(_this);
 }
 

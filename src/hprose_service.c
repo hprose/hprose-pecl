@@ -72,13 +72,11 @@ static zend_always_inline void hprose_service_add_function(hprose_service *_this
 
 #if PHP_MAJOR_VERSION < 7
 static void hprose_service_remote_call_dtor(void *pDest) {
-    hprose_remote_call **call = (hprose_remote_call **)pDest;
-    efree(*call);
+    efree(*(hprose_remote_call **)pDest);
 }
 #else
 static void hprose_service_remote_call_dtor(zval *pDest) {
-    hprose_remote_call *call = (hprose_remote_call *)Z_PTR_P(pDest);
-    efree(call);
+    efree((hprose_remote_call *)Z_PTR_P(pDest));
 }
 #endif
 
