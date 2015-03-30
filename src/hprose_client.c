@@ -159,8 +159,8 @@ static zend_always_inline void hprose_client_sync_invoke(zval *client, char *nam
     hprose_make_zval(userdata);
     object_init(context);
     object_init(userdata);
-    add_property_zval_ex(context, ZEND_STRS("client"), client TSRMLS_CC);
-    add_property_zval_ex(context, ZEND_STRS("userdata"), userdata TSRMLS_CC);
+    add_property_zval(context, "client", client);
+    add_property_zval(context, "userdata", userdata);
     ZVAL_STRINGL_0(&_name, name, len);
     hprose_make_zval(request);
     hprose_client_do_output(_this, &_name, args, byref, simple, context, request TSRMLS_CC);
@@ -192,8 +192,8 @@ static zend_always_inline void hprose_client_async_invoke(zval *client, char *na
     hprose_make_zval(userdata);
     object_init(context);
     object_init(userdata);
-    add_property_zval_ex(context, ZEND_STRS("client"), client TSRMLS_CC);
-    add_property_zval_ex(context, ZEND_STRS("userdata"), userdata TSRMLS_CC);
+    add_property_zval(context, "client", client);
+    add_property_zval(context, "userdata", userdata);
     ZVAL_STRINGL_0(&_name, name, len);
     hprose_make_zval(request);
     hprose_client_do_output(_this, &_name, args, byref, simple, context, request TSRMLS_CC);
