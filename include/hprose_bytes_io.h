@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl header file.                  *
  *                                                        *
- * LastModified: Mar 26, 2015                             *
+ * LastModified: Mar 30, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -85,13 +85,26 @@ static zend_always_inline void _hprose_bytes_io_grow(hprose_bytes_io *_this, int
     }
 }
 
-static zend_always_inline hprose_bytes_io *hprose_bytes_io_pnew(zend_bool persistent) {
-    hprose_bytes_io *_this = pecalloc(1, sizeof(hprose_bytes_io), persistent);
-    _this->buf = NULL;
-    _this->len = 0;
-    _this->cap = 0;
+static zend_always_inline void hprose_bytes_io_pinit(hprose_bytes_io *_this, const char *buf, int32_t len, zend_bool persistent) {
+    if (buf) {
+        _this->buf = pestrndup(buf, len, persistent);
+        _this->len = len;
+        _this->cap = len + 1;
+    }
+    else {
+        _this->buf = NULL;
+        _this->len = 0;
+        _this->cap = 0;
+    }
     _this->pos = 0;
     _this->persistent = persistent;
+}
+
+#define hprose_bytes_io_init(_this, buf, len) hprose_bytes_io_pinit(_this, buf, len, 0)
+
+static zend_always_inline hprose_bytes_io *hprose_bytes_io_pnew(zend_bool persistent) {
+    hprose_bytes_io *_this = pecalloc(1, sizeof(hprose_bytes_io), persistent);
+    hprose_bytes_io_pinit(_this, NULL, 0, persistent);
     return _this;
 }
 
@@ -99,26 +112,26 @@ static zend_always_inline hprose_bytes_io *hprose_bytes_io_pnew(zend_bool persis
 
 static zend_always_inline hprose_bytes_io *hprose_bytes_io_pcreate(const char *buf, int32_t len, zend_bool persistent) {
     hprose_bytes_io *_this = pecalloc(1, sizeof(hprose_bytes_io), persistent);
-    _this->buf = pestrndup(buf, len, persistent);
-    _this->len = len;
-    _this->cap = len + 1;
-    _this->pos = 0;
-    _this->persistent = persistent;
+    hprose_bytes_io_pinit(_this, buf, len, persistent);
     return _this;
 }
 
-// only for read, don't call hprose_bytes_io_close or hprose_bytes_io_free on it, using efree to free it.
-static zend_always_inline hprose_bytes_io *hprose_bytes_io_create_readonly(const char *buf, int32_t len) {
-    hprose_bytes_io *_this = emalloc(sizeof(hprose_bytes_io));
+#define hprose_bytes_io_create(buf, len) hprose_bytes_io_pcreate((buf), (len), 0)
+
+static zend_always_inline void hprose_bytes_io_init_readonly(hprose_bytes_io *_this, const char *buf, int32_t len) {
     _this->buf = (char *)buf;
     _this->len = len;
     _this->cap = len + 1;
     _this->pos = 0;
     _this->persistent = 0;
-    return _this;
 }
 
-#define hprose_bytes_io_create(buf, len) hprose_bytes_io_pcreate((buf), (len), 0)
+// only for read, don't call hprose_bytes_io_close or hprose_bytes_io_free on it, using efree to free it.
+static zend_always_inline hprose_bytes_io *hprose_bytes_io_create_readonly(const char *buf, int32_t len) {
+    hprose_bytes_io *_this = emalloc(sizeof(hprose_bytes_io));
+    hprose_bytes_io_init_readonly(_this, buf, len);
+    return _this;
+}
 
 static zend_always_inline void hprose_bytes_io_close(hprose_bytes_io *_this) {
     if (_this->buf) {
