@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl source file.                    *
  *                                                        *
- * LastModified: Mar 29, 2015                             *
+ * LastModified: Mar 30, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -152,55 +152,50 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
 }
 
 static zend_always_inline void hprose_client_sync_invoke(zval *client, char *name, int32_t len, zval *args, zend_bool byref, int mode, zend_bool simple, zval *return_value TSRMLS_DC) {
-    zval *context, *request, *response, *_name, *userdata;
+    zval *context, *userdata, *request, response, _name;
     hprose_client *_this = HPROSE_GET_OBJECT_P(client, client)->_this;
     hprose_make_zval(context);
-    hprose_make_zval(request);
-    hprose_make_zval(_name);
     hprose_make_zval(userdata);
     object_init(context);
     object_init(userdata);
     add_property_zval_ex(context, ZEND_STRS("client"), client TSRMLS_CC);
     add_property_zval_ex(context, ZEND_STRS("userdata"), userdata TSRMLS_CC);
-    ZVAL_STRINGL_1(_name, name, len);
-    hprose_client_do_output(_this, _name, args, byref, simple, context, request TSRMLS_CC);
-    hprose_zval_free(_name);
+    ZVAL_STRINGL_0(&_name, name, len);
+    hprose_make_zval(request);
+    hprose_client_do_output(_this, &_name, args, byref, simple, context, request TSRMLS_CC);
     if (EG(exception)) {
         hprose_zval_free(request);
         hprose_zval_free(context);
         hprose_zval_free(userdata);
         return;
     }
-    hprose_make_zval(response);
-    ZVAL_NULL(response);
-    method_invoke(client, sendAndReceive, response, "z", request);
+    ZVAL_NULL(&response);
+    method_invoke(client, sendAndReceive, &response, "z", request);
     hprose_zval_free(request);
     if (EG(exception)) {
-        hprose_zval_free(response);
+        zval_dtor(&response);
         hprose_zval_free(context);
         hprose_zval_free(userdata);
         return;
     }
-    hprose_client_do_input(_this, response, args, mode, context, return_value TSRMLS_CC);
-    hprose_zval_free(response);
+    hprose_client_do_input(_this, &response, args, mode, context, return_value TSRMLS_CC);
+    zval_dtor(&response);
     hprose_zval_free(context);
     hprose_zval_free(userdata);
 }
 
 static zend_always_inline void hprose_client_async_invoke(zval *client, char *name, int32_t len, zval *args, zend_bool byref, int mode, zend_bool simple, zval *callback TSRMLS_DC) {
-    zval *context, *request, *_name, *userdata, *use;
+    zval *context, *userdata, *request, *use, _name;
     hprose_client *_this = HPROSE_GET_OBJECT_P(client, client)->_this;
     hprose_make_zval(context);
-    hprose_make_zval(request);
-    hprose_make_zval(_name);
     hprose_make_zval(userdata);
     object_init(context);
     object_init(userdata);
     add_property_zval_ex(context, ZEND_STRS("client"), client TSRMLS_CC);
     add_property_zval_ex(context, ZEND_STRS("userdata"), userdata TSRMLS_CC);
-    ZVAL_STRINGL_1(_name, name, len);
-    hprose_client_do_output(_this, _name, args, byref, simple, context, request TSRMLS_CC);
-    hprose_zval_free(_name);
+    ZVAL_STRINGL_0(&_name, name, len);
+    hprose_make_zval(request);
+    hprose_client_do_output(_this, &_name, args, byref, simple, context, request TSRMLS_CC);
     if (EG(exception)) {
         hprose_zval_free(request);
         hprose_zval_free(context);
@@ -271,8 +266,8 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
     }
     else {
         if (err != NULL) {
-            zend_throw_exception_object(err TSRMLS_CC);
             hprose_zval_free(result);
+            zend_throw_exception_object(err TSRMLS_CC);
             return;
         }
         hprose_client_do_input(_this, response, args, mode, context, result TSRMLS_CC);
@@ -330,7 +325,7 @@ ZEND_METHOD(hprose_proxy, __call) {
     length_t len;
     zval *args;
     int32_t n;
-    hprose_bytes_io *_name = hprose_bytes_io_new();
+    hprose_bytes_io _name;
     HPROSE_THIS(proxy);
 #if PHP_MAJOR_VERSION >= 7
     zval client;
@@ -339,8 +334,9 @@ ZEND_METHOD(hprose_proxy, __call) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa", &name, &len, &args) == FAILURE) {
         return;
     }
-    hprose_bytes_io_write(_name, _this->ns, strlen(_this->ns));
-    hprose_bytes_io_write(_name, name, len);
+    hprose_bytes_io_init(&_name, NULL, 0);
+    hprose_bytes_io_write(&_name, _this->ns, strlen(_this->ns));
+    hprose_bytes_io_write(&_name, name, len);
     n = Z_ARRLEN_P(args);
     if (n > 0) {
         zval *callback = php_array_get(args, n - 1);
@@ -352,39 +348,48 @@ ZEND_METHOD(hprose_proxy, __call) {
 #endif
 #if PHP_MAJOR_VERSION < 7
             zend_hash_index_del(Z_ARRVAL_P(args), n - 1);
-            hprose_client_async_invoke(_this->client, _name->buf, _name->len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, callback TSRMLS_CC);
+            hprose_client_async_invoke(_this->client, _name.buf, _name.len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, callback TSRMLS_CC);
 #else
             zval _callback;
             ZVAL_COPY(&_callback, callback);
             zend_hash_index_del(Z_ARRVAL_P(args), n - 1);
-            hprose_client_async_invoke(&client, _name->buf, _name->len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, &_callback TSRMLS_CC);
+            hprose_client_async_invoke(&client, _name.buf, _name.len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, &_callback TSRMLS_CC);
             zval_ptr_dtor(&_callback);
 #endif
-            hprose_bytes_io_free(_name);
+            hprose_bytes_io_close(&_name);
             return;
         }
     }
 #if PHP_MAJOR_VERSION < 7
-    hprose_client_sync_invoke(_this->client, _name->buf, _name->len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, return_value TSRMLS_CC);
+    hprose_client_sync_invoke(_this->client, _name.buf, _name.len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, return_value TSRMLS_CC);
 #else
-    hprose_client_sync_invoke(&client, _name->buf, _name->len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, return_value TSRMLS_CC);
+    hprose_client_sync_invoke(&client, _name.buf, _name.len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, return_value TSRMLS_CC);
 #endif
-    hprose_bytes_io_free(_name);
+    hprose_bytes_io_close(&_name);
 }
 
 ZEND_METHOD(hprose_proxy, __get) {
-    hprose_bytes_io *_name = hprose_bytes_io_new();
+    hprose_bytes_io _name;
     char *name;
     length_t len;
     HPROSE_THIS(proxy);
+#if PHP_MAJOR_VERSION >= 7
+    zval client;
+    ZVAL_OBJ(&client, _this->client);
+#endif
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name, &len) == FAILURE) {
         return;
     }
-    hprose_bytes_io_write(_name, _this->ns, strlen(_this->ns));
-    hprose_bytes_io_write(_name, name, len);
-    hprose_bytes_io_putc(_name, '-');
-    create_php_object(HproseProxy, return_value, "zs", _this->client, _name->buf, (long)_name->len);
-    hprose_bytes_io_free(_name);    
+    hprose_bytes_io_init(&_name, NULL, 0);
+    hprose_bytes_io_write(&_name, _this->ns, strlen(_this->ns));
+    hprose_bytes_io_write(&_name, name, len);
+    hprose_bytes_io_putc(&_name, '-');
+#if PHP_MAJOR_VERSION < 7
+    create_php_object(HproseProxy, return_value, "zs", _this->client, _name.buf, (long)_name.len);
+#else
+    create_php_object(HproseProxy, return_value, "zs", &client, _name.buf, (long)_name.len);
+#endif
+    hprose_bytes_io_close(&_name);    
 }
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_proxy_construct_arginfo, 0, 0, 1)

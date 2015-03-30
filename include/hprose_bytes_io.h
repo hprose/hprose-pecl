@@ -38,7 +38,7 @@ typedef struct {
 } hprose_bytes_io;
 
 #ifndef HPROSE_BYTES_IO_PREALLOC
-#define HPROSE_BYTES_IO_PREALLOC 1024
+#define HPROSE_BYTES_IO_PREALLOC 64
 #endif
 
 #ifndef HPROSE_INT32_MIN_STR
