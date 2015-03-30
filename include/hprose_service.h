@@ -493,14 +493,8 @@ static zend_always_inline zend_bool hprose_service_try_catch_error(zval *service
 static zend_always_inline void hprose_service_default_handle(zval *service, zval *request, zval *context, zval *return_value TSRMLS_DC) {
     hprose_service *_this = HPROSE_GET_OBJECT_P(service, service)->_this;
     hprose_bytes_io input;
-    //zval *data;
-    //hprose_make_zval(data);
-    //convert_to_string(request);
-    //ZVAL_ZVAL(data, request, 0, 0);
-    //hprose_service_input_filter(_this, data, context TSRMLS_CC);
     hprose_service_input_filter(_this, request, context TSRMLS_CC);
     if (hprose_service_try_catch_error(service, context, return_value TSRMLS_CC)) {
-        //hprose_zval_free(data);
         return;
     }
     hprose_bytes_io_init_readonly(&input, Z_STRVAL_P(request), Z_STRLEN_P(request));
@@ -514,7 +508,6 @@ static zend_always_inline void hprose_service_default_handle(zval *service, zval
                     "Wrong Request: \r\n%s", Z_STRVAL_P(request));
             break;
     }
-    //hprose_zval_free(data);
     hprose_service_try_catch_error(service, context, return_value TSRMLS_CC);
 }
 END_EXTERN_C()
