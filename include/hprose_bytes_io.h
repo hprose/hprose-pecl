@@ -277,6 +277,7 @@ static zend_always_inline zend_bool hprose_bytes_io_eof(hprose_bytes_io *_this) 
 
 static zend_always_inline void hprose_bytes_io_write(hprose_bytes_io *_this, const char *str, int32_t n) {
     if (n < 0) n = strlen(str);
+    if (n == 0) return;
     _hprose_bytes_io_grow(_this, n);
     memcpy(_this->buf + _this->len, str, n);
     _this->len += n;
