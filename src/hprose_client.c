@@ -88,6 +88,7 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
     }
     else if (mode == HPROSE_RESULT_MODE_RAW) {
         RETVAL_STRINGL_0(Z_STRVAL_P(response), Z_STRLEN_P(response) - 1);
+        *(Z_STRVAL_P(return_value) + Z_STRLEN_P(return_value)) = '\0';
         ZVAL_NULL(response);
         return;        
     }
