@@ -222,33 +222,36 @@ static zend_always_inline void hprose_service_on_after_invoke(zval *service, zva
 }
 
 static zend_always_inline void hprose_service_send_error(zval *service, zval *err, zval *context, zval *return_value TSRMLS_DC) {
-    hprose_bytes_io *output = hprose_bytes_io_new();
-    hprose_writer *writer = hprose_writer_create(output, 1);
+    hprose_bytes_io output;
+    hprose_writer writer;
+    hprose_bytes_io_init(&output, NULL, 0);
+    hprose_writer_init(&writer, &output, 1);
     hprose_service_on_send_error(service, err, context TSRMLS_CC);
-    hprose_bytes_io_putc(output, HPROSE_TAG_ERROR);
-    hprose_writer_write_string(writer, err);
-    hprose_bytes_io_putc(output, HPROSE_TAG_END);
-    hprose_writer_free(writer);
-    RETVAL_STRINGL_0(output->buf, output->len);
-    efree(output);
+    hprose_bytes_io_putc(&output, HPROSE_TAG_ERROR);
+    hprose_writer_write_string(&writer, err);
+    hprose_bytes_io_putc(&output, HPROSE_TAG_END);
+    hprose_writer_destroy(&writer);
+    RETVAL_STRINGL_0(output.buf, output.len);
     hprose_service_output_filter(HPROSE_GET_OBJECT_P(service, service)->_this, return_value, context TSRMLS_CC);
 }
 
 static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_bytes_io *input, zval *context, zval *return_value TSRMLS_DC) {
     hprose_service *_this = HPROSE_GET_OBJECT_P(service, service)->_this;
-    hprose_bytes_io *output = hprose_bytes_io_new();
-    hprose_reader *reader = hprose_reader_create(input, 0);
+    hprose_bytes_io output;
+    hprose_reader reader;
+    hprose_bytes_io_init(&output, NULL, 0);
+    hprose_reader_init(&reader, input, 0);
     char tag;
     do {
-        zval *_name, *args = NULL, *result = NULL;
+        zval *_name, *args, *result = NULL;
         char *name, *alias;
         int32_t nlen;
         hprose_remote_call *call;
         zend_bool simple = _this->simple;
         zend_bool byref = 0;
         hprose_make_zval(_name);
-        hprose_reader_reset(reader);
-        hprose_reader_read_string(reader, _name TSRMLS_CC);
+        hprose_reader_reset(&reader);
+        hprose_reader_read_string(&reader, _name TSRMLS_CC);
         name = Z_STRVAL_P(_name);
         nlen = Z_STRLEN_P(_name);
         alias = zend_str_tolower_dup(name, nlen);
@@ -259,8 +262,8 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
             if (call == NULL) {
                 zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                         "Can't find this function %s().", name);
-                hprose_reader_free(reader);
-                hprose_bytes_io_free(output);
+                hprose_reader_destroy(&reader);
+                hprose_bytes_io_close(&output);
                 hprose_zval_free(_name);
                 return;
             }
@@ -269,10 +272,10 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
             simple = (zend_bool)call->simple;
         }
         tag = hprose_bytes_io_getc(input);
+        hprose_make_zval(args);
         if (tag == HPROSE_TAG_LIST) {
-            hprose_make_zval(args);
-            hprose_reader_reset(reader);
-            hprose_reader_read_list_without_tag(reader, args TSRMLS_CC);
+            hprose_reader_reset(&reader);
+            hprose_reader_read_list_without_tag(&reader, args TSRMLS_CC);
             tag = hprose_bytes_io_getc(input);
             if (tag == HPROSE_TAG_TRUE) {
                 byref = 1;
@@ -313,20 +316,23 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
                 args = _args;
             }
         }
+        else {
+            array_init_size(args, 0);
+        }
         if ((tag != HPROSE_TAG_END) && (tag != HPROSE_TAG_CALL)) {
             zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                     "Unknown tag: %c\r\nwith following data: %s",
                     tag, hprose_bytes_io_to_string(input));
-            hprose_reader_free(reader);
-            hprose_bytes_io_free(output);
+            hprose_reader_destroy(&reader);
+            hprose_bytes_io_close(&output);
             hprose_zval_free(_name);
             hprose_zval_free(args);
             return;
         }
         hprose_service_on_before_invoke(service, _name, args, byref, context TSRMLS_CC);
         if (EG(exception)) {
-            hprose_reader_free(reader);
-            hprose_bytes_io_free(output);
+            hprose_reader_destroy(&reader);
+            hprose_bytes_io_close(&output);
             hprose_zval_free(_name);
             hprose_zval_free(args);
             return;
@@ -351,8 +357,8 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
         ZVAL_NULL(result);
         __function_invoke_args(call->fcc, NULL, result, args TSRMLS_CC);
         if (EG(exception)) {
-            hprose_reader_free(reader);
-            hprose_bytes_io_free(output);
+            hprose_reader_destroy(&reader);
+            hprose_bytes_io_close(&output);
             hprose_zval_free(_name);
             hprose_zval_free(args);
             hprose_zval_free(result);
@@ -360,8 +366,8 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
         }
         hprose_service_on_after_invoke(service, _name, args, byref, result, context TSRMLS_CC);
         if (EG(exception)) {
-            hprose_reader_free(reader);
-            hprose_bytes_io_free(output);
+            hprose_reader_destroy(&reader);
+            hprose_bytes_io_close(&output);
             hprose_zval_free(_name);
             hprose_zval_free(args);
             hprose_zval_free(result);
@@ -371,61 +377,62 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
             convert_to_string(result);
             RETVAL_ZVAL(result, 0, 1);
             hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
-            hprose_reader_free(reader);
-            hprose_bytes_io_free(output);
+            hprose_reader_destroy(&reader);
+            hprose_bytes_io_close(&output);
             hprose_zval_free(_name);
             hprose_zval_free(args);
             return;
         }
         else if (call->mode == HPROSE_RESULT_MODE_RAW) {
             convert_to_string(result);
-            hprose_bytes_io_write(output, Z_STRVAL_P(result), Z_STRLEN_P(result));
+            hprose_bytes_io_write(&output, Z_STRVAL_P(result), Z_STRLEN_P(result));
         }
         else {
-            hprose_writer *writer = hprose_writer_create(output, simple);
-            hprose_bytes_io_putc(output, HPROSE_TAG_RESULT);
+            hprose_writer writer;
+            hprose_writer_init(&writer, &output, simple);
+            hprose_bytes_io_putc(&output, HPROSE_TAG_RESULT);
             if (call->mode == HPROSE_RESULT_MODE_SERIALIZED) {
                 convert_to_string(result);
-                hprose_bytes_io_write(output, Z_STRVAL_P(result), Z_STRLEN_P(result));
+                hprose_bytes_io_write(&output, Z_STRVAL_P(result), Z_STRLEN_P(result));
             }
             else {
-                hprose_writer_reset(writer);
-                hprose_writer_serialize(writer, result TSRMLS_CC);
+                hprose_writer_reset(&writer);
+                hprose_writer_serialize(&writer, result TSRMLS_CC);
                 hprose_zval_free(result);
             }
             if (byref) {
-                hprose_bytes_io_putc(output, HPROSE_TAG_ARGUMENT);
-                hprose_writer_reset(writer);
-                hprose_writer_write_array(writer, args TSRMLS_CC);
+                hprose_bytes_io_putc(&output, HPROSE_TAG_ARGUMENT);
+                hprose_writer_reset(&writer);
+                hprose_writer_write_array(&writer, args TSRMLS_CC);
             }
-            hprose_writer_free(writer);
+            hprose_writer_destroy(&writer);
         }
         hprose_zval_free(_name);
         hprose_zval_free(args);
     } while (tag == HPROSE_TAG_CALL);
-    hprose_reader_free(reader);
-    hprose_bytes_io_putc(output, HPROSE_TAG_END);
-    RETVAL_STRINGL_0(output->buf, output->len);
-    efree(output);
+    hprose_reader_destroy(&reader);
+    hprose_bytes_io_putc(&output, HPROSE_TAG_END);
+    RETVAL_STRINGL_0(output.buf, output.len);
     hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
 }
 
 static zend_always_inline void hprose_service_do_function_list(zval *service, zval *context, zval *return_value TSRMLS_DC) {
     hprose_service *_this = HPROSE_GET_OBJECT_P(service, service)->_this;
-    hprose_bytes_io *output = hprose_bytes_io_new();
-    hprose_writer *writer = hprose_writer_create(output, 1);
-    hprose_bytes_io_putc(output, HPROSE_TAG_FUNCTIONS);
-    hprose_writer_write_array(writer, _this->names TSRMLS_CC);
-    hprose_bytes_io_putc(output, HPROSE_TAG_END);
-    hprose_writer_free(writer);
-    RETVAL_STRINGL_0(output->buf, output->len);
-    efree(output);
+    hprose_bytes_io output;
+    hprose_writer writer;
+    hprose_bytes_io_init(&output, NULL, 0);
+    hprose_writer_init(&writer, &output, 1);
+    hprose_bytes_io_putc(&output, HPROSE_TAG_FUNCTIONS);
+    hprose_writer_write_array(&writer, _this->names TSRMLS_CC);
+    hprose_bytes_io_putc(&output, HPROSE_TAG_END);
+    hprose_writer_destroy(&writer);
+    RETVAL_STRINGL_0(output.buf, output.len);
     hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
 }
 
 static zend_always_inline void hprose_service_catch_error(zval *service, zval *err, zval *context, zval *return_value TSRMLS_DC) {
-    hprose_bytes_io *estream = hprose_bytes_io_new();
-    zval *result;
+    hprose_bytes_io output;
+    zval result;
 #if PHP_MAJOR_VERSION < 7
     zval *_debug = zend_read_property(get_hprose_service_ce(), service, ZEND_STRL("debug"), 1 TSRMLS_CC);
     zend_bool debug = Z_BVAL_P(_debug);
@@ -435,40 +442,30 @@ static zend_always_inline void hprose_service_catch_error(zval *service, zval *e
     zend_read_property(get_hprose_service_ce(), service, ZEND_STRL("debug"), 1, &_debug);
     debug = (Z_TYPE(_debug) == IS_TRUE);
 #endif
+    hprose_bytes_io_init(&output, NULL, 0);
 
-    hprose_make_zval(result);
-    method_invoke_no_args(err, getMessage, result);
-    convert_to_string(result);
-    hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
-    hprose_zval_free(result);
+    method_invoke_no_args(err, getMessage, &result);
+    hprose_bytes_io_write(&output, Z_STRVAL(result), Z_STRLEN(result));
+    zval_dtor(&result);
 
     if (debug) {
-        hprose_make_zval(result);
-        method_invoke_no_args(err, getFile, result);
-        convert_to_string(result);
-        hprose_bytes_io_write(estream, ZEND_STRL("\nfile: "));
-        hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
-        hprose_zval_free(result);
+        method_invoke_no_args(err, getFile, &result);
+        hprose_bytes_io_write(&output, ZEND_STRL("\nfile: "));
+        hprose_bytes_io_write(&output, Z_STRVAL(result), Z_STRLEN(result));
+        zval_dtor(&result);
 
-        hprose_make_zval(result);
-        method_invoke_no_args(err, getLine, result);
-        convert_to_string(result);
-        hprose_bytes_io_write(estream, ZEND_STRL("\nline: "));
-        hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
-        hprose_zval_free(result);
+        method_invoke_no_args(err, getLine, &result);
+        hprose_bytes_io_write(&output, ZEND_STRL("\nline: "));
+        hprose_bytes_io_write_int(&output, Z_LVAL(result));
 
-        hprose_make_zval(result);
-        method_invoke_no_args(err, getTraceAsString, result);
-        convert_to_string(result);
-        hprose_bytes_io_write(estream, ZEND_STRL("\ntrace: "));
-        hprose_bytes_io_write(estream, Z_STRVAL_P(result), Z_STRLEN_P(result));
-        hprose_zval_free(result);
+        method_invoke_no_args(err, getTraceAsString, &result);
+        hprose_bytes_io_write(&output, ZEND_STRL("\ntrace: "));
+        hprose_bytes_io_write(&output, Z_STRVAL(result), Z_STRLEN(result));
+        zval_dtor(&result);
     }
-    hprose_make_zval(result);
-    ZVAL_STRINGL_0(result, estream->buf, estream->len);
-    efree(estream);
-    hprose_service_send_error(service, result, context, return_value TSRMLS_CC);
-    hprose_zval_free(result);
+    ZVAL_STRINGL_0(&result, output.buf, output.len);
+    hprose_service_send_error(service, &result, context, return_value TSRMLS_CC);
+    zval_dtor(&result);
 }
 
 static zend_always_inline zend_bool hprose_service_try_catch_error(zval *service, zval *context, zval *return_value TSRMLS_DC) {
@@ -495,20 +492,21 @@ static zend_always_inline zend_bool hprose_service_try_catch_error(zval *service
 
 static zend_always_inline void hprose_service_default_handle(zval *service, zval *request, zval *context, zval *return_value TSRMLS_DC) {
     hprose_service *_this = HPROSE_GET_OBJECT_P(service, service)->_this;
-    hprose_bytes_io *input;
-    zval *data;
-    hprose_make_zval(data);
-    convert_to_string(request);
-    ZVAL_ZVAL(data, request, 0, 0);
-    hprose_service_input_filter(_this, data, context TSRMLS_CC);
+    hprose_bytes_io input;
+    //zval *data;
+    //hprose_make_zval(data);
+    //convert_to_string(request);
+    //ZVAL_ZVAL(data, request, 0, 0);
+    //hprose_service_input_filter(_this, data, context TSRMLS_CC);
+    hprose_service_input_filter(_this, request, context TSRMLS_CC);
     if (hprose_service_try_catch_error(service, context, return_value TSRMLS_CC)) {
-        hprose_zval_free(data);
+        //hprose_zval_free(data);
         return;
     }
-    input = hprose_bytes_io_create_readonly(Z_STRVAL_P(data), Z_STRLEN_P(data));
-    switch (hprose_bytes_io_getc(input)) {
+    hprose_bytes_io_init_readonly(&input, Z_STRVAL_P(request), Z_STRLEN_P(request));
+    switch (hprose_bytes_io_getc(&input)) {
         case HPROSE_TAG_CALL:
-            hprose_service_do_invoke(service, input, context, return_value TSRMLS_CC); break;
+            hprose_service_do_invoke(service, &input, context, return_value TSRMLS_CC); break;
         case HPROSE_TAG_END:
             hprose_service_do_function_list(service, context, return_value TSRMLS_CC); break;
         default:
@@ -516,8 +514,7 @@ static zend_always_inline void hprose_service_default_handle(zval *service, zval
                     "Wrong Request: \r\n%s", Z_STRVAL_P(request));
             break;
     }
-    efree(input);
-    hprose_zval_free(data);
+    //hprose_zval_free(data);
     hprose_service_try_catch_error(service, context, return_value TSRMLS_CC);
 }
 END_EXTERN_C()
