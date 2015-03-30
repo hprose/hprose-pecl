@@ -64,7 +64,7 @@ static zend_always_inline void hprose_raw_reader_read_string_raw(hprose_raw_read
 static zend_always_inline void hprose_raw_reader_read_guid_raw(hprose_raw_reader *_this, hprose_bytes_io *ostream);
 static inline void hprose_raw_reader_read_complex_raw(hprose_raw_reader *_this, hprose_bytes_io *ostream TSRMLS_DC);
 
-#define _hprose_raw_reader_read_raw(_this, ostream) __hprose_raw_reader_read_raw(_this, ostream, hprose_bytes_io_getc(_this->stream) TSRMLS_CC)
+#define _hprose_raw_reader_read_raw(_this, ostream) __hprose_raw_reader_read_raw((_this), (ostream), hprose_bytes_io_getc((_this)->stream) TSRMLS_CC)
 
 static inline void __hprose_raw_reader_read_raw(hprose_raw_reader *_this, hprose_bytes_io *ostream, char tag TSRMLS_DC) {
     hprose_bytes_io_putc(ostream, tag);

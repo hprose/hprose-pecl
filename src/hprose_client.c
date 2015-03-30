@@ -26,24 +26,24 @@
 #include "hprose_client.h"
 
 static zend_always_inline void hprose_client_do_output(hprose_client *_this, zval *name, zval *args, zend_bool byref, zend_bool simple, zval *context, zval *return_value TSRMLS_DC) {
-    hprose_bytes_io *stream = hprose_bytes_io_new();
-    hprose_writer *writer;
+    hprose_bytes_io stream;
+    hprose_writer writer;
     HashTable *ht;
     int32_t i;
-    hprose_bytes_io_putc(stream, HPROSE_TAG_CALL);
-    writer = hprose_writer_create(stream, simple);
-    hprose_writer_write_string(writer, name);
+    hprose_bytes_io_init(&stream, NULL, 0);
+    hprose_bytes_io_putc(&stream, HPROSE_TAG_CALL);
+    hprose_writer_init(&writer, &stream, simple);
+    hprose_writer_write_string(&writer, name);
     if (Z_ARRLEN_P(args) > 0 || byref) {
-        hprose_writer_reset(writer);
-        hprose_writer_write_array(writer, args TSRMLS_CC);
+        hprose_writer_reset(&writer);
+        hprose_writer_write_array(&writer, args TSRMLS_CC);
         if (byref) {
-            hprose_writer_write_true(writer);
+            hprose_writer_write_true(&writer);
         }
     }
-    hprose_writer_free(writer);
-    hprose_bytes_io_putc(stream, HPROSE_TAG_END);
-    RETVAL_STRINGL_0(stream->buf, stream->len);
-    efree(stream);
+    hprose_writer_destroy(&writer);
+    hprose_bytes_io_putc(&stream, HPROSE_TAG_END);
+    RETVAL_STRINGL_0(stream.buf, stream.len);
     ht = Z_ARRVAL_P(_this->filters);
     i = zend_hash_num_elements(ht);
     if (i) {
@@ -82,38 +82,44 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
         }
     }
     if (mode == HPROSE_RESULT_MODE_RAW_WITH_END_TAG) {
-        RETURN_ZVAL(response, 1, 0);
+        RETVAL_ZVAL(response, 0, 0);
+        ZVAL_NULL(response);
+        return;
     }
     else if (mode == HPROSE_RESULT_MODE_RAW) {
-        RETURN_STRINGL_1(Z_STRVAL_P(response), Z_STRLEN_P(response) - 1);
+        RETVAL_STRINGL_0(Z_STRVAL_P(response), Z_STRLEN_P(response) - 1);
+        ZVAL_NULL(response);
+        return;        
     }
     else {
-        hprose_bytes_io *stream = hprose_bytes_io_create_readonly(Z_STRVAL_P(response), Z_STRLEN_P(response));
-        hprose_reader *reader = hprose_reader_create(stream, 0);
+        hprose_bytes_io stream;
+        hprose_reader reader;
+        hprose_bytes_io_init_readonly(&stream, Z_STRVAL_P(response), Z_STRLEN_P(response));
+        hprose_reader_init(&reader, &stream, 0);
         char tag;
         RETVAL_NULL();
-        while ((tag = hprose_bytes_io_getc(stream)) != HPROSE_TAG_END) {
+        while ((tag = hprose_bytes_io_getc(&stream)) != HPROSE_TAG_END) {
             switch (tag) {
                 case HPROSE_TAG_RESULT:
                     if (mode == HPROSE_RESULT_MODE_SERIALIZED) {
-                        hprose_bytes_io *result = hprose_raw_reader_read_raw((hprose_raw_reader *)reader TSRMLS_CC);
-                        RETVAL_STRINGL_0(result->buf, result->len);
-                        efree(result);
+                        hprose_bytes_io result;
+                        hprose_bytes_io_init(&result, NULL, 0);
+                        _hprose_raw_reader_read_raw((hprose_raw_reader *)(&reader), &result);
+                        RETVAL_STRINGL_0(result.buf, result.len);
                     }
                     else {
-                        hprose_reader_reset(reader);
-                        hprose_reader_unserialize(reader, return_value TSRMLS_CC);
+                        hprose_reader_reset(&reader);
+                        hprose_reader_unserialize(&reader, return_value TSRMLS_CC);
                     }
                     break;
                 case HPROSE_TAG_ARGUMENT: {
-                    zval *_args;
-                    hprose_make_zval(_args);
+                    zval _args;
                     int32_t n, i;
-                    hprose_reader_reset(reader);
-                    hprose_reader_read_list(reader, _args TSRMLS_CC);
-                    n = MIN(Z_ARRLEN_P(args), Z_ARRLEN_P(_args));
+                    hprose_reader_reset(&reader);
+                    hprose_reader_read_list(&reader, &_args TSRMLS_CC);
+                    n = MIN(Z_ARRLEN_P(args), Z_ARRLEN(_args));
                     for (i = 0; i < n; ++i) {
-                        zval *val = php_array_get(_args, i);
+                        zval *val = php_array_get(&_args, i);
 #if PHP_MAJOR_VERSION < 7
                         Z_ADDREF_P(val);
 #else
@@ -121,31 +127,27 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
 #endif                        
                         add_index_zval(args, i, val);
                     }
-                    hprose_zval_free(_args);
+                    zval_dtor(&_args);
                     break;
                 }
                 case HPROSE_TAG_ERROR: {
-                    hprose_reader_reset(reader);
-                    zval *errstr;
-                    hprose_make_zval(errstr);
-                    hprose_reader_read_string(reader, errstr TSRMLS_CC);
+                    hprose_reader_reset(&reader);
+                    zval errstr;
+                    hprose_reader_read_string(&reader, &errstr TSRMLS_CC);
                     zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
-                                            "%s", Z_STRVAL_P(errstr));
-                    hprose_zval_free(errstr);
-                    hprose_reader_free(reader);
-                    efree(stream);
+                                            "%s", Z_STRVAL(errstr));
+                    zval_dtor(&errstr);
+                    hprose_reader_destroy(&reader);
                     return;
                 }
                 default:
                     zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                             "Wrong Response:\r\n%s", Z_STRVAL_P(response));
-                    hprose_reader_free(reader);
-                    efree(stream);
+                    hprose_reader_destroy(&reader);
                     return;
             }
         }
-        hprose_reader_free(reader);
-        efree(stream);
+        hprose_reader_destroy(&reader);
     }
 }
 
