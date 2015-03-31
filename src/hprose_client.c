@@ -87,10 +87,14 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
         return;
     }
     else if (mode == HPROSE_RESULT_MODE_RAW) {
+#if PHP_MAJOR_VERSION < 7
         RETVAL_STRINGL_0(Z_STRVAL_P(response), Z_STRLEN_P(response) - 1);
         *(Z_STRVAL_P(return_value) + Z_STRLEN_P(return_value)) = '\0';
         ZVAL_NULL(response);
-        return;        
+#else
+        RETVAL_STRINGL(Z_STRVAL_P(response), Z_STRLEN_P(response) - 1);
+#endif
+        return;
     }
     else {
         hprose_bytes_io stream;
@@ -163,9 +167,16 @@ static zend_always_inline void hprose_client_sync_invoke(zval *client, char *nam
     object_init(userdata);
     add_property_zval(context, "client", client);
     add_property_zval(context, "userdata", userdata);
+#if PHP_MAJOR_VERSION < 7
     ZVAL_STRINGL_0(&_name, name, len);
+#else
+    ZVAL_STRINGL(&_name, name, len);
+#endif
     hprose_make_zval(request);
     hprose_client_do_output(_this, &_name, args, byref, simple, context, request TSRMLS_CC);
+#if PHP_MAJOR_VERSION >= 7
+    zval_ptr_dtor(&_name);
+#endif
     if (EG(exception)) {
         hprose_zval_free(request);
         hprose_zval_free(context);
@@ -196,9 +207,16 @@ static zend_always_inline void hprose_client_async_invoke(zval *client, char *na
     object_init(userdata);
     add_property_zval(context, "client", client);
     add_property_zval(context, "userdata", userdata);
+#if PHP_MAJOR_VERSION < 7
     ZVAL_STRINGL_0(&_name, name, len);
+#else
+    ZVAL_STRINGL(&_name, name, len);
+#endif
     hprose_make_zval(request);
     hprose_client_do_output(_this, &_name, args, byref, simple, context, request TSRMLS_CC);
+#if PHP_MAJOR_VERSION >= 7
+    zval_ptr_dtor(&_name);
+#endif
     if (EG(exception)) {
         hprose_zval_free(request);
         hprose_zval_free(context);
@@ -490,14 +508,14 @@ ZEND_METHOD(hprose_client, sendAndReceiveCallback) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz!a", &response, &err, &use) == FAILURE) {
         return;
     }
-    Z_ADDREF_P(response);
 #if PHP_MAJOR_VERSION < 7
+    Z_ADDREF_P(response);
     SEPARATE_ZVAL(&response);
-#else
-    SEPARATE_ZVAL(response);
 #endif
     hprose_client_send_and_receive_callback(_this, response, err, use TSRMLS_CC);
+#if PHP_MAJOR_VERSION < 7
     hprose_zval_free(response);
+#endif
 }
 
 ZEND_METHOD(hprose_client, useService) {
