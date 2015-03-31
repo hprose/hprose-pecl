@@ -79,6 +79,161 @@ static zend_always_inline void hprose_service_add_function(hprose_service *_this
     efree(name);
 }
 
+static zend_always_inline void hprose_service_add_functions(hprose_service *_this, zval *funcs, zval *aliases, uint8_t mode, zval *simple TSRMLS_DC) {
+    int32_t i, count;
+    HashTable *ht = Z_ARRVAL_P(funcs);
+    zend_hash_internal_pointer_reset(ht);
+    if (aliases) {
+        count = Z_ARRLEN_P(aliases);
+        if (count > 0) {
+            if (count == Z_ARRLEN_P(funcs)) {
+                for (i = 0; i < count; ++i) {
+#if PHP_MAJOR_VERSION < 7
+                    zval **func, *alias;
+                    zend_hash_get_current_data(ht, (void **)&func);
+                    alias = php_array_get(aliases, i);
+                    hprose_service_add_function(_this, *func, alias, mode, simple TSRMLS_CC);
+#else
+                    zval *func = zend_hash_get_current_data(ht);
+                    zval *alias = php_array_get(aliases, i);
+                    hprose_service_add_function(_this, func, alias, mode, simple TSRMLS_CC);
+#endif
+                    if (EG(exception)) return;
+                    zend_hash_move_forward(ht);
+                }
+            }
+            else {
+                zend_throw_exception(NULL, "The count of functions is not matched with aliases", 0 TSRMLS_CC);
+            }
+            return;
+        }
+    }
+    count = Z_ARRLEN_P(funcs);
+    for (i = 0; i < count; ++i) {
+#if PHP_MAJOR_VERSION < 7
+        zval **func;
+        zend_hash_get_current_data(ht, (void **)&func);
+        hprose_service_add_function(_this, *func, NULL, mode, simple TSRMLS_CC);
+#else
+        zval *func = zend_hash_get_current_data(ht);
+        hprose_service_add_function(_this, func, NULL, mode, simple TSRMLS_CC);
+#endif
+        if (EG(exception)) return;
+        zend_hash_move_forward(ht);
+    }
+}
+
+static zend_always_inline void hprose_service_add_method(hprose_service *_this, zval *methodname, zval *belongto, zval *alias, uint8_t mode, zval *simple TSRMLS_DC) {
+    if (Z_TYPE_P(methodname) != IS_STRING) {
+        zend_throw_exception(NULL, "method name must be a string", 0 TSRMLS_CC);
+        return;
+    }
+    zval *func;
+    hprose_make_zval(func);
+    array_init_size(func, 2);
+#if PHP_MAJOR_VERSION < 7
+    Z_ADDREF_P(belongto);
+    Z_ADDREF_P(methodname);
+#else
+    Z_TRY_ADDREF_P(belongto);
+    Z_TRY_ADDREF_P(methodname);
+#endif
+    add_next_index_zval(func, belongto);
+    add_next_index_zval(func, methodname);
+    hprose_service_add_function(_this, func, alias, mode, simple TSRMLS_CC);
+    hprose_zval_free(func);    
+}
+
+static zend_always_inline void hprose_service_add_methods(hprose_service *_this, zval *methods, zval *belongto, zval *aliases, uint8_t mode, zval *simple TSRMLS_DC) {
+    int32_t i, count;
+    zval *_aliases;
+    HashTable *ht = Z_ARRVAL_P(methods);
+    if (aliases) {
+        if ((Z_TYPE_P(aliases) == IS_STRING && Z_STRLEN_P(aliases) == 0) ||
+            (Z_TYPE_P(aliases) == IS_ARRAY && Z_ARRLEN_P(aliases) == 0)) {
+            aliases = NULL;
+        }
+    }
+    count = Z_ARRLEN_P(methods);
+    if (aliases) {
+        if (Z_TYPE_P(aliases) == IS_STRING) {
+            hprose_make_zval(_aliases);
+            array_init_size(_aliases, count);
+            hprose_bytes_io aliasPrefix;
+            hprose_bytes_io_init(&aliasPrefix, NULL, 0);
+            hprose_bytes_io_write(&aliasPrefix, Z_STRVAL_P(aliases), Z_STRLEN_P(aliases));
+            hprose_bytes_io_putc(&aliasPrefix, '_');
+            zend_hash_internal_pointer_reset(ht);
+            for (i = 0; i < count; ++i) {
+                hprose_bytes_io alias;
+#if PHP_MAJOR_VERSION < 7
+                zval **method;
+                zend_hash_get_current_data(ht, (void **)&method);
+#else
+                zval *method = zend_hash_get_current_data(ht);
+#endif
+                hprose_bytes_io_init(&alias, NULL, 0);
+                aliasPrefix.pos = 0;
+                hprose_bytes_io_read_to(&aliasPrefix, &alias, aliasPrefix.len);
+#if PHP_MAJOR_VERSION < 7
+                hprose_bytes_io_write(&alias, Z_STRVAL_PP(method), Z_STRLEN_PP(method));
+                add_next_index_stringl(_aliases, alias.buf, alias.len, 0);
+#else
+                hprose_bytes_io_write(&alias, Z_STRVAL_P(method), Z_STRLEN_P(method));
+                add_next_index_stringl(_aliases, alias.buf, alias.len);
+                hprose_bytes_io_close(&alias);
+#endif
+                zend_hash_move_forward(ht);
+            }
+            hprose_bytes_io_close(&aliasPrefix);
+        }
+        else if (Z_TYPE_P(aliases) == IS_ARRAY) {
+#if PHP_MAJOR_VERSION < 7
+            _aliases = aliases;
+            Z_ADDREF_P(_aliases);
+            SEPARATE_ZVAL(&_aliases);
+#else
+            hprose_make_zval(_aliases);
+            ZVAL_COPY(_aliases, aliases);
+#endif
+        }
+        if (Z_ARRLEN_P(_aliases) != count) {
+            zend_throw_exception(NULL, "The count of methods is not matched with aliases", 0 TSRMLS_CC);
+            return;
+        }
+    }
+    else {
+        hprose_make_zval(_aliases);
+        array_init_size(_aliases, count);
+        zend_hash_internal_pointer_reset(ht);
+        for (i = 0; i < count; ++i) {
+#if PHP_MAJOR_VERSION < 7
+            zval **method;
+            zend_hash_get_current_data(ht, (void **)&method);
+            add_next_index_stringl(_aliases, Z_STRVAL_PP(method), Z_STRLEN_PP(method), 1);
+#else
+            zval *method = zend_hash_get_current_data(ht);
+            add_next_index_stringl(_aliases, Z_STRVAL_P(method), Z_STRLEN_P(method));
+#endif
+            zend_hash_move_forward(ht);
+        }
+    }
+    zend_hash_internal_pointer_reset(ht);
+    for (i = 0; i < count; ++i) {
+#if PHP_MAJOR_VERSION < 7
+        zval **method;
+        zend_hash_get_current_data(ht, (void **)&method);
+        hprose_service_add_method(_this, *method, belongto, php_array_get(_aliases, i), mode, simple TSRMLS_CC);
+#else
+        zval *method = zend_hash_get_current_data(ht);
+        hprose_service_add_method(_this, method, belongto, php_array_get(_aliases, i), mode, simple TSRMLS_CC);
+#endif
+        if (EG(exception)) return;
+        zend_hash_move_forward(ht);
+    }
+    hprose_zval_free(_aliases);
+}
+
 #if PHP_MAJOR_VERSION < 7
 static void hprose_service_remote_call_dtor(void *pDest) {
     efree(*(hprose_remote_call **)pDest);
@@ -296,75 +451,32 @@ ZEND_METHOD(hprose_service, addMissingFunction) {
 
 ZEND_METHOD(hprose_service, addFunctions) {
     zval *funcs, *aliases = NULL, *simple = NULL;
-    HashTable *functions;
     long mode = HPROSE_RESULT_MODE_NORMAL;
-    int32_t i, count;
     HPROSE_THIS(service);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|z!lz!", &funcs, &aliases, &mode, &simple) == FAILURE) {
         return;
     }
-    functions = Z_ARRVAL_P(funcs);
-    zend_hash_internal_pointer_reset(functions);
-    if (aliases) {
-        count = Z_ARRLEN_P(aliases);
-        if (count > 0) {
-            if (count == Z_ARRLEN_P(funcs)) {
-                for (i = 0; i < count; ++i) {
-#if PHP_MAJOR_VERSION < 7
-                    zval **func, *alias;
-                    zend_hash_get_current_data(functions, (void **)&func);
-                    alias = php_array_get(aliases, i);
-                    hprose_service_add_function(_this, *func, alias, mode, simple TSRMLS_CC);
-#else
-                    zval *func = zend_hash_get_current_data(functions);
-                    zval *alias = php_array_get(aliases, i);
-                    hprose_service_add_function(_this, func, alias, mode, simple TSRMLS_CC);
-#endif
-                    if (EG(exception)) return;
-                    zend_hash_move_forward(functions);
-                }
-            }
-            else {
-                zend_throw_exception(NULL, "The count of functions is not matched with aliases", 0 TSRMLS_CC);
-            }
-            return;
-        }
-    }
-    count = Z_ARRLEN_P(funcs);
-    for (i = 0; i < count; ++i) {
-#if PHP_MAJOR_VERSION < 7
-        zval **func;
-        zend_hash_get_current_data(functions, (void **)&func);
-        hprose_service_add_function(_this, *func, NULL, mode, simple TSRMLS_CC);
-#else
-        zval *func = zend_hash_get_current_data(functions);
-        hprose_service_add_function(_this, func, NULL, mode, simple TSRMLS_CC);
-#endif
-        if (EG(exception)) return;
-        zend_hash_move_forward(functions);
-    }    
+    hprose_service_add_functions(_this, funcs, aliases, mode, simple TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_service, addMethod) {
-    zval *func, *methodname, *belongto, *alias = NULL, *simple = NULL;
+    zval *methodname, *belongto, *alias = NULL, *simple = NULL;
     long mode = HPROSE_RESULT_MODE_NORMAL;
     HPROSE_THIS(service);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz|z!lz!", &methodname, &belongto, &alias, &mode, &simple) == FAILURE) {
         return;
     }
-    hprose_make_zval(func);
-    array_init_size(func, 2);
-#if PHP_MAJOR_VERSION < 7
-    Z_ADDREF_P(belongto);
-    Z_ADDREF_P(methodname);
-#else
-    Z_TRY_ADDREF_P(belongto);
-    Z_TRY_ADDREF_P(methodname);
-#endif
-    add_next_index_zval(func, belongto);
-    add_next_index_zval(func, methodname);
-    hprose_service_add_function(_this, func, alias, mode, simple TSRMLS_CC);
-    hprose_zval_free(func);
+    hprose_service_add_method(_this, methodname, belongto, alias, mode, simple TSRMLS_CC);
+}
+
+ZEND_METHOD(hprose_service, addMethods) {
+    zval *methods, *belongto, *aliases = NULL, *simple = NULL;
+    long mode = HPROSE_RESULT_MODE_NORMAL;
+    HPROSE_THIS(service);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz|z!lz!", &methods, &belongto, &aliases, &mode, &simple) == FAILURE) {
+        return;
+    }
+    hprose_service_add_methods(_this, methods, belongto, aliases, mode, simple TSRMLS_CC);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_construct_arginfo, 0, 0, 0)
@@ -461,6 +573,14 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_service_add_method_arginfo, 0, 0, 2)
     ZEND_ARG_INFO(0, simple)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_add_methods_arginfo, 0, 0, 2)
+    ZEND_ARG_ARRAY_INFO(0, methods, 0)
+    ZEND_ARG_INFO(0, belongto)
+    ZEND_ARG_INFO(0, aliases)
+    ZEND_ARG_INFO(0, mode)
+    ZEND_ARG_INFO(0, simple)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, __construct, hprose_service_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     ZEND_ME(hprose_service, __destruct, hprose_service_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
@@ -483,6 +603,7 @@ static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, addFunction, hprose_service_add_function_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, addFunctions, hprose_service_add_functions_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, addMethod, hprose_service_add_method_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_service, addMethods, hprose_service_add_methods_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 

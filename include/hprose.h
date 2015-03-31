@@ -801,6 +801,7 @@ static zend_always_inline zend_fcall_info_cache _get_fcall_info_cache(zval *call
         case IS_ARRAY: {
             zval *obj = php_array_get(callable, 0);
             zval *name = php_array_get(callable, 1);
+            convert_to_string(name);
             return __get_fcall_info_cache(obj, Z_STRVAL_P(name), Z_STRLEN_P(name) TSRMLS_CC);
         }
         case IS_STRING: return __get_fcall_info_cache(NULL, Z_STRVAL_P(callable), Z_STRLEN_P(callable) TSRMLS_CC);
