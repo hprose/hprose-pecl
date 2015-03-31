@@ -26,11 +26,20 @@
 #include "hprose_result_mode.h"
 #include "hprose_service.h"
 
-static zend_always_inline void hprose_service_add_function(hprose_service *_this, zval *func, zval *alias, uint8_t mode, uint8_t simple TSRMLS_DC) {
+static zend_always_inline void hprose_service_add_function(hprose_service *_this, zval *func, zval *alias, uint8_t mode, zval *simple TSRMLS_DC) {
     zend_fcall_info_cache fcc = _get_fcall_info_cache(func TSRMLS_CC);
     char *name;
     int32_t len, i, n;
     hprose_remote_call *call;
+    zend_bool _simple = 2;
+    if (simple) {
+        convert_to_boolean(simple);
+#if PHP_MAJOR_VERSION < 7
+        _simple = Z_BVAL_P(simple);
+#else
+        _simple = (Z_TYPE_P(simple) == IS_TRUE);
+#endif
+    }
     if (EG(exception)) {
         return;
     }
@@ -57,7 +66,7 @@ static zend_always_inline void hprose_service_add_function(hprose_service *_this
     call = emalloc(sizeof(hprose_remote_call));
     call->fcc = fcc;
     call->mode = mode;
-    call->simple = simple;
+    call->simple = _simple;
     call->byref = 0;
     n = call->fcc.function_handler->common.num_args;
     for (i = 0; i < n; ++i) {
@@ -263,21 +272,13 @@ ZEND_METHOD(hprose_service, defaultHandle) {
 }
 
 ZEND_METHOD(hprose_service, addFunction) {
-    zval *func, *alias = NULL, *_simple = NULL;
-    long mode = HPROSE_RESULT_MODE_NORMAL, simple = 2;
+    zval *func, *alias = NULL, *simple = NULL;
+    long mode = HPROSE_RESULT_MODE_NORMAL;
     HPROSE_THIS(service);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|z!lz!", &func, &alias, &mode, &simple) == FAILURE) {
         return;
     }
-    if (_simple) {
-        convert_to_boolean(_simple);
-#if PHP_MAJOR_VERSION < 7
-        simple = Z_BVAL_P(_simple);
-#else
-        simple = (Z_TYPE_P(_simple) == IS_TRUE);
-#endif
-    }
-    hprose_service_add_function(_this, func, alias, mode, simple  TSRMLS_CC);
+    hprose_service_add_function(_this, func, alias, mode, simple TSRMLS_CC);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_construct_arginfo, 0, 0, 0)
