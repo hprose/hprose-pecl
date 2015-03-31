@@ -294,6 +294,57 @@ ZEND_METHOD(hprose_service, addMissingFunction) {
     hprose_zval_free(alias);
 }
 
+ZEND_METHOD(hprose_service, addFunctions) {
+    zval *funcs, *aliases = NULL, *simple = NULL;
+    HashTable *functions;
+    long mode = HPROSE_RESULT_MODE_NORMAL;
+    int32_t i, count;
+    HPROSE_THIS(service);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|z!lz!", &funcs, &aliases, &mode, &simple) == FAILURE) {
+        return;
+    }
+    functions = Z_ARRVAL_P(funcs);
+    zend_hash_internal_pointer_reset(functions);
+    if (aliases) {
+        count = Z_ARRLEN_P(aliases);
+        if (count > 0) {
+            if (count == Z_ARRLEN_P(funcs)) {
+                for (i = 0; i < count; ++i) {
+#if PHP_MAJOR_VERSION < 7
+                    zval **func, *alias;
+                    zend_hash_get_current_data(functions, (void **)&func);
+                    alias = php_array_get(aliases, i);
+                    hprose_service_add_function(_this, *func, alias, mode, simple TSRMLS_CC);
+#else
+                    zval *func = zend_hash_get_current_data(functions);
+                    zval *alias = php_array_get(aliases, i);
+                    hprose_service_add_function(_this, func, alias, mode, simple TSRMLS_CC);
+#endif
+                    if (EG(exception)) return;
+                    zend_hash_move_forward(functions);
+                }
+            }
+            else {
+                zend_throw_exception(NULL, "The count of functions is not matched with aliases", 0 TSRMLS_CC);
+            }
+            return;
+        }
+    }
+    count = Z_ARRLEN_P(funcs);
+    for (i = 0; i < count; ++i) {
+#if PHP_MAJOR_VERSION < 7
+        zval **func;
+        zend_hash_get_current_data(functions, (void **)&func);
+        hprose_service_add_function(_this, *func, NULL, mode, simple TSRMLS_CC);
+#else
+        zval *func = zend_hash_get_current_data(functions);
+        hprose_service_add_function(_this, func, NULL, mode, simple TSRMLS_CC);
+#endif
+        if (EG(exception)) return;
+        zend_hash_move_forward(functions);
+    }    
+}
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_construct_arginfo, 0, 0, 0)
     ZEND_ARG_INFO(0, url)
 ZEND_END_ARG_INFO()
@@ -373,6 +424,13 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_service_add_missing_function_arginfo, 0, 0, 1)
     ZEND_ARG_INFO(0, simple)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_add_functions_arginfo, 0, 0, 1)
+    ZEND_ARG_ARRAY_INFO(0, funcs, 0)
+    ZEND_ARG_ARRAY_INFO(0, aliases, 1)
+    ZEND_ARG_INFO(0, mode)
+    ZEND_ARG_INFO(0, simple)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, __construct, hprose_service_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     ZEND_ME(hprose_service, __destruct, hprose_service_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
@@ -391,8 +449,9 @@ static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, getSimple, hprose_service_get_simple_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, setSimple, hprose_service_set_simple_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, defaultHandle, hprose_service_default_handle_arginfo, ZEND_ACC_PUBLIC)
-    ZEND_ME(hprose_service, addFunction, hprose_service_add_function_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, addMissingFunction, hprose_service_add_missing_function_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_service, addFunction, hprose_service_add_function_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_service, addFunctions, hprose_service_add_functions_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 
