@@ -32,6 +32,9 @@ static zend_always_inline void hprose_service_add_function(hprose_service *_this
     int32_t len, i, n;
     hprose_remote_call *call;
     zend_bool _simple = 2;
+    if (EG(exception)) {
+        return;
+    }
     if (simple) {
         convert_to_boolean(simple);
 #if PHP_MAJOR_VERSION < 7
@@ -39,9 +42,6 @@ static zend_always_inline void hprose_service_add_function(hprose_service *_this
 #else
         _simple = (Z_TYPE_P(simple) == IS_TRUE);
 #endif
-    }
-    if (EG(exception)) {
-        return;
     }
     if (alias) {
         convert_to_string(alias);
@@ -345,6 +345,28 @@ ZEND_METHOD(hprose_service, addFunctions) {
     }    
 }
 
+ZEND_METHOD(hprose_service, addMethod) {
+    zval *func, *methodname, *belongto, *alias = NULL, *simple = NULL;
+    long mode = HPROSE_RESULT_MODE_NORMAL;
+    HPROSE_THIS(service);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz|z!lz!", &methodname, &belongto, &alias, &mode, &simple) == FAILURE) {
+        return;
+    }
+    hprose_make_zval(func);
+    array_init_size(func, 2);
+#if PHP_MAJOR_VERSION < 7
+    Z_ADDREF_P(belongto);
+    Z_ADDREF_P(methodname);
+#else
+    Z_TRY_ADDREF_P(belongto);
+    Z_TRY_ADDREF_P(methodname);
+#endif
+    add_next_index_zval(func, belongto);
+    add_next_index_zval(func, methodname);
+    hprose_service_add_function(_this, func, alias, mode, simple TSRMLS_CC);
+    hprose_zval_free(func);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_construct_arginfo, 0, 0, 0)
     ZEND_ARG_INFO(0, url)
 ZEND_END_ARG_INFO()
@@ -431,6 +453,14 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_service_add_functions_arginfo, 0, 0, 1)
     ZEND_ARG_INFO(0, simple)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_add_method_arginfo, 0, 0, 2)
+    ZEND_ARG_INFO(0, methodname)
+    ZEND_ARG_INFO(0, belongto)
+    ZEND_ARG_INFO(0, alias)
+    ZEND_ARG_INFO(0, mode)
+    ZEND_ARG_INFO(0, simple)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, __construct, hprose_service_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     ZEND_ME(hprose_service, __destruct, hprose_service_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
@@ -452,6 +482,7 @@ static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, addMissingFunction, hprose_service_add_missing_function_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, addFunction, hprose_service_add_function_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, addFunctions, hprose_service_add_functions_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_service, addMethod, hprose_service_add_method_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 

@@ -760,7 +760,7 @@ static zend_always_inline zend_fcall_info_cache __get_fcall_info_cache(zval *obj
             return fcc;
         }
         fcc.function_handler = fptr;
-        if (fptr->common.fn_flags & ZEND_ACC_STATIC) {
+        if ((fptr->common.fn_flags & ZEND_ACC_STATIC) || obj == NULL) {
 #if PHP_API_VERSION < 20090626
             fcc.calling_scope = NULL;
             fcc.object_pp = NULL;
