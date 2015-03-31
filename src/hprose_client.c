@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl source file.                    *
  *                                                        *
- * LastModified: Mar 30, 2015                             *
+ * LastModified: Mar 31, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -488,6 +488,8 @@ ZEND_METHOD(hprose_client, sendAndReceiveCallback) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz!a", &response, &err, &use) == FAILURE) {
         return;
     }
+    Z_ADDREF_P(response);
+    SEPARATE_ZVAL(&response);
     hprose_client_send_and_receive_callback(_this, response, err, use TSRMLS_CC);
 }
 
