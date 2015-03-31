@@ -114,13 +114,14 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
                     }
                     break;
                 case HPROSE_TAG_ARGUMENT: {
-                    zval _args;
+                    zval *_args;
                     int32_t n, i;
+                    hprose_make_zval(_args);
                     hprose_reader_reset(&reader);
-                    hprose_reader_read_list(&reader, &_args TSRMLS_CC);
-                    n = MIN(Z_ARRLEN_P(args), Z_ARRLEN(_args));
+                    hprose_reader_read_list(&reader, _args TSRMLS_CC);
+                    n = MIN(Z_ARRLEN_P(args), Z_ARRLEN_P(_args));
                     for (i = 0; i < n; ++i) {
-                        zval *val = php_array_get(&_args, i);
+                        zval *val = php_array_get(_args, i);
 #if PHP_MAJOR_VERSION < 7
                         Z_ADDREF_P(val);
 #else
@@ -128,17 +129,18 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
 #endif                        
                         add_index_zval(args, i, val);
                     }
-                    zval_dtor(&_args);
+                    hprose_zval_free(_args);
                     break;
                 }
                 case HPROSE_TAG_ERROR: {
                     hprose_reader_reset(&reader);
-                    zval errstr;
-                    hprose_reader_read_string(&reader, &errstr TSRMLS_CC);
+                    zval *errstr;
+                    hprose_make_zval(errstr);
+                    hprose_reader_read_string(&reader, errstr TSRMLS_CC);
                     zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
-                                            "%s", Z_STRVAL(errstr));
-                    zval_dtor(&errstr);
+                                            "%s", Z_STRVAL_P(errstr));
                     hprose_reader_destroy(&reader);
+                    hprose_zval_free(errstr);
                     return;
                 }
                 default:
@@ -495,6 +497,7 @@ ZEND_METHOD(hprose_client, sendAndReceiveCallback) {
     SEPARATE_ZVAL(response);
 #endif
     hprose_client_send_and_receive_callback(_this, response, err, use TSRMLS_CC);
+    hprose_zval_free(response);
 }
 
 ZEND_METHOD(hprose_client, useService) {
