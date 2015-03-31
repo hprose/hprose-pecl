@@ -271,7 +271,11 @@ ZEND_METHOD(hprose_service, addFunction) {
     }
     if (_simple) {
         convert_to_boolean(_simple);
+#if PHP_MAJOR_VERSION < 7
         simple = Z_BVAL_P(_simple);
+#else
+        simple = (Z_TYPE_P(_simple) == IS_TRUE);
+#endif
     }
     hprose_service_add_function(_this, func, alias, mode, simple  TSRMLS_CC);
 }

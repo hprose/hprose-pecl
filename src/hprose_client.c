@@ -489,7 +489,11 @@ ZEND_METHOD(hprose_client, sendAndReceiveCallback) {
         return;
     }
     Z_ADDREF_P(response);
+#if PHP_MAJOR_VERSION < 7
     SEPARATE_ZVAL(&response);
+#else
+    SEPARATE_ZVAL(response);
+#endif
     hprose_client_send_and_receive_callback(_this, response, err, use TSRMLS_CC);
 }
 
