@@ -582,6 +582,128 @@ ZEND_METHOD(hprose_service, addClassMethods) {
     hprose_service_add_class_methods(_this, class_name, exec_class, alias_prefix, mode, simple TSRMLS_CC);
 }
 
+ZEND_METHOD(hprose_service, add) {
+    zval *arg1 = NULL, *arg2 = NULL, *arg3 = NULL, *simple = NULL;
+    long mode = HPROSE_RESULT_MODE_NORMAL;
+    HPROSE_THIS(service);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|z!z!", &arg1, &arg2, &arg3) == FAILURE) {
+        return;
+    }
+    switch (ZEND_NUM_ARGS()) {
+        case 1:
+            if (arg1) {
+                if (is_callable(arg1)) {
+                    hprose_service_add_function(_this, arg1, NULL, mode, simple TSRMLS_CC);
+                    return;
+                }                
+                switch (Z_TYPE_P(arg1)) {
+                    case IS_ARRAY:
+                        hprose_service_add_functions(_this, arg1, NULL, mode, simple TSRMLS_CC);
+                        return;
+                    case IS_OBJECT:
+                        hprose_service_add_instance_methods(_this, arg1, NULL, NULL, mode, simple TSRMLS_CC);
+                        return;
+                    case IS_STRING:
+                        hprose_service_add_class_methods(_this, arg1, NULL, NULL, mode, simple TSRMLS_CC);
+                        return;
+                }
+            }
+            break;
+        case 2:
+            if (is_callable(arg1) && is_string(arg2)) {
+                hprose_service_add_function(_this, arg1, arg2, mode, simple TSRMLS_CC);
+                return;
+            }
+            else if (is_string(arg1)) {
+                if (is_string(arg2)) {
+                    zval *a;
+                    zend_bool is_not_callable;
+                    hprose_zval_new(a);
+                    array_init_size(a, 2);
+                    Z_ADDREF_P(arg1);
+                    Z_ADDREF_P(arg2);
+                    add_next_index_zval(a, arg2);
+                    add_next_index_zval(a, arg1);
+                    is_not_callable = !is_callable(a);
+                    hprose_zval_free(a);
+                    if (is_not_callable) {
+                        if (class_exists(Z_STRVAL_P(arg2), Z_STRLEN_P(arg2), 1)) {
+                            hprose_service_add_class_methods(_this, arg1, arg2, NULL, mode, simple TSRMLS_CC);
+                        }
+                        else {
+                            hprose_service_add_class_methods(_this, arg1, NULL, arg2, mode, simple TSRMLS_CC);
+                        }
+                        return;
+                    }
+                }
+                hprose_service_add_method(_this, arg1, arg2, NULL, mode, simple TSRMLS_CC);
+                return;
+            }
+            else if (is_array(arg1)) {
+                if (is_array(arg2)) {
+                    hprose_service_add_functions(_this, arg1, arg2, mode, simple TSRMLS_CC);
+                }
+                else {
+                    hprose_service_add_methods(_this, arg1, arg2, NULL, mode, simple TSRMLS_CC);
+                }
+                return;
+            }
+            else if (is_object(arg1)) {
+                hprose_service_add_instance_methods(_this, arg1, arg2, NULL, mode, simple TSRMLS_CC);
+                return;
+            }
+            break;
+        case 3:
+            if (is_callable(arg1) &&
+                    ((arg2 == NULL) || (is_string(arg2) && Z_STRLEN_P(arg2) == 0)) &&
+                    is_string(arg3)) {
+                hprose_service_add_function(_this, arg1, arg3, mode, simple TSRMLS_CC);
+                return;
+            }
+            else if (is_string(arg1) && is_string(arg3)) {
+                if (is_string(arg2)) {
+                    zval *a;
+                    zend_bool is_not_callable;
+                    hprose_zval_new(a);
+                    array_init_size(a, 2);
+                    Z_ADDREF_P(arg1);
+                    Z_ADDREF_P(arg2);
+                    add_next_index_zval(a, arg2);
+                    add_next_index_zval(a, arg1);
+                    is_not_callable = !is_callable(a);
+                    hprose_zval_free(a);
+                    if (is_not_callable) {
+                        hprose_service_add_class_methods(_this, arg1, arg2, arg3, mode, simple TSRMLS_CC);
+                        return;
+                    }
+                }
+                if ((arg2 == NULL) || (is_string(arg2) && Z_STRLEN_P(arg2) == 0)) {
+                    hprose_service_add_class_methods(_this, arg1, NULL, arg3, mode, simple TSRMLS_CC);
+                    return;
+                }
+                if (is_string(arg2) || is_object(arg2)) {
+                    hprose_service_add_method(_this, arg1, arg2, arg3, mode, simple TSRMLS_CC);
+                    return;
+                }
+            }
+            else if (is_array(arg1)) {
+                if (((arg2 == NULL) || (is_string(arg2) && Z_STRLEN_P(arg2) == 0)) && is_array(arg3)) {
+                    hprose_service_add_functions(_this, arg1, arg3, mode, simple TSRMLS_CC);
+                }
+                else {
+                    hprose_service_add_methods(_this, arg1, arg2, arg3, mode, simple TSRMLS_CC);
+                }
+                return;
+            }
+            else if (is_object(arg1)) {
+                hprose_service_add_instance_methods(_this, arg1, arg2, arg3, mode, simple TSRMLS_CC);
+                return;
+            }
+            break;
+    }
+    WRONG_PARAM_COUNT;
+}
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_construct_arginfo, 0, 0, 0)
     ZEND_ARG_INFO(0, url)
 ZEND_END_ARG_INFO()
@@ -700,6 +822,12 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_service_add_class_methods_arginfo, 0, 0, 1)
     ZEND_ARG_INFO(0, simple)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_service_add_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, arg1)
+    ZEND_ARG_INFO(0, arg2)
+    ZEND_ARG_INFO(0, arg3)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, __construct, hprose_service_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     ZEND_ME(hprose_service, __destruct, hprose_service_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
@@ -725,6 +853,7 @@ static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, addMethods, hprose_service_add_methods_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, addInstanceMethods, hprose_service_add_instance_methods_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, addClassMethods, hprose_service_add_class_methods_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_service, add, hprose_service_add_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 

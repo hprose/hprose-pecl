@@ -628,6 +628,16 @@ static zend_always_inline zend_bool __instanceof(zend_class_entry *ce, char *nam
 // name must be a symbol
 #define instanceof(ce, name) __instanceof(ce, ZEND_STRL(#name) TSRMLS_CC)
 
+#define is_string(v) ((v) && Z_TYPE_P(v) == IS_STRING)
+#define is_array(v) ((v) && Z_TYPE_P(v) == IS_ARRAY)
+#define is_object(v) ((v) && Z_TYPE_P(v) == IS_OBJECT)
+
+#if PHP_API_VERSION < 20090626
+#define is_callable(v) ((v) && zend_is_callable((v), 0, NULL))
+#else
+#define is_callable(v) ((v) && zend_is_callable((v), IS_CALLABLE_CHECK_SILENT, NULL TSRMLS_CC))
+#endif
+
 #if PHP_MAJOR_VERSION < 7
 #define hprose_zval_new(val)      MAKE_STD_ZVAL(val)
 #define hprose_zval_free(val)      zval_ptr_dtor(&(val))

@@ -362,11 +362,7 @@ ZEND_METHOD(hprose_proxy, __call) {
     if (n > 0) {
         zval *callback = php_array_get(args, n - 1);
         
-#if PHP_API_VERSION < 20090626
-        if (zend_is_callable(callback, 0, NULL)) {
-#else
-        if (zend_is_callable(callback, IS_CALLABLE_CHECK_SILENT, NULL TSRMLS_CC)) {
-#endif
+        if (is_callable(callback)) {
 #if PHP_MAJOR_VERSION < 7
             zend_hash_index_del(Z_ARRVAL_P(args), n - 1);
             hprose_client_async_invoke(_this->client, _name.buf, _name.len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, callback TSRMLS_CC);
@@ -556,11 +552,7 @@ ZEND_METHOD(hprose_client, invoke) {
         Z_ADDREF_P(args);
         null_args = 1;
     }
-#if PHP_API_VERSION < 20090626
-    if (callback && zend_is_callable(callback, 0, NULL)) {
-#else
-    if (callback && zend_is_callable(callback, IS_CALLABLE_CHECK_SILENT, NULL TSRMLS_CC)) {
-#endif
+    if (is_callable(callback)) {
         hprose_client_async_invoke(getThis(), name, nlen, args, byref, mode, simple, callback TSRMLS_CC);
     }
     else {
