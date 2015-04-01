@@ -13,7 +13,7 @@
  *                                                        *
  * hprose writer for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 28, 2015                             *
+ * LastModified: Apr 1, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -176,8 +176,8 @@ static zend_always_inline hprose_writer_refer * hprose_real_writer_refer_new() {
 #else
     zend_llist_init(_this->ref, sizeof(zend_object *), (llist_dtor_func_t)__hprose_writer_refer_dtor, 0);
 #endif
-    hprose_make_zval(_this->sref);
-    hprose_make_zval(_this->oref);
+    hprose_zval_new(_this->sref);
+    hprose_zval_new(_this->oref);
     array_init(_this->sref);
     array_init(_this->oref);
     _this->refcount = 0;
@@ -195,8 +195,8 @@ static inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRML
 
 static zend_always_inline void hprose_writer_init(hprose_writer *_this, hprose_bytes_io *stream, zend_bool simple) {
     _this->stream = stream;
-    hprose_make_zval(_this->classref);
-    hprose_make_zval(_this->propsref);
+    hprose_zval_new(_this->classref);
+    hprose_zval_new(_this->propsref);
     array_init(_this->classref);
     array_init(_this->propsref);
     _this->refer = simple ? hprose_fake_writer_refer_new() : hprose_real_writer_refer_new();
@@ -474,7 +474,7 @@ static inline int32_t hprose_writer_write_class(hprose_writer *_this, char *alia
     int32_t index = Z_ARRLEN_P(_this->propsref);
 #if PHP_MAJOR_VERSION < 7
     zval *props;
-    hprose_make_zval(props);
+    hprose_zval_new(props);
     array_init(props);
 #else
     zval props;

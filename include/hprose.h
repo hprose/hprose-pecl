@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl header file.                           *
  *                                                        *
- * LastModified: Mar 28, 2015                             *
+ * LastModified: Apr 1, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -629,10 +629,10 @@ static zend_always_inline zend_bool __instanceof(zend_class_entry *ce, char *nam
 #define instanceof(ce, name) __instanceof(ce, ZEND_STRL(#name) TSRMLS_CC)
 
 #if PHP_MAJOR_VERSION < 7
-#define hprose_make_zval(val)      MAKE_STD_ZVAL(val)
+#define hprose_zval_new(val)      MAKE_STD_ZVAL(val)
 #define hprose_zval_free(val)      zval_ptr_dtor(&(val))
 #else
-#define hprose_make_zval(val)      val = emalloc(sizeof(zval));
+#define hprose_zval_new(val)      val = emalloc(sizeof(zval));
 #define hprose_zval_free(val)      zval_ptr_dtor(val); efree(val);
 #endif
 

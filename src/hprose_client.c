@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl source file.                    *
  *                                                        *
- * LastModified: Mar 31, 2015                             *
+ * LastModified: Apr 1, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -120,7 +120,7 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
                 case HPROSE_TAG_ARGUMENT: {
                     zval *_args;
                     int32_t n, i;
-                    hprose_make_zval(_args);
+                    hprose_zval_new(_args);
                     hprose_reader_reset(&reader);
                     hprose_reader_read_list(&reader, _args TSRMLS_CC);
                     n = MIN(Z_ARRLEN_P(args), Z_ARRLEN_P(_args));
@@ -139,7 +139,7 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
                 case HPROSE_TAG_ERROR: {
                     hprose_reader_reset(&reader);
                     zval *errstr;
-                    hprose_make_zval(errstr);
+                    hprose_zval_new(errstr);
                     hprose_reader_read_string(&reader, errstr TSRMLS_CC);
                     zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                             "%s", Z_STRVAL_P(errstr));
@@ -161,8 +161,8 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
 static zend_always_inline void hprose_client_sync_invoke(zval *client, char *name, int32_t len, zval *args, zend_bool byref, int mode, zend_bool simple, zval *return_value TSRMLS_DC) {
     zval *context, *userdata, *request, response, _name;
     hprose_client *_this = HPROSE_GET_OBJECT_P(client, client)->_this;
-    hprose_make_zval(context);
-    hprose_make_zval(userdata);
+    hprose_zval_new(context);
+    hprose_zval_new(userdata);
     object_init(context);
     object_init(userdata);
     add_property_zval(context, "client", client);
@@ -172,7 +172,7 @@ static zend_always_inline void hprose_client_sync_invoke(zval *client, char *nam
 #else
     ZVAL_STRINGL(&_name, name, len);
 #endif
-    hprose_make_zval(request);
+    hprose_zval_new(request);
     hprose_client_do_output(_this, &_name, args, byref, simple, context, request TSRMLS_CC);
 #if PHP_MAJOR_VERSION >= 7
     zval_ptr_dtor(&_name);
@@ -201,8 +201,8 @@ static zend_always_inline void hprose_client_sync_invoke(zval *client, char *nam
 static zend_always_inline void hprose_client_async_invoke(zval *client, char *name, int32_t len, zval *args, zend_bool byref, int mode, zend_bool simple, zval *callback TSRMLS_DC) {
     zval *context, *userdata, *request, *use, _name;
     hprose_client *_this = HPROSE_GET_OBJECT_P(client, client)->_this;
-    hprose_make_zval(context);
-    hprose_make_zval(userdata);
+    hprose_zval_new(context);
+    hprose_zval_new(userdata);
     object_init(context);
     object_init(userdata);
     add_property_zval(context, "client", client);
@@ -212,7 +212,7 @@ static zend_always_inline void hprose_client_async_invoke(zval *client, char *na
 #else
     ZVAL_STRINGL(&_name, name, len);
 #endif
-    hprose_make_zval(request);
+    hprose_zval_new(request);
     hprose_client_do_output(_this, &_name, args, byref, simple, context, request TSRMLS_CC);
 #if PHP_MAJOR_VERSION >= 7
     zval_ptr_dtor(&_name);
@@ -232,7 +232,7 @@ static zend_always_inline void hprose_client_async_invoke(zval *client, char *na
     Z_TRY_ADDREF_P(context);
     Z_TRY_ADDREF_P(callback);
 #endif
-    hprose_make_zval(use);
+    hprose_zval_new(use);
     array_init(use);
     add_next_index_zval(use, args);
     add_next_index_zval(use, context);
@@ -252,7 +252,7 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
     zend_fcall_info_cache fcc = _get_fcall_info_cache(callback TSRMLS_CC);
     uint32_t n = fcc.function_handler->common.num_args;
     zval *result;
-    hprose_make_zval(result);
+    hprose_zval_new(result);
     ZVAL_NULL(result);
     long mode;
     php_array_get_long(use, 3, &mode);
@@ -479,7 +479,7 @@ ZEND_METHOD(hprose_client, __construct) {
 #endif
     intern->_this->ns = "";
     intern->_this->simple = 0;
-    hprose_make_zval(intern->_this->filters);
+    hprose_zval_new(intern->_this->filters);
     array_init(intern->_this->filters);
     zend_update_property_stringl(get_hprose_client_ce(), getThis(), ZEND_STRL("url"), url, len TSRMLS_CC);    
 }
@@ -551,7 +551,7 @@ ZEND_METHOD(hprose_client, invoke) {
         return;
     }
     if (args == NULL) {
-        hprose_make_zval(args);
+        hprose_zval_new(args);
         array_init(args);
         Z_ADDREF_P(args);
         null_args = 1;

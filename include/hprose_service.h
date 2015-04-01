@@ -13,7 +13,7 @@
  *                                                        *
  * hprose service for pecl header file.                   *
  *                                                        *
- * LastModified: Mar 28, 2015                             *
+ * LastModified: Apr 1, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -249,7 +249,7 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
         hprose_remote_call *call;
         zend_bool simple = _this->simple;
         zend_bool byref = 0;
-        hprose_make_zval(_name);
+        hprose_zval_new(_name);
         hprose_reader_reset(&reader);
         hprose_reader_read_string(&reader, _name TSRMLS_CC);
         name = Z_STRVAL_P(_name);
@@ -272,7 +272,7 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
             simple = (zend_bool)call->simple;
         }
         tag = hprose_bytes_io_getc(input);
-        hprose_make_zval(args);
+        hprose_zval_new(args);
         if (tag == HPROSE_TAG_LIST) {
             hprose_reader_reset(&reader);
             hprose_reader_read_list_without_tag(&reader, args TSRMLS_CC);
@@ -286,7 +286,7 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
                 int32_t i;
                 int32_t count = Z_ARRLEN_P(args);
                 int32_t n = MIN(count, call->fcc.function_handler->common.num_args);
-                hprose_make_zval(_args);
+                hprose_zval_new(_args);
                 array_init_size(_args, count);
                 for (i = 0; i < n; ++i) {
                     zval *e = php_array_get(args, i);
@@ -339,7 +339,7 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
         }
         if (zend_hash_str_find_ptr(_this->calls, ZEND_STRL("*")) == call) {
             zval *_args;
-            hprose_make_zval(_args);
+            hprose_zval_new(_args);
             array_init_size(_args, 2);
 #if PHP_MAJOR_VERSION < 7
             Z_ADDREF_P(_name);
@@ -353,7 +353,7 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
             hprose_zval_free(args);
             args = _args;
         }
-        hprose_make_zval(result);
+        hprose_zval_new(result);
         ZVAL_NULL(result);
         __function_invoke_args(call->fcc, NULL, result, args TSRMLS_CC);
         if (EG(exception)) {

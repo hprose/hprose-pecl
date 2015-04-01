@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl header file.                    *
  *                                                        *
- * LastModified: Mar 26, 2015                             *
+ * LastModified: Apr 1, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -119,7 +119,7 @@ static hprose_reader_refer_handlers __hprose_real_reader_refer = {
 static zend_always_inline hprose_reader_refer * hprose_real_reader_refer_new() {
     hprose_real_reader_refer *_this = emalloc(sizeof(hprose_real_reader_refer));
     _this->handlers = &__hprose_real_reader_refer;
-    hprose_make_zval(_this->ref);
+    hprose_zval_new(_this->ref);
     array_init(_this->ref);
     return (hprose_reader_refer *)(void *)_this;
 }
@@ -135,8 +135,8 @@ static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_
 
 static zend_always_inline void hprose_reader_init(hprose_reader *_this, hprose_bytes_io *stream, zend_bool simple) {
     _this->stream = stream;
-    hprose_make_zval(_this->classref);
-    hprose_make_zval(_this->propsref);
+    hprose_zval_new(_this->classref);
+    hprose_zval_new(_this->propsref);
     array_init(_this->classref);
     array_init(_this->propsref);
     _this->refer = simple ? hprose_fake_reader_refer_new() : hprose_real_reader_refer_new();
