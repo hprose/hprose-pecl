@@ -459,7 +459,7 @@ static zend_always_inline zend_bool php_assoc_array_get_long(zval *val, char *ke
 
 static inline char *object_hash(zval *val) {
     char *hash;
-#if (sizeof(intptr_t) == 4)
+#if SIZEOF_LONG == 4
     spprintf(&hash, 32, "%016x%016x", (intptr_t)Z_OBJ_HANDLE_P(val), (intptr_t)Z_OBJ_HT_P(val));
 #else
     spprintf(&hash, 32, "%016lx%016lx", (intptr_t)Z_OBJ_HANDLE_P(val), (intptr_t)Z_OBJ_HT_P(val));
