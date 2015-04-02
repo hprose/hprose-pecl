@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl source file.                           *
  *                                                        *
- * LastModified: Mar 24, 2015                             *
+ * LastModified: Apr 2, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/

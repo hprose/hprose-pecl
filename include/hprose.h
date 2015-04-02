@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl header file.                           *
  *                                                        *
- * LastModified: Apr 1, 2015                              *
+ * LastModified: Apr 2, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -121,60 +121,6 @@ typedef unsigned __int64 uint64_t;
 #include <inttypes.h>
 #else
 #include <stdint.h>
-#endif
-#endif
-
-/**********************************************************\
-| BYTE_ORDER definition                                    |
-\**********************************************************/
-#include <sys/types.h> /* This will likely define BYTE_ORDER */
-
-#ifndef BYTE_ORDER
-#if (BSD >= 199103)
-# include <machine/endian.h>
-#else
-#if defined(linux) || defined(__linux__)
-# include <endian.h>
-#else
-#define LITTLE_ENDIAN   1234    /* least-significant byte first (vax, pc) */
-#define BIG_ENDIAN  4321    /* most-significant byte first (IBM, net) */
-#define PDP_ENDIAN  3412    /* LSB first in word, MSW first in long (pdp)*/
-
-#if defined(__i386__) || defined(__x86_64__) || defined(__amd64__) || \
-   defined(vax) || defined(ns32000) || defined(sun386) || \
-   defined(MIPSEL) || defined(_MIPSEL) || defined(BIT_ZERO_ON_RIGHT) || \
-   defined(__alpha__) || defined(__alpha)
-#define BYTE_ORDER    LITTLE_ENDIAN
-#endif
-
-#if defined(sel) || defined(pyr) || defined(mc68000) || defined(sparc) || \
-    defined(is68k) || defined(tahoe) || defined(ibm032) || defined(ibm370) || \
-    defined(MIPSEB) || defined(_MIPSEB) || defined(_IBMR2) || defined(DGUX) ||\
-    defined(apollo) || defined(__convex__) || defined(_CRAY) || \
-    defined(__hppa) || defined(__hp9000) || \
-    defined(__hp9000s300) || defined(__hp9000s700) || \
-    defined (BIT_ZERO_ON_LEFT) || defined(m68k) || defined(__sparc)
-#define BYTE_ORDER  BIG_ENDIAN
-#endif
-#endif /* linux */
-#endif /* BSD */
-#endif /* BYTE_ORDER */
-
-#ifndef BYTE_ORDER
-#ifdef __BYTE_ORDER
-#if defined(__LITTLE_ENDIAN) && defined(__BIG_ENDIAN)
-#ifndef LITTLE_ENDIAN
-#define LITTLE_ENDIAN __LITTLE_ENDIAN
-#endif
-#ifndef BIG_ENDIAN
-#define BIG_ENDIAN __BIG_ENDIAN
-#endif
-#if (__BYTE_ORDER == __LITTLE_ENDIAN)
-#define BYTE_ORDER LITTLE_ENDIAN
-#else
-#define BYTE_ORDER BIG_ENDIAN
-#endif
-#endif
 #endif
 #endif
 
@@ -456,16 +402,6 @@ static zend_always_inline zend_bool php_assoc_array_get_long(zval *val, char *ke
 /**********************************************************\
 | helper function definition                               |
 \**********************************************************/
-
-static inline char *object_hash(zval *val) {
-    char *hash;
-#if SIZEOF_LONG == 4
-    spprintf(&hash, 32, "%016x%016x", (intptr_t)Z_OBJ_HANDLE_P(val), (intptr_t)Z_OBJ_HT_P(val));
-#else
-    spprintf(&hash, 32, "%016lx%016lx", (intptr_t)Z_OBJ_HANDLE_P(val), (intptr_t)Z_OBJ_HT_P(val));
-#endif
-    return hash;
-}
 
 static inline void hprose_str_replace(char from, char to, char *s, int len, int start) {
     register int i;
