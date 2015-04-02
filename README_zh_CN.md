@@ -31,3 +31,9 @@
 通过 *Hprose*，你就可以在这些语言之间方便高效的实现互通了。
 
 本项目是 Hprose 的 PHP 的 C 扩展实现。
+
+## 使用
+
+本扩展是 [Hprose for PHP](http://github.com/hprose/hprose-php) 的一部分，它仅实现了 hprose 序列化，反序列化以及 RPC 协议抽象层。实际的 Http 的客户端和服务器实现是使用 PHP 编写的。你可以通过以下网址来了解如何使用它：
+
+http://github.com/hprose/hprose-php
