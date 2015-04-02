@@ -47,7 +47,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
 		<active>yes</active>
 	</lead>
 	<date>2015-04-03</date>
-	<time>03:12:51</time>
+	<time>04:15:34</time>
 	<version>
 		<release>1.1.0</release>
 		<api>1.1.0</api>
@@ -61,7 +61,8 @@ http://pear.php.net/dtd/package-2.0.xsd">
         Fixed building on RHEL 5.
         Fixed failed tests with PHP 7.
         More faster hprose_serialize and hprose_unserialize.
-        Fixed no response casused crash.</notes>
+        Fixed no response casused crash.
+    	Fixed Line termination inconsistency.</notes>
 	<contents>
 		<dir name="/">
 			<file role="doc" name="CREDITS" />
@@ -142,6 +143,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
                 Fixed failed tests with PHP 7.
                 More faster hprose_serialize and hprose_unserialize.
                 Fixed no response casused crash.
+                Fixed Line termination inconsistency.
             </notes>
         </release>
         <release>
