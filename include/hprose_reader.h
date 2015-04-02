@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl header file.                    *
  *                                                        *
- * LastModified: Apr 1, 2015                              *
+ * LastModified: Apr 2, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -35,110 +35,29 @@
 #define INFINITY (1.0/0.0)
 #endif
 
-
 BEGIN_EXTERN_C()
 
 zend_class_entry *get_hprose_reader_ce();
 
 HPROSE_STARTUP_FUNCTION(reader);
 
-typedef void hprose_reader_refer_set(void *_this, zval *val);
-typedef zval * hprose_reader_refer_read(void *_this, int32_t index);
-typedef void hprose_reader_refer_reset(void *_this);
-typedef void hprose_reader_refer_free(void *_this);
-
-typedef struct {
-    hprose_reader_refer_set *set;
-    hprose_reader_refer_read *read;
-    hprose_reader_refer_reset *reset;
-    hprose_reader_refer_free *free;
-} hprose_reader_refer_handlers;
-
-typedef struct {
-    hprose_reader_refer_handlers *handlers;
-} hprose_reader_refer;
-
-static void hprose_fake_reader_refer_set(void *_this, zval *val) {}
-static zval * hprose_fake_reader_refer_read(void *_this, int32_t index) {
-    TSRMLS_FETCH();
-    zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
-            "Unexpected serialize tag '%c' in stream", HPROSE_TAG_REF);
-    return NULL;
-}
-static void hprose_fake_reader_refer_reset(void *_this) {}
-static void hprose_fake_reader_refer_free(void *_this) { efree(_this); }
-
-static hprose_reader_refer_handlers __hprose_fake_reader_refer = {
-    hprose_fake_reader_refer_set,
-    hprose_fake_reader_refer_read,
-    hprose_fake_reader_refer_reset,
-    hprose_fake_reader_refer_free
-};
-
-static zend_always_inline hprose_reader_refer *hprose_fake_reader_refer_new() {
-    hprose_reader_refer *_this = emalloc(sizeof(hprose_reader_refer));
-    _this->handlers = &__hprose_fake_reader_refer;
-    return _this;
-}
-
-typedef struct {
-    hprose_reader_refer_handlers *handlers;
-    zval *ref;
-} hprose_real_reader_refer;
-
-static void hprose_real_reader_refer_set(void *_this, zval *val) {
-    hprose_real_reader_refer *refer = (hprose_real_reader_refer *)_this;
-#ifdef Z_TRY_ADDREF_P
-    Z_TRY_ADDREF_P(val);
-#else
-    Z_ADDREF_P(val);
-#endif
-    add_next_index_zval(refer->ref, val);
-}
-static zval * hprose_real_reader_refer_read(void *_this, int32_t index) {
-    hprose_real_reader_refer *refer = (hprose_real_reader_refer *)_this;
-    zval *result = php_array_get(refer->ref, index);
-#ifdef Z_TRY_ADDREF_P
-    Z_TRY_ADDREF_P(result);
-#else
-    Z_ADDREF_P(result);
-#endif
-    return result;
-}
-
-static void hprose_real_reader_refer_reset(void *_this) {
-    hprose_real_reader_refer *refer = (hprose_real_reader_refer *)_this;
-    zend_hash_clean(Z_ARRVAL_P(refer->ref));
-}
-
-static void hprose_real_reader_refer_free(void *_this) {
-    hprose_real_reader_refer *refer = (hprose_real_reader_refer *)_this;
-    hprose_zval_free(refer->ref);
-    refer->ref = NULL;
-    efree(refer);
-}
-
-static hprose_reader_refer_handlers __hprose_real_reader_refer = {
-    hprose_real_reader_refer_set,
-    hprose_real_reader_refer_read,
-    hprose_real_reader_refer_reset,
-    hprose_real_reader_refer_free
-};
-
-static zend_always_inline hprose_reader_refer * hprose_real_reader_refer_new() {
-    hprose_real_reader_refer *_this = emalloc(sizeof(hprose_real_reader_refer));
-    _this->handlers = &__hprose_real_reader_refer;
-    hprose_zval_new(_this->ref);
-    array_init(_this->ref);
-    return (hprose_reader_refer *)(void *)_this;
-}
-
 typedef struct {
     hprose_bytes_io *stream;
     zval *classref;
     zval *propsref;
-    hprose_reader_refer *refer;
+    zval *refer;
 } hprose_reader;
+
+static zend_always_inline void hprose_reader_refer_set(zval *refer, zval *val) {
+    if (refer) {
+#ifdef Z_TRY_ADDREF_P
+        Z_TRY_ADDREF_P(val);
+#else
+        Z_ADDREF_P(val);
+#endif
+        add_next_index_zval(refer, val);
+    }
+}
 
 static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_value TSRMLS_DC);
 
@@ -148,7 +67,13 @@ static zend_always_inline void hprose_reader_init(hprose_reader *_this, hprose_b
     hprose_zval_new(_this->propsref);
     array_init(_this->classref);
     array_init(_this->propsref);
-    _this->refer = simple ? hprose_fake_reader_refer_new() : hprose_real_reader_refer_new();
+    if (simple) {
+        _this->refer = NULL;
+    }
+    else {
+        hprose_zval_new(_this->refer);
+        array_init(_this->refer);
+    }
 }
 
 static zend_always_inline hprose_reader * hprose_reader_create(hprose_bytes_io *stream, zend_bool simple) {
@@ -163,8 +88,10 @@ static zend_always_inline void hprose_reader_destroy(hprose_reader *_this) {
     hprose_zval_free(_this->propsref);
     _this->classref = NULL;
     _this->propsref = NULL;
-    _this->refer->handlers->free(_this->refer);
-    _this->refer = NULL;
+    if (_this->refer) {
+        hprose_zval_free(_this->refer);
+        _this->refer = NULL;
+    }
 }
 
 static zend_always_inline void hprose_reader_free(hprose_reader *_this) {
@@ -175,7 +102,9 @@ static zend_always_inline void hprose_reader_free(hprose_reader *_this) {
 static zend_always_inline void hprose_reader_reset(hprose_reader *_this) {
     zend_hash_clean(Z_ARRVAL_P(_this->classref));
     zend_hash_clean(Z_ARRVAL_P(_this->propsref));
-    _this->refer->handlers->reset(_this->refer);
+    if (_this->refer) {
+        zend_hash_clean(Z_ARRVAL_P(_this->refer));
+    }
 }
 
 static zend_always_inline long hprose_reader_read_integer_without_tag(hprose_reader *_this) {
@@ -288,9 +217,15 @@ static zend_always_inline zend_bool hprose_reader_read_boolean(hprose_reader *_t
     }
 }
 
-static zend_always_inline void hprose_reader_read_ref(hprose_reader *_this, zval *return_value) {
-    zval *val = _this->refer->handlers->read(_this->refer, hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_SEMICOLON));
-    RETURN_ZVAL(val, 1, 1);
+static zend_always_inline void hprose_reader_read_ref(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+    if (_this->refer) {
+        uint32_t index = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_SEMICOLON);
+        zval *result = php_array_get(_this->refer, index);
+        RETURN_ZVAL(result, 1, 0);
+        return;
+    }
+    zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
+            "Unexpected serialize tag '%c' in stream", HPROSE_TAG_REF);
 }
 
 static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
@@ -334,7 +269,7 @@ static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_re
         function_invoke(date_create, return_value, "s", tmp->buf, tmp->len);
     }
     hprose_bytes_io_free(tmp);
-    _this->refer->handlers->set(_this->refer, return_value);
+    hprose_reader_refer_set(_this->refer, return_value);
 }
 
 static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
@@ -371,7 +306,7 @@ static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader
         function_invoke(date_create, return_value, "s", tmp->buf, tmp->len);
     }
     hprose_bytes_io_free(tmp);
-    _this->refer->handlers->set(_this->refer, return_value);
+    hprose_reader_refer_set(_this->refer, return_value);
 }
 
 static zend_always_inline void hprose_reader_read_bytes_without_tag(hprose_reader *_this, zval *return_value) {
@@ -379,7 +314,7 @@ static zend_always_inline void hprose_reader_read_bytes_without_tag(hprose_reade
     char *bytes = hprose_bytes_io_read(_this->stream, count);
     hprose_bytes_io_skip(_this->stream, 1);
     RETVAL_STRINGL_0(bytes, count);
-    _this->refer->handlers->set(_this->refer, return_value);
+    hprose_reader_refer_set(_this->refer, return_value);
 }
 
 static zend_always_inline void hprose_reader_read_utf8char_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
@@ -398,7 +333,7 @@ static zend_always_inline void _hprose_reader_read_string_without_tag(hprose_rea
 
 static zend_always_inline void hprose_reader_read_string_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     _hprose_reader_read_string_without_tag(_this, return_value TSRMLS_CC);
-    _this->refer->handlers->set(_this->refer, return_value);
+    hprose_reader_refer_set(_this->refer, return_value);
 }
 
 static zend_always_inline void _hprose_reader_read_string(hprose_reader *_this, zval *return_value TSRMLS_DC) {
@@ -416,7 +351,7 @@ static zend_always_inline void _hprose_reader_read_string(hprose_reader *_this, 
             return;
         }
         case HPROSE_TAG_REF: {
-            hprose_reader_read_ref(_this, return_value);
+            hprose_reader_read_ref(_this, return_value TSRMLS_CC);
             convert_to_string(return_value);
             return;
         }
@@ -443,7 +378,7 @@ static zend_always_inline void hprose_reader_read_string(hprose_reader *_this, z
             return;
         }
         case HPROSE_TAG_REF: {
-            hprose_reader_read_ref(_this, return_value);
+            hprose_reader_read_ref(_this, return_value TSRMLS_CC);
             convert_to_string(return_value);
             return;
         }
@@ -456,13 +391,13 @@ static zend_always_inline void hprose_reader_read_guid_without_tag(hprose_reader
     char *s = hprose_bytes_io_read(_this->stream, 36);
     hprose_bytes_io_skip(_this->stream, 1);
     RETVAL_STRINGL_0(s, 36);
-    _this->refer->handlers->set(_this->refer, return_value);
+    hprose_reader_refer_set(_this->refer, return_value);
 }
 
 static inline void hprose_reader_read_list_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     int32_t i = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_OPENBRACE);
     array_init_size(return_value, i);
-    _this->refer->handlers->set(_this->refer, return_value);
+    hprose_reader_refer_set(_this->refer, return_value);
     for (; i > 0; --i) {
 #if PHP_MAJOR_VERSION < 7
         zval *val;
@@ -490,7 +425,7 @@ static zend_always_inline void hprose_reader_read_list(hprose_reader *_this, zva
             return;
         }
         case HPROSE_TAG_REF: {
-            hprose_reader_read_ref(_this, return_value);
+            hprose_reader_read_ref(_this, return_value TSRMLS_CC);
             return;
         }
         default: unexpected_tag(tag, expected_tags TSRMLS_CC);
@@ -500,7 +435,7 @@ static zend_always_inline void hprose_reader_read_list(hprose_reader *_this, zva
 static inline void hprose_reader_read_map_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
     int32_t i = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_OPENBRACE);
     array_init_size(return_value, i);
-    _this->refer->handlers->set(_this->refer, return_value);
+    hprose_reader_refer_set(_this->refer, return_value);
     for (; i > 0; --i) {
 #if PHP_MAJOR_VERSION < 7
         zval *key, *value;
@@ -540,7 +475,7 @@ static zend_always_inline void hprose_reader_read_map(hprose_reader *_this, zval
             return;
         }
         case HPROSE_TAG_REF: {
-            hprose_reader_read_ref(_this, return_value);
+            hprose_reader_read_ref(_this, return_value TSRMLS_CC);
             return;
         }
         default: unexpected_tag(tag, expected_tags TSRMLS_CC);
@@ -591,7 +526,7 @@ static inline void hprose_reader_read_object_without_tag(hprose_reader *_this, z
     HashTable *props_ht = Z_ARRVAL_P(props);
     int32_t i = zend_hash_num_elements(props_ht);
     zend_class_entry *entry = __create_php_object(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), return_value TSRMLS_CC, "");
-    _this->refer->handlers->set(_this->refer, return_value);
+    hprose_reader_refer_set(_this->refer, return_value);
     if (i) {
         zend_hash_internal_pointer_reset(props_ht);
         for (; i > 0; --i) {
@@ -686,7 +621,7 @@ static inline void hprose_reader_unserialize(hprose_reader *_this, zval *return_
             return;
         }
         case HPROSE_TAG_REF: {
-            hprose_reader_read_ref(_this, return_value);
+            hprose_reader_read_ref(_this, return_value TSRMLS_CC);
             return;
         }
         case HPROSE_TAG_ERROR: {
