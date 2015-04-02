@@ -82,30 +82,30 @@ static zend_always_inline void hprose_real_writer_refer_write_ref(hprose_bytes_i
 
 static void hprose_real_writer_refer_set(void *_this, zval *val) {
     hprose_real_writer_refer *refer = (hprose_real_writer_refer *)_this;
-    char *key;
     switch (Z_TYPE_P(val)) {
         case IS_STRING:
             add_assoc_long_ex(refer->sref, Z_STRVAL_P(val), Z_STRLEN_P(val), refer->refcount);
             break;
-        case IS_OBJECT:
+        case IS_OBJECT: {
+            ulong h;
 #if PHP_MAJOR_VERSION < 7
             Z_ADDREF_P(val);
             zend_llist_add_element(refer->ref, &val);
+            h = (ulong)Z_OBJ_HANDLE_P(val);
 #else
             Z_ADDREF_P(val);
             zend_llist_add_element(refer->ref, &(Z_OBJ_P(val)));
+            h = (ulong)Z_OBJ_P(val);
 #endif
-            key = object_hash(val);
-            add_assoc_long_ex(refer->oref, key, 32, refer->refcount);
-            efree(key);
+            add_index_long(refer->oref, h, refer->refcount);
             break;
+        }
     }
     ++(refer->refcount);
 }
 static zend_bool hprose_real_writer_refer_write(void *_this, hprose_bytes_io *stream, zval *val) {
     hprose_real_writer_refer *refer = (hprose_real_writer_refer *)_this;
     long index;
-    char *key;
     switch (Z_TYPE_P(val)) {
         case IS_STRING:
             if (php_assoc_array_get_long(refer->sref, Z_STRVAL_P(val), Z_STRLEN_P(val), &index)) {
@@ -113,15 +113,18 @@ static zend_bool hprose_real_writer_refer_write(void *_this, hprose_bytes_io *st
                 return 1;
             }
             break;
-        case IS_OBJECT:
-            key = object_hash(val);
-            if (php_assoc_array_get_long(refer->oref, key, 32, &index)) {
+        case IS_OBJECT: {
+#if PHP_MAJOR_VERSION < 7
+            ulong h = (ulong)Z_OBJ_HANDLE_P(val);
+#else
+            h = (ulong)Z_OBJ_P(val);
+#endif
+            if (php_array_get_long(refer->oref, h, &index)) {
                 hprose_real_writer_refer_write_ref(stream, (int32_t)index);
-                efree(key);
                 return 1;
             }
-            efree(key);
             break;
+        }
     }
     return 0;
 }
