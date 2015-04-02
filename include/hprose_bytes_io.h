@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl header file.                  *
  *                                                        *
- * LastModified: Mar 30, 2015                             *
+ * LastModified: Apr 2, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -68,11 +68,8 @@ static zend_always_inline void _hprose_bytes_io_grow(hprose_bytes_io *_this, int
     if (_this->buf) {
         size *= 2;
         if (size > _this->cap) {
-            char *buf = pemalloc(size, _this->persistent);
-            memcpy(buf, _this->buf, _this->len);
-            buf[_this->len] = 0;
-            pefree(_this->buf, _this->persistent);
-            _this->buf = buf;
+            _this->buf = perealloc(_this->buf, size, _this->persistent);
+            _this->buf[_this->len] = 0;
             _this->cap = size;
         }
     }

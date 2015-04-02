@@ -43,3 +43,5 @@ tests/*.php
 tests/*.sh
 
 tmp-php.ini
+
+*.tgz

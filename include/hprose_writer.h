@@ -270,6 +270,9 @@ static zend_always_inline void hprose_writer_write_double(hprose_writer *_this, 
     else if (isinf(d)) {
         hprose_writer_write_infinity(_this, d > 0);
     }
+    else if (floor(d) == d && d <= INT64_MAX && d >= INT64_MIN) {
+        hprose_writer_write_long(_this, (int64_t)d);
+    }
     else {
         hprose_bytes_io_putc(_this->stream, HPROSE_TAG_DOUBLE);
         hprose_bytes_io_write_double(_this->stream, d);
