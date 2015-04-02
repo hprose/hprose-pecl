@@ -27,6 +27,15 @@
 #include "hprose_class_manager.h"
 #include "hprose_raw_reader.h"
 
+/* Workaround for old gcc. */
+#ifndef NAN
+#define NAN (0.0/0.0)
+#endif
+#ifndef INFINITY
+#define INFINITY (1.0/0.0)
+#endif
+
+
 BEGIN_EXTERN_C()
 
 zend_class_entry *get_hprose_reader_ce();
