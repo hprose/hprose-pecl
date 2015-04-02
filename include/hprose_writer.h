@@ -583,6 +583,7 @@ static inline void hprose_writer_write_object_with_ref(hprose_writer *_this, zva
 }
 #if PHP_API_VERSION < 20090626
 static zend_always_inline zend_class_entry *php_date_get_date_ce() {
+    TSRMLS_FETCH();
     static zend_class_entry **ce = NULL;
     if (ce == NULL) {
         zend_lookup_class(ZEND_STRL("DateTime"), &ce TSRMLS_CC);
