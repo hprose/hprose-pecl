@@ -1132,10 +1132,17 @@ static void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return
 
     if (retval_ptr) {
         if (return_value) {
-            if (dtor) {
-                zval_dtor(return_value);
+            if (return_value != retval_ptr) {
+                if (dtor) {
+                    zval_dtor(return_value);
+                }
+                COPY_PZVAL_TO_ZVAL(*return_value, retval_ptr);
             }
-            COPY_PZVAL_TO_ZVAL(*return_value, retval_ptr);
+            else {
+                if (dtor) {
+                    zval_ptr_dtor(&retval_ptr);
+                }
+            }
         }
         else {
             zval_ptr_dtor(&retval_ptr);
