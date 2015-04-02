@@ -81,6 +81,10 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
             zend_hash_move_backwards(ht);
         }
     }
+    if (Z_STRLEN_P(response) == 0) {
+        zend_throw_exception(NULL, "No Response", 0 TSRMLS_CC);
+        return;
+    }
     if (mode == HPROSE_RESULT_MODE_RAW_WITH_END_TAG) {
         RETVAL_ZVAL(response, 0, 0);
         ZVAL_NULL(response);
