@@ -530,17 +530,16 @@ static inline int32_t hprose_writer_write_class(hprose_writer *_this, char *alia
 
 static inline void hprose_writer_write_object(hprose_writer *_this, zval *val TSRMLS_DC) {
     HashTable *ht = Z_OBJPROP_P(val), *props_ht;
+    int32_t alen;
 #if PHP_MAJOR_VERSION < 7
-    char *classname = (char *)Z_OBJ_CLASS_NAME_P(val);
+    char *classname = (char *)Z_OBJCE_P(val)->name;
     int32_t nlen = strlen(classname);
+    char *alias = hprose_class_manager_get_alias(classname, nlen, &alen);
 #else
     zend_string *_classname = Z_OBJ_HT_P(val)->get_class_name(Z_OBJ_P(val));
-    char *classname = _classname->val;
-    int32_t nlen = _classname->len;
-    efree(_classname);
+    char *alias = hprose_class_manager_get_alias(_classname->val, _classname->len, &alen);
+    zend_string_release(_classname);
 #endif
-    int32_t alen;
-    char *alias = hprose_class_manager_get_alias(classname, nlen, &alen);
     zval *props;
     long index;
     if (!php_assoc_array_get_long(_this->classref, alias, alen, &index)) {
