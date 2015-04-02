@@ -46,18 +46,22 @@ http://pear.php.net/dtd/package-2.0.xsd">
 		<email>mabingyao@gmail.com</email>
 		<active>yes</active>
 	</lead>
-	<date>2015-04-02</date>
-	<time>14:09:23</time>
+	<date>2015-04-03</date>
+	<time>03:12:51</time>
 	<version>
-		<release>1.0.0</release>
-		<api>1.0.0</api>
+		<release>1.1.0</release>
+		<api>1.1.0</api>
 	</version>
 	<stability>
 		<release>stable</release>
 		<api>stable</api>
 	</stability>
 	<license uri="http://mit-license.org/">MIT</license>
-	<notes>Initial Hprose for pecl</notes>
+    <notes>Fixed failed test in 32bits build.
+        Fixed building on RHEL 5.
+        Fixed failed tests with PHP 7.
+        More faster hprose_serialize and hprose_unserialize.
+        Fixed no response casused crash.</notes>
 	<contents>
 		<dir name="/">
 			<file role="doc" name="CREDITS" />
@@ -121,4 +125,37 @@ http://pear.php.net/dtd/package-2.0.xsd">
 	<extsrcrelease>
 		<configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
 	</extsrcrelease>
+    <changelog>
+        <release>
+            <version>
+                <release>1.1.0</release>
+                <api>1.1.0</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2015-04-03</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Fixed failed test in 32bits build.
+                Fixed building on RHEL 5.
+                Fixed failed tests with PHP 7.
+                More faster hprose_serialize and hprose_unserialize.
+                Fixed no response casused crash.
+            </notes>
+        </release>
+        <release>
+            <version>
+                <release>1.0.0</release>
+                <api>1.0.0</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2015-04-02</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Initial release to PECL</notes>
+        </release>
+    </changelog>
 </package>
