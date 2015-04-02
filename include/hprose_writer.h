@@ -25,6 +25,9 @@
 #include "hprose_tags.h"
 #include "hprose_bytes_io.h"
 #include "hprose_class_manager.h"
+#if PHP_API_VERSION >= 20090626
+#include "ext/date/php_date.h"
+#endif
 
 BEGIN_EXTERN_C()
 
@@ -610,6 +613,7 @@ static inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRML
             break;
         case IS_OBJECT: {
             zend_class_entry *ce = Z_OBJCE_P(val);
+#if PHP_API_VERSION < 20090626
             if (instanceof(ce, DateTime)) {
                 hprose_writer_write_datetime_with_ref(_this, val TSRMLS_CC);
             }
@@ -622,6 +626,20 @@ static inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRML
             else if (instanceof(ce, stdClass)) {
                 hprose_writer_write_stdclass_with_ref(_this, val TSRMLS_CC);
             }
+#else
+            if (instanceof_function(ce, php_date_get_date_ce() TSRMLS_CC)) {
+                hprose_writer_write_datetime_with_ref(_this, val TSRMLS_CC);
+            }
+            else if (instanceof(ce, SplObjectStorage)) {
+                hprose_writer_write_map_with_ref(_this, val TSRMLS_CC);
+            }
+            else if (instanceof(ce, Traversable)) {
+                hprose_writer_write_list_with_ref(_this, val TSRMLS_CC);
+            }
+            else if (instanceof(ce, stdClass)) {
+                hprose_writer_write_stdclass_with_ref(_this, val TSRMLS_CC);
+            }
+#endif
             else {
                 hprose_writer_write_object_with_ref(_this, val TSRMLS_CC);
             }

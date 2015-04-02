@@ -26,6 +26,9 @@
 #include "hprose_bytes_io.h"
 #include "hprose_class_manager.h"
 #include "hprose_raw_reader.h"
+#if PHP_API_VERSION >= 20090626
+#include "ext/date/php_date.h"
+#endif
 
 /* Workaround for old gcc. */
 #ifndef NAN
@@ -33,6 +36,10 @@
 #endif
 #ifndef INFINITY
 #define INFINITY (1.0/0.0)
+#endif
+
+#ifndef Z_PHPDATE_P
+#define Z_PHPDATE_P(zv)  zend_object_store_get_object(zv TSRMLS_CC)
 #endif
 
 BEGIN_EXTERN_C()
@@ -260,6 +267,7 @@ static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_re
             }
         }
     }
+#if PHP_API_VERSION < 20090626
     if (tag == HPROSE_TAG_UTC) {
         zval timezone;
         function_invoke(timezone_open, &timezone, "s", ZEND_STRL("UTC"));
@@ -268,6 +276,18 @@ static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_re
     else {
         function_invoke(date_create, return_value, "s", tmp->buf, tmp->len);
     }
+#else
+    if (tag == HPROSE_TAG_UTC) {
+        zval timezone;
+        function_invoke(timezone_open, &timezone, "s", ZEND_STRL("UTC"));
+        php_date_instantiate(php_date_get_date_ce(), return_value TSRMLS_CC);
+        php_date_initialize(Z_PHPDATE_P(return_value), tmp->buf, tmp->len, NULL, &timezone, 0 TSRMLS_CC);
+    }
+    else {
+        php_date_instantiate(php_date_get_date_ce(), return_value TSRMLS_CC);
+        php_date_initialize(Z_PHPDATE_P(return_value), tmp->buf, tmp->len, NULL, NULL, 0 TSRMLS_CC);
+    }
+#endif
     hprose_bytes_io_free(tmp);
     hprose_reader_refer_set(_this->refer, return_value);
 }
@@ -297,6 +317,7 @@ static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader
             }
         }
     }
+#if PHP_API_VERSION < 20090626
     if (tag == HPROSE_TAG_UTC) {
         zval timezone;
         function_invoke(timezone_open, &timezone, "s", ZEND_STRL("UTC"));
@@ -305,6 +326,18 @@ static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader
     else {
         function_invoke(date_create, return_value, "s", tmp->buf, tmp->len);
     }
+#else
+    if (tag == HPROSE_TAG_UTC) {
+        zval timezone;
+        function_invoke(timezone_open, &timezone, "s", ZEND_STRL("UTC"));
+        php_date_instantiate(php_date_get_date_ce(), return_value TSRMLS_CC);
+        php_date_initialize(Z_PHPDATE_P(return_value), tmp->buf, tmp->len, NULL, &timezone, 0 TSRMLS_CC);
+    }
+    else {
+        php_date_instantiate(php_date_get_date_ce(), return_value TSRMLS_CC);
+        php_date_initialize(Z_PHPDATE_P(return_value), tmp->buf, tmp->len, NULL, NULL, 0 TSRMLS_CC);
+    }
+#endif
     hprose_bytes_io_free(tmp);
     hprose_reader_refer_set(_this->refer, return_value);
 }
