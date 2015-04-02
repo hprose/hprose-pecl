@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl source file.                    *
  *                                                        *
- * LastModified: Mar 24, 2015                             *
+ * LastModified: Apr 3, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -176,7 +176,7 @@ ZEND_METHOD(hprose_reader, readDate) {
             return;            
         }
         case HPROSE_TAG_REF: {
-            hprose_reader_read_ref(_this, return_value);
+            hprose_reader_read_ref(_this, return_value TSRMLS_CC);
             return;
         }
     }
@@ -201,7 +201,7 @@ ZEND_METHOD(hprose_reader, readTime) {
             return;            
         }
         case HPROSE_TAG_REF: {
-            hprose_reader_read_ref(_this, return_value);
+            hprose_reader_read_ref(_this, return_value TSRMLS_CC);
             return;
         }
     }
@@ -228,7 +228,7 @@ ZEND_METHOD(hprose_reader, readBytes) {
             return;            
         }
         case HPROSE_TAG_REF: {
-            hprose_reader_read_ref(_this, return_value);
+            hprose_reader_read_ref(_this, return_value TSRMLS_CC);
             return;
         }
     }
@@ -279,7 +279,7 @@ ZEND_METHOD(hprose_reader, readGuid) {
             return;            
         }
         case HPROSE_TAG_REF: {
-            hprose_reader_read_ref(_this, return_value);
+            hprose_reader_read_ref(_this, return_value TSRMLS_CC);
             return;
         }
     }
@@ -330,7 +330,7 @@ ZEND_METHOD(hprose_reader, readObject) {
             return;
         }
         case HPROSE_TAG_REF: {
-            hprose_reader_read_ref(_this, return_value);
+            hprose_reader_read_ref(_this, return_value TSRMLS_CC);
             return;
         }
     }
