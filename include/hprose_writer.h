@@ -117,7 +117,7 @@ static zend_bool hprose_real_writer_refer_write(void *_this, hprose_bytes_io *st
 #if PHP_MAJOR_VERSION < 7
             ulong h = (ulong)Z_OBJ_HANDLE_P(val);
 #else
-            h = (ulong)Z_OBJ_P(val);
+            ulong h = (ulong)Z_OBJ_P(val);
 #endif
             if (php_array_get_long(refer->oref, h, &index)) {
                 hprose_real_writer_refer_write_ref(stream, (int32_t)index);
