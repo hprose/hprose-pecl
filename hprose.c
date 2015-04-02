@@ -89,7 +89,7 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_info_arginfo, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
 /* compiled function list so Zend knows what's in this module */
-const zend_function_entry hprose_functions[] = {
+static zend_function_entry hprose_functions[] = {
     ZEND_FE(hprose_serialize, hprose_serialize_arginfo)
     ZEND_FE(hprose_unserialize, hprose_unserialize_arginfo)
     ZEND_FE(hprose_info, hprose_info_arginfo)
