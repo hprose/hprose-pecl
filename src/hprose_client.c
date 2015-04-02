@@ -311,15 +311,10 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
 
 ZEND_METHOD(hprose_proxy, __construct) {
     zval *client = NULL;
-    zend_class_entry *ce = NULL;
     char *ns = "";
     length_t len = 0;
     HPROSE_OBJECT_INTERN(proxy);
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|s", &client, &ce, &ns, &len) == FAILURE) {
-        return;
-    }
-    if (!client || !instanceof(ce, HproseClient)) {
-        zend_throw_exception(NULL, "client must be an instance of HproseClient.", 0 TSRMLS_CC);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|s", &client, get_hprose_client_ce(), &ns, &len) == FAILURE) {
         return;
     }
     intern->_this = emalloc(sizeof(hprose_proxy));

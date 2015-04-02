@@ -26,7 +26,9 @@
 #include "hprose_bytes_io.h"
 #include "hprose_class_manager.h"
 #if PHP_API_VERSION >= 20090626
+#include "zend_interfaces.h"
 #include "ext/date/php_date.h"
+#include "ext/spl/spl_observer.h"
 #endif
 
 BEGIN_EXTERN_C()
@@ -630,13 +632,13 @@ static inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRML
             if (instanceof_function(ce, php_date_get_date_ce() TSRMLS_CC)) {
                 hprose_writer_write_datetime_with_ref(_this, val TSRMLS_CC);
             }
-            else if (instanceof(ce, SplObjectStorage)) {
+            else if (instanceof_function(ce, spl_ce_SplObjectStorage TSRMLS_CC)) {
                 hprose_writer_write_map_with_ref(_this, val TSRMLS_CC);
             }
-            else if (instanceof(ce, Traversable)) {
+            else if (instanceof_function(ce, zend_ce_traversable TSRMLS_CC)) {
                 hprose_writer_write_list_with_ref(_this, val TSRMLS_CC);
             }
-            else if (instanceof(ce, stdClass)) {
+            else if (instanceof_function(ce, zend_standard_class_def TSRMLS_CC)) {
                 hprose_writer_write_stdclass_with_ref(_this, val TSRMLS_CC);
             }
 #endif

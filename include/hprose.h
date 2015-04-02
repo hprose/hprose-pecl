@@ -549,25 +549,6 @@ static zend_always_inline zend_bool is_list(zval *val) {
     return 0;
 }
 
-static zend_always_inline zend_bool __instanceof(zend_class_entry *ce, char *name, int len TSRMLS_DC) {
-#if PHP_MAJOR_VERSION < 7
-    zend_class_entry **_ce;
-    if (zend_lookup_class(name, len, &_ce TSRMLS_CC) == FAILURE) {
-        return 0;
-    }
-    return instanceof_function(ce, *_ce TSRMLS_CC);
-#else /* PHP_MAJOR_VERSION < 7 */
-    zend_string *_name = zend_string_init(name, len, 0);
-    zend_class_entry *_ce = zend_lookup_class(_name);
-    zend_string_release(_name);
-    if (_ce == NULL) return 0;
-    return instanceof_function(ce, _ce);
-#endif /* PHP_MAJOR_VERSION < 7 */
-}
-
-// name must be a symbol
-#define instanceof(ce, name) __instanceof(ce, ZEND_STRL(#name) TSRMLS_CC)
-
 #define is_string(v) ((v) && Z_TYPE_P(v) == IS_STRING)
 #define is_array(v) ((v) && Z_TYPE_P(v) == IS_ARRAY)
 #define is_object(v) ((v) && Z_TYPE_P(v) == IS_OBJECT)
