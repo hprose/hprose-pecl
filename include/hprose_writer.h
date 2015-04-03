@@ -60,7 +60,7 @@ static zend_always_inline void hprose_writer_refer_set(void *_this, zval *val) {
             ulong h;
 #if PHP_MAJOR_VERSION < 7
             Z_ADDREF_P(val);
-            zend_llist_add_element(refer->ref, &val);
+            zend_llist_add_element(refer->ref, val);
             h = (ulong)Z_OBJ_HANDLE_P(val);
 #else
             Z_ADDREF_P(val);
@@ -121,9 +121,9 @@ static zend_always_inline void hprose_writer_refer_free(void *_this) {
 
 static void __hprose_writer_refer_dtor(void *data) {
 #if PHP_MAJOR_VERSION < 7
-        zval **val = (zval **)data;
+        zval *val = (zval *)data;
         if (data) {
-            zval_ptr_dtor(val);
+            zval_ptr_dtor(&val);
         }
 #else
         zend_object **obj = (zend_object **)data;
@@ -137,7 +137,7 @@ static zend_always_inline hprose_writer_refer * hprose_writer_refer_new() {
     hprose_writer_refer *_this = emalloc(sizeof(hprose_writer_refer));
     _this->ref = emalloc(sizeof(zend_llist));
 #if PHP_MAJOR_VERSION < 7
-    zend_llist_init(_this->ref, sizeof(zval *), (llist_dtor_func_t)__hprose_writer_refer_dtor, 0);
+    zend_llist_init(_this->ref, sizeof(zval), (llist_dtor_func_t)__hprose_writer_refer_dtor, 0);
 #else
     zend_llist_init(_this->ref, sizeof(zend_object *), (llist_dtor_func_t)__hprose_writer_refer_dtor, 0);
 #endif

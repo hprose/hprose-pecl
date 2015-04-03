@@ -86,14 +86,14 @@ ZEND_METHOD(hprose_reader, readInteger) {
 
 ZEND_METHOD(hprose_reader, readLongWithoutTag) {
     HPROSE_THIS(reader);
-    int32_t len;
+    int32_t len = 0;
     char *num = hprose_reader_read_long_without_tag(_this, &len);
     RETURN_STRINGL_0(num, len);
 }
 
 ZEND_METHOD(hprose_reader, readLong) {
     HPROSE_THIS(reader);
-    int32_t len;
+    int32_t len = 0;
     char *num = hprose_reader_read_long(_this, &len TSRMLS_CC);
     RETURN_STRINGL_0(num, len);
 }

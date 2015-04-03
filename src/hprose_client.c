@@ -111,9 +111,10 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
             switch (tag) {
                 case HPROSE_TAG_RESULT:
                     if (mode == HPROSE_RESULT_MODE_SERIALIZED) {
+                        hprose_raw_reader raw_reader = { reader.stream };
                         hprose_bytes_io result;
                         hprose_bytes_io_init(&result, NULL, 0);
-                        _hprose_raw_reader_read_raw((hprose_raw_reader *)(&reader), &result);
+                        _hprose_raw_reader_read_raw(&raw_reader, &result);
                         RETVAL_STRINGL_0(result.buf, result.len);
                     }
                     else {
@@ -255,10 +256,10 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
     zval *callback = php_array_get(use, 2);
     zend_fcall_info_cache fcc = _get_fcall_info_cache(callback TSRMLS_CC);
     uint32_t n = fcc.function_handler->common.num_args;
+    long mode = HPROSE_RESULT_MODE_NORMAL;
     zval *result;
     hprose_zval_new(result);
     ZVAL_NULL(result);
-    long mode;
     php_array_get_long(use, 3, &mode);
     if (n == 3) {
         if (err == NULL) {
