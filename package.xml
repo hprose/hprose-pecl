@@ -9,10 +9,10 @@
 http://pear.php.net/dtd/tasks-1.0.xsd
 http://pear.php.net/dtd/package-2.0
 http://pear.php.net/dtd/package-2.0.xsd">
-	<name>hprose</name>
-	<channel>pecl.php.net</channel>
-	<summary>Hprose for PHP.</summary>
-	<description>Hprose extension for PHP.
+    <name>hprose</name>
+    <channel>pecl.php.net</channel>
+    <summary>Hprose for PHP.</summary>
+    <description>Hprose extension for PHP.
         Hprose is a High Performance Remote Object Service Engine.
 
         It is a modern, lightweight, cross-language, cross-platform, object-oriented, high performance, remote dynamic communication middleware. It is not only easy to use, but powerful. You just need a little time to learn, then you can use it to easily construct cross language cross platform distributed application system.
@@ -39,94 +39,96 @@ http://pear.php.net/dtd/package-2.0.xsd">
         Through Hprose, You can conveniently and efficiently intercommunicate between those programming languages.
 
         This project is the implementation of Hprose for PHP.
-	</description>
-	<lead>
-		<name>Ma Bingyao</name>
-		<user>andot</user>
-		<email>mabingyao@gmail.com</email>
-		<active>yes</active>
-	</lead>
-	<date>2015-04-03</date>
-	<time>13:39:31</time>
-	<version>
-		<release>1.1.0</release>
-		<api>1.1.0</api>
-	</version>
-	<stability>
-		<release>stable</release>
-		<api>stable</api>
-	</stability>
-	<license uri="http://mit-license.org/">MIT</license>
+    </description>
+    <lead>
+        <name>Ma Bingyao</name>
+        <user>andot</user>
+        <email>mabingyao@gmail.com</email>
+        <active>yes</active>
+    </lead>
+    <date>2015-04-03</date>
+    <time>16:20:52</time>
+    <version>
+        <release>1.1.0</release>
+        <api>1.1.0</api>
+    </version>
+    <stability>
+        <release>stable</release>
+        <api>stable</api>
+    </stability>
+    <license uri="http://mit-license.org/">MIT</license>
     <notes>Fixed failed test in 32bits build.
         Fixed building on RHEL 5.
         Fixed failed tests with PHP 7.
         More faster hprose_serialize and hprose_unserialize.
         Fixed no response casused crash.
-    	Fixed Line termination inconsistency.</notes>
-	<contents>
-		<dir name="/">
-			<file role="doc" name="CREDITS" />
-			<file role="doc" name="LICENSE.md" />
-			<file role="doc" name="README.md" />
-			<file role="doc" name="README_zh_CN.md" />
-			<file role="src" name="config.m4" />
-			<file role="src" name="config.w32" />
-			<file role="src" name="php_hprose.h" />
-			<file role="src" name="hprose.c" />
-			<dir name="include">
-				<file role="src" name="hprose.h" />
-				<file role="src" name="hprose_tags.h" />
-				<file role="src" name="hprose_bytes_io.h" />
-				<file role="src" name="hprose_class_manager.h" />
-				<file role="src" name="hprose_writer.h" />
-				<file role="src" name="hprose_raw_reader.h" />
-				<file role="src" name="hprose_reader.h" />
-				<file role="src" name="hprose_formatter.h" />
-				<file role="src" name="hprose_result_mode.h" />
-				<file role="src" name="hprose_filter.h" />
-				<file role="src" name="hprose_client.h" />
-				<file role="src" name="hprose_service.h" />
-			</dir>
-			<dir name="src">
-        			<file role="src" name="hprose_common.c" />
-        			<file role="src" name="hprose_tags.c" />
-        			<file role="src" name="hprose_bytes_io.c" />
-        			<file role="src" name="hprose_class_manager.c" />
-        			<file role="src" name="hprose_writer.c" />
-        			<file role="src" name="hprose_raw_reader.c" />
-				<file role="src" name="hprose_reader.c" />
-				<file role="src" name="hprose_formatter.c" />
-				<file role="src" name="hprose_result_mode.c" />
-				<file role="src" name="hprose_filter.c" />
-				<file role="src" name="hprose_client.c" />
-				<file role="src" name="hprose_service.c" />
-			</dir>
-			<dir name="tests">
-				<file role="test" name="tags.phpt" />
-				<file role="test" name="bytes_io.phpt" />
-				<file role="test" name="class_manager.phpt" />
-				<file role="test" name="writer.phpt" />
-				<file role="test" name="raw_reader.phpt" />
-				<file role="test" name="reader.phpt" />
-				<file role="test" name="formatter.phpt" />
-				<file role="test" name="result_mode.phpt" />
-			</dir>
-		</dir>
-	</contents>
-	<dependencies>
-		<required>
-			<php>
-				<min>5.3</min>
-			</php>
-			<pearinstaller>
-				<min>1.4.0</min>
-			</pearinstaller>
-		</required>
-	</dependencies>
-	<providesextension>hprose</providesextension>
-	<extsrcrelease>
-		<configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
-	</extsrcrelease>
+        Fixed Line termination inconsistency.
+        Fixed all warnings, notes and known bugs.
+    </notes>
+    <contents>
+        <dir name="/">
+            <file role="doc" name="CREDITS" />
+            <file role="doc" name="LICENSE.md" />
+            <file role="doc" name="README.md" />
+            <file role="doc" name="README_zh_CN.md" />
+            <file role="src" name="config.m4" />
+            <file role="src" name="config.w32" />
+            <file role="src" name="php_hprose.h" />
+            <file role="src" name="hprose.c" />
+            <dir name="include">
+                <file role="src" name="hprose.h" />
+                <file role="src" name="hprose_tags.h" />
+                <file role="src" name="hprose_bytes_io.h" />
+                <file role="src" name="hprose_class_manager.h" />
+                <file role="src" name="hprose_writer.h" />
+                <file role="src" name="hprose_raw_reader.h" />
+                <file role="src" name="hprose_reader.h" />
+                <file role="src" name="hprose_formatter.h" />
+                <file role="src" name="hprose_result_mode.h" />
+                <file role="src" name="hprose_filter.h" />
+                <file role="src" name="hprose_client.h" />
+                <file role="src" name="hprose_service.h" />
+            </dir>
+            <dir name="src">
+                <file role="src" name="hprose_common.c" />
+                <file role="src" name="hprose_tags.c" />
+                <file role="src" name="hprose_bytes_io.c" />
+                <file role="src" name="hprose_class_manager.c" />
+                <file role="src" name="hprose_writer.c" />
+                <file role="src" name="hprose_raw_reader.c" />
+                <file role="src" name="hprose_reader.c" />
+                <file role="src" name="hprose_formatter.c" />
+                <file role="src" name="hprose_result_mode.c" />
+                <file role="src" name="hprose_filter.c" />
+                <file role="src" name="hprose_client.c" />
+                <file role="src" name="hprose_service.c" />
+            </dir>
+            <dir name="tests">
+                <file role="test" name="tags.phpt" />
+                <file role="test" name="bytes_io.phpt" />
+                <file role="test" name="class_manager.phpt" />
+                <file role="test" name="writer.phpt" />
+                <file role="test" name="raw_reader.phpt" />
+                <file role="test" name="reader.phpt" />
+                <file role="test" name="formatter.phpt" />
+                <file role="test" name="result_mode.phpt" />
+            </dir>
+        </dir>
+    </contents>
+    <dependencies>
+        <required>
+            <php>
+                <min>5.3</min>
+            </php>
+            <pearinstaller>
+                <min>1.4.0</min>
+            </pearinstaller>
+        </required>
+    </dependencies>
+    <providesextension>hprose</providesextension>
+    <extsrcrelease>
+        <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
+    </extsrcrelease>
     <changelog>
         <release>
             <version>
@@ -145,6 +147,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
                 More faster hprose_serialize and hprose_unserialize.
                 Fixed no response casused crash.
                 Fixed Line termination inconsistency.
+                Fixed all warnings, notes and known bugs.
             </notes>
         </release>
         <release>
