@@ -537,12 +537,12 @@ static zend_always_inline int32_t ustrlen(char *str, int32_t len) {
 static zend_always_inline zend_bool is_list(zval *val) {
     HashTable *ht = Z_ARRVAL_P(val);
     int32_t count = zend_hash_num_elements(ht);
-    // zero length array
+    /* zero length array */
     if (count == 0) return 1;
     if (zend_hash_index_exists(ht, 0)) {
-        // count == 1 and a[0] exists
+        /* count == 1 and a[0] exists */
         if (count == 1) return 1;
-        // a[0] exists, a[count - 1] exists and the next index is count
+        /* a[0] exists, a[count - 1] exists and the next index is count */
         return zend_hash_index_exists(ht, count - 1) &&
                zend_hash_next_free_element(ht) == count;
     }
@@ -742,7 +742,7 @@ static zend_always_inline zend_fcall_info_cache _get_fcall_info_cache(zval *call
     }
 }
 
-// name is a symbol
+/* name is a symbol */
 #define get_fcall_info_cache(obj, name) __get_fcall_info_cache(obj, ZEND_STRL(#name) TSRMLS_CC)
 
 #if PHP_MAJOR_VERSION < 7

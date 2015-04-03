@@ -123,7 +123,7 @@ static zend_always_inline void hprose_bytes_io_init_readonly(hprose_bytes_io *_t
     _this->persistent = 0;
 }
 
-// only for read, don't call hprose_bytes_io_close or hprose_bytes_io_free on it, using efree to free it.
+/* only for read, don't call hprose_bytes_io_close or hprose_bytes_io_free on it, using efree to free it. */
 static zend_always_inline hprose_bytes_io *hprose_bytes_io_create_readonly(const char *buf, int32_t len) {
     hprose_bytes_io *_this = emalloc(sizeof(hprose_bytes_io));
     hprose_bytes_io_init_readonly(_this, buf, len);
@@ -206,7 +206,7 @@ static zend_always_inline int32_t hprose_bytes_io_read_int(hprose_bytes_io *_thi
     }
     int32_t sign = 1;
     switch (c) {
-        case '-': sign = -1; // fallthrough
+        case '-': sign = -1; /* fallthrough */
         case '+': c = hprose_bytes_io_getc(_this); break;
     }
     while ((_this->pos < _this->len) && (c != tag)) {
@@ -231,20 +231,20 @@ static zend_always_inline char * _hprose_bytes_io_read_pstring(hprose_bytes_io *
             case 5:
             case 6:
             case 7:
-                // 0xxx xxxx
+                /* 0xxx xxxx */
                 ++p;
                 break;
             case 12:
             case 13:
-                // 110x xxxx   10xx xxxx
+                /* 110x xxxx   10xx xxxx */
                 p += 2;
                 break;
             case 14:
-                // 1110 xxxx  10xx xxxx  10xx xxxx
+                /* 1110 xxxx  10xx xxxx  10xx xxxx */
                 p += 3;
                 break;
             case 15:
-                // 1111 0xxx  10xx xxxx  10xx xxxx  10xx xxxx
+                /* 1111 0xxx  10xx xxxx  10xx xxxx  10xx xxxx */
                 p += 4;
                 ++i;
                 if (i < n) break;
@@ -421,7 +421,7 @@ static zend_always_inline int32_t hprose_bytes_io_read_int_to(hprose_bytes_io *f
     }
     int32_t sign = 1;
     switch (c) {
-        case '-': sign = -1; // fallthrough
+        case '-': sign = -1; /* fallthrough */
         case '+': c = hprose_bytes_io_getc(from); break;
     }
     while ((from->pos < from->len) && (c != tag)) {
@@ -447,20 +447,20 @@ static zend_always_inline void _hprose_bytes_io_read_string_to(hprose_bytes_io *
             case 5:
             case 6:
             case 7:
-                // 0xxx xxxx
+                /* 0xxx xxxx */
                 ++p;
                 break;
             case 12:
             case 13:
-                // 110x xxxx   10xx xxxx
+                /* 110x xxxx   10xx xxxx */
                 p += 2;
                 break;
             case 14:
-                // 1110 xxxx  10xx xxxx  10xx xxxx
+                /* 1110 xxxx  10xx xxxx  10xx xxxx */
                 p += 3;
                 break;
             case 15:
-                // 1111 0xxx  10xx xxxx  10xx xxxx  10xx xxxx
+                /* 1111 0xxx  10xx xxxx  10xx xxxx  10xx xxxx */
                 p += 4;
                 ++i;
                 if (i < n) break;
