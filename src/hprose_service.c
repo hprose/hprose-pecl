@@ -188,7 +188,7 @@ static zend_always_inline void hprose_service_add_method(hprose_service *_this, 
 
 static zend_always_inline void hprose_service_add_methods(hprose_service *_this, zval *methods, zval *belongto, zval *aliases, uint8_t mode, zval *simple TSRMLS_DC) {
     int32_t i, count;
-    zval *_aliases;
+    zval *_aliases = NULL;
     HashTable *ht = Z_ARRVAL_P(methods);
     if (aliases) {
         if ((Z_TYPE_P(aliases) == IS_STRING && Z_STRLEN_P(aliases) == 0) ||
@@ -239,6 +239,10 @@ static zend_always_inline void hprose_service_add_methods(hprose_service *_this,
             ZVAL_COPY(_aliases, aliases);
 #endif
         }
+        else {
+            zend_throw_exception(NULL, "The aliases must be string, array or null", 0 TSRMLS_CC);
+            return;
+        }
         if (Z_ARRLEN_P(_aliases) != count) {
             zend_throw_exception(NULL, "The count of methods is not matched with aliases", 0 TSRMLS_CC);
             return;
@@ -273,6 +277,7 @@ static zend_always_inline void hprose_service_add_methods(hprose_service *_this,
         if (EG(exception)) return;
         zend_hash_move_forward(ht);
     }
+    assert(_aliases != NULL);
     hprose_zval_free(_aliases);
 }
 
