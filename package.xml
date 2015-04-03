@@ -47,7 +47,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
 		<active>yes</active>
 	</lead>
 	<date>2015-04-03</date>
-	<time>04:15:34</time>
+	<time>13:39:31</time>
 	<version>
 		<release>1.1.0</release>
 		<api>1.1.0</api>
@@ -88,6 +88,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
 				<file role="src" name="hprose_service.h" />
 			</dir>
 			<dir name="src">
+        			<file role="src" name="hprose_common.c" />
         			<file role="src" name="hprose_tags.c" />
         			<file role="src" name="hprose_bytes_io.c" />
         			<file role="src" name="hprose_class_manager.c" />

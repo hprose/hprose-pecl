@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl header file.                  *
  *                                                        *
- * LastModified: Apr 2, 2015                              *
+ * LastModified: Apr 3, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -199,7 +199,7 @@ static zend_always_inline char * hprose_bytes_io_preaduntil_ex(hprose_bytes_io *
 #define hprose_bytes_io_readuntil(_this, tag, len_ptr) hprose_bytes_io_preaduntil_ex((_this), (tag), (len_ptr), 0, 1)
 
 static zend_always_inline int32_t hprose_bytes_io_read_int(hprose_bytes_io *_this, char tag) {
-    int32_t result = 0, p = _this->pos;
+    int32_t result = 0;
     char c = hprose_bytes_io_getc(_this);
     if (c == tag) {
         return 0;

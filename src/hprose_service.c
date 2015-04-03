@@ -14,7 +14,7 @@
  *                                                        *
  * hprose service for pecl source file.                   *
  *                                                        *
- * LastModified: Apr 1, 2015                              *
+ * LastModified: Apr 3, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -592,7 +592,7 @@ ZEND_METHOD(hprose_service, add) {
     switch (ZEND_NUM_ARGS()) {
         case 1:
             if (arg1) {
-                if (is_callable(arg1)) {
+                if (is_callable_p(arg1)) {
                     hprose_service_add_function(_this, arg1, NULL, mode, simple TSRMLS_CC);
                     return;
                 }                
@@ -610,12 +610,12 @@ ZEND_METHOD(hprose_service, add) {
             }
             break;
         case 2:
-            if (is_callable(arg1) && is_string(arg2)) {
+            if (is_callable_p(arg1) && is_string_p(arg2)) {
                 hprose_service_add_function(_this, arg1, arg2, mode, simple TSRMLS_CC);
                 return;
             }
-            else if (is_string(arg1)) {
-                if (is_string(arg2)) {
+            else if (is_string_p(arg1)) {
+                if (is_string_p(arg2)) {
                     zval *a;
                     zend_bool is_not_callable;
                     hprose_zval_new(a);
@@ -624,7 +624,7 @@ ZEND_METHOD(hprose_service, add) {
                     Z_ADDREF_P(arg2);
                     add_next_index_zval(a, arg2);
                     add_next_index_zval(a, arg1);
-                    is_not_callable = !is_callable(a);
+                    is_not_callable = !is_callable_p(a);
                     hprose_zval_free(a);
                     if (is_not_callable) {
                         if (class_exists(Z_STRVAL_P(arg2), Z_STRLEN_P(arg2), 1)) {
@@ -639,8 +639,8 @@ ZEND_METHOD(hprose_service, add) {
                 hprose_service_add_method(_this, arg1, arg2, NULL, mode, simple TSRMLS_CC);
                 return;
             }
-            else if (is_array(arg1)) {
-                if (is_array(arg2)) {
+            else if (is_array_p(arg1)) {
+                if (is_array_p(arg2)) {
                     hprose_service_add_functions(_this, arg1, arg2, mode, simple TSRMLS_CC);
                 }
                 else {
@@ -648,20 +648,20 @@ ZEND_METHOD(hprose_service, add) {
                 }
                 return;
             }
-            else if (is_object(arg1)) {
+            else if (is_object_p(arg1)) {
                 hprose_service_add_instance_methods(_this, arg1, arg2, NULL, mode, simple TSRMLS_CC);
                 return;
             }
             break;
         case 3:
-            if (is_callable(arg1) &&
-                    ((arg2 == NULL) || (is_string(arg2) && Z_STRLEN_P(arg2) == 0)) &&
-                    is_string(arg3)) {
+            if (is_callable_p(arg1) &&
+                    ((arg2 == NULL) || (is_string_p(arg2) && Z_STRLEN_P(arg2) == 0)) &&
+                    is_string_p(arg3)) {
                 hprose_service_add_function(_this, arg1, arg3, mode, simple TSRMLS_CC);
                 return;
             }
-            else if (is_string(arg1) && is_string(arg3)) {
-                if (is_string(arg2)) {
+            else if (is_string_p(arg1) && is_string_p(arg3)) {
+                if (is_string_p(arg2)) {
                     zval *a;
                     zend_bool is_not_callable;
                     hprose_zval_new(a);
@@ -670,24 +670,24 @@ ZEND_METHOD(hprose_service, add) {
                     Z_ADDREF_P(arg2);
                     add_next_index_zval(a, arg2);
                     add_next_index_zval(a, arg1);
-                    is_not_callable = !is_callable(a);
+                    is_not_callable = !is_callable_p(a);
                     hprose_zval_free(a);
                     if (is_not_callable) {
                         hprose_service_add_class_methods(_this, arg1, arg2, arg3, mode, simple TSRMLS_CC);
                         return;
                     }
                 }
-                if ((arg2 == NULL) || (is_string(arg2) && Z_STRLEN_P(arg2) == 0)) {
+                if ((arg2 == NULL) || (is_string_p(arg2) && Z_STRLEN_P(arg2) == 0)) {
                     hprose_service_add_class_methods(_this, arg1, NULL, arg3, mode, simple TSRMLS_CC);
                     return;
                 }
-                if (is_string(arg2) || is_object(arg2)) {
+                if (is_string_p(arg2) || is_object_p(arg2)) {
                     hprose_service_add_method(_this, arg1, arg2, arg3, mode, simple TSRMLS_CC);
                     return;
                 }
             }
-            else if (is_array(arg1)) {
-                if (((arg2 == NULL) || (is_string(arg2) && Z_STRLEN_P(arg2) == 0)) && is_array(arg3)) {
+            else if (is_array_p(arg1)) {
+                if (((arg2 == NULL) || (is_string_p(arg2) && Z_STRLEN_P(arg2) == 0)) && is_array_p(arg3)) {
                     hprose_service_add_functions(_this, arg1, arg3, mode, simple TSRMLS_CC);
                 }
                 else {
@@ -695,7 +695,7 @@ ZEND_METHOD(hprose_service, add) {
                 }
                 return;
             }
-            else if (is_object(arg1)) {
+            else if (is_object_p(arg1)) {
                 hprose_service_add_instance_methods(_this, arg1, arg2, arg3, mode, simple TSRMLS_CC);
                 return;
             }

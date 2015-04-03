@@ -2,6 +2,7 @@ ARG_ENABLE("hprose", "hprose support", "no");
 
 if (PHP_HPROSE != "no") {
     EXTENSION("hprose", "hprose.c");
+    ADD_SOURCE("src/hprose_common.c");
     ADD_SOURCE("src/hprose_tags.c");
     ADD_SOURCE("src/hprose_bytes_io.c");
     ADD_SOURCE("src/hprose_class_manager.c");

@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl source file.                    *
  *                                                        *
- * LastModified: Apr 1, 2015                              *
+ * LastModified: Apr 3, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -361,7 +361,7 @@ ZEND_METHOD(hprose_proxy, __call) {
     if (n > 0) {
         zval *callback = php_array_get(args, n - 1);
         
-        if (is_callable(callback)) {
+        if (is_callable_p(callback)) {
 #if PHP_MAJOR_VERSION < 7
             zend_hash_index_del(Z_ARRVAL_P(args), n - 1);
             hprose_client_async_invoke(_this->client, _name.buf, _name.len, args, 0, HPROSE_RESULT_MODE_NORMAL, 0, callback TSRMLS_CC);
@@ -551,7 +551,7 @@ ZEND_METHOD(hprose_client, invoke) {
         Z_ADDREF_P(args);
         null_args = 1;
     }
-    if (is_callable(callback)) {
+    if (is_callable_p(callback)) {
         hprose_client_async_invoke(getThis(), name, nlen, args, byref, mode, simple, callback TSRMLS_CC);
     }
     else {

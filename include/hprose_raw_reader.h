@@ -13,7 +13,7 @@
  *                                                        *
  * hprose raw reader for pecl header file.                *
  *                                                        *
- * LastModified: Mar 26, 2015                             *
+ * LastModified: Apr 3, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -45,7 +45,7 @@ static zend_always_inline void unexpected_tag(char tag, char *expected_tags TSRM
     zend_throw_exception(NULL, "No byte found in stream", 0 TSRMLS_CC);
 }
 
-static hprose_raw_reader * hprose_raw_reader_create(hprose_bytes_io *stream) {
+static zend_always_inline hprose_raw_reader * hprose_raw_reader_create(hprose_bytes_io *stream) {
     hprose_raw_reader *_this = emalloc(sizeof(hprose_raw_reader));
     _this->stream = stream;
     return _this;
