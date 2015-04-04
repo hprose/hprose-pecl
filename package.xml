@@ -46,24 +46,19 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <email>mabingyao@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2015-04-03</date>
+    <date>2015-04-04</date>
     <time>16:20:52</time>
     <version>
-        <release>1.1.0</release>
-        <api>1.1.0</api>
+        <release>1.2.0</release>
+        <api>1.2.0</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Fixed failed test in 32bits build.
-        Fixed building on RHEL 5.
-        Fixed failed tests with PHP 7.
-        More faster hprose_serialize and hprose_unserialize.
-        Fixed no response casused crash.
-        Fixed Line termination inconsistency.
-        Fixed all warnings, notes and known bugs.
+    <notes>Changed C++ style comments to C-style comments.
+        Renamed hprose.c to php_hprose.c
     </notes>
     <contents>
         <dir name="/">
@@ -74,7 +69,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
             <file role="src" name="config.m4" />
             <file role="src" name="config.w32" />
             <file role="src" name="php_hprose.h" />
-            <file role="src" name="hprose.c" />
+            <file role="src" name="php_hprose.c" />
             <dir name="include">
                 <file role="src" name="hprose.h" />
                 <file role="src" name="hprose_tags.h" />
@@ -130,6 +125,21 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.2.0</release>
+                <api>1.2.0</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2015-04-04</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Changed C++ style comments to C-style comments.
+                Renamed hprose.c to php_hprose.c
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.1.0</release>
