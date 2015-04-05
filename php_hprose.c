@@ -13,12 +13,25 @@
  *                                                        *
  * hprose for pecl source file.                           *
  *                                                        *
- * LastModified: Apr 2, 2015                              *
+ * LastModified: Apr 6, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
 
 #include "php_hprose.h"
+#include "hprose_tags.h"
+#include "hprose_bytes_io.h"
+#include "hprose_class_manager.h"
+#include "hprose_writer.h"
+#include "hprose_raw_reader.h"
+#include "hprose_reader.h"
+#include "hprose_formatter.h"
+#include "hprose_result_mode.h"
+#include "hprose_filter.h"
+#include "hprose_client.h"
+#include "hprose_service.h"
+
+#include "ext/standard/info.h" /* for phpinfo() functions */
 
 ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(tags);
