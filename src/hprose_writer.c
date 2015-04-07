@@ -129,7 +129,23 @@ ZEND_METHOD(hprose_writer, writeBytesWithRef) {
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &bytes) == SUCCESS) {
         hprose_writer_write_bytes_with_ref(_this, bytes);
+    }
+}
+
+ZEND_METHOD(hprose_writer, writeBytesIO) {
+    zval *stream = NULL;
+    HPROSE_THIS(writer);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &stream) == SUCCESS) {
+        hprose_writer_write_bytes_io(_this, stream TSRMLS_CC);
     }    
+}
+
+ZEND_METHOD(hprose_writer, writeBytesIOWithRef) {
+    zval *stream = NULL;
+    HPROSE_THIS(writer);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &stream) == SUCCESS) {
+        hprose_writer_write_bytes_io_with_ref(_this, stream TSRMLS_CC);
+    }
 }
 
 ZEND_METHOD(hprose_writer, writeDateTime) {
@@ -273,6 +289,10 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_writer_write_bytes_arginfo, 0, 0, 1)
     ZEND_ARG_INFO(0, bytes)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_writer_write_bytes_io_arginfo, 0, 0, 1)
+    ZEND_ARG_OBJ_INFO(0, dt, HproseBytesIO, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(hprose_writer_write_datetime_arginfo, 0, 0, 1)
     ZEND_ARG_OBJ_INFO(0, dt, DateTime, 0)
 ZEND_END_ARG_INFO()
@@ -314,6 +334,8 @@ static zend_function_entry hprose_writer_methods[] = {
     ZEND_ME(hprose_writer, writeStringWithRef, hprose_writer_write_string_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_writer, writeBytes, hprose_writer_write_bytes_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_writer, writeBytesWithRef, hprose_writer_write_bytes_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_writer, writeBytesIO, hprose_writer_write_bytes_io_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_writer, writeBytesIOWithRef, hprose_writer_write_bytes_io_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_writer, writeDateTime, hprose_writer_write_datetime_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_writer, writeDateTimeWithRef, hprose_writer_write_datetime_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_writer, writeArray, hprose_writer_write_array_arginfo, ZEND_ACC_PUBLIC)

@@ -290,6 +290,34 @@ static zend_always_inline void hprose_writer_write_bytes_with_ref(hprose_writer 
     if (_this->refer == NULL || !hprose_writer_refer_write(_this->refer, _this->stream, val)) hprose_writer_write_bytes(_this, val);
 }
 
+static zend_always_inline void hprose_writer_write_bytes_io(hprose_writer *_this, zval *val TSRMLS_DC) {
+    hprose_bytes_io *stream = HPROSE_GET_OBJECT_P(bytes_io, val)->_this;
+    int32_t len = 0;
+    if (HB_INITED_P(stream)) {
+        len = HB_LEN_P(stream);
+    }
+    if (_this->refer) {
+        hprose_writer_refer_set(_this->refer, val);
+    }
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_BYTES);
+    if (len) {
+        int32_t pos = HB_POS_P(stream);
+        HB_POS_P(stream) = 0;
+        hprose_bytes_io_write_int(_this->stream, len);
+        hprose_bytes_io_putc(_this->stream, HPROSE_TAG_QUOTE);
+        hprose_bytes_io_read_to(stream, _this->stream, len);
+        HB_POS_P(stream) = pos;
+    }
+    else {
+        hprose_bytes_io_putc(_this->stream, HPROSE_TAG_QUOTE);
+    }
+    hprose_bytes_io_putc(_this->stream, HPROSE_TAG_QUOTE);
+}
+
+static zend_always_inline void hprose_writer_write_bytes_io_with_ref(hprose_writer *_this, zval *val TSRMLS_DC) {
+    if (_this->refer == NULL || !hprose_writer_refer_write(_this->refer, _this->stream, val)) hprose_writer_write_bytes_io(_this, val TSRMLS_CC);
+}
+
 static zend_always_inline void hprose_writer_write_datetime(hprose_writer *_this, zval *val TSRMLS_DC) {
     zval result;
     if (_this->refer) {
@@ -629,7 +657,10 @@ static inline void hprose_writer_serialize(hprose_writer *_this, zval *val TSRML
             break;
         case IS_OBJECT: {
             zend_class_entry *ce = Z_OBJCE_P(val);
-            if (instanceof_function(ce, php_date_get_date_ce() TSRMLS_CC)) {
+            if (instanceof_function(ce, get_hprose_bytes_io_ce() TSRMLS_CC)) {
+                hprose_writer_write_bytes_io_with_ref(_this, val TSRMLS_CC);
+            }
+            else if (instanceof_function(ce, php_date_get_date_ce() TSRMLS_CC)) {
                 hprose_writer_write_datetime_with_ref(_this, val TSRMLS_CC);
             }
             else if (instanceof_function(ce, spl_ce_SplObjectStorage TSRMLS_CC)) {

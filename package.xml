@@ -46,8 +46,8 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <email>mabingyao@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2015-04-04</date>
-    <time>16:20:52</time>
+    <date>2015-04-07</date>
+    <time>19:35:52</time>
     <version>
         <release>1.2.0</release>
         <api>1.2.0</api>
@@ -57,8 +57,12 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Changed C++ style comments to C-style comments.
-        Renamed hprose.c to php_hprose.c
+    <notes>Optimized of the string for php7.
+        Added load & save method for HproseBytesIO.
+        Added unserializing from HproseBytesIO for hprose_unserilaize.
+        Added HproseBytesIO serialize support.
+        Changed C++ style comments to C-style comments.
+        Renamed hprose.c to php_hprose.c.
     </notes>
     <contents>
         <dir name="/">
@@ -134,9 +138,13 @@ http://pear.php.net/dtd/package-2.0.xsd">
                 <release>stable</release>
                 <api>stable</api>
             </stability>
-            <date>2015-04-04</date>
+            <date>2015-04-07</date>
             <license uri="http://mit-license.org/">MIT</license>
-            <notes>Changed C++ style comments to C-style comments.
+            <notes>Optimized of the string for php7.
+                Added load & save method for HproseBytesIO.
+                Added unserializing from HproseBytesIO for hprose_unserilaize.
+                Added HproseBytesIO serialize support.
+                Changed C++ style comments to C-style comments.
                 Renamed hprose.c to php_hprose.c
             </notes>
         </release>
