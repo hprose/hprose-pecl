@@ -58,7 +58,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
     <notes>Optimized of the string for php7.
-        Added load & save method for HproseBytesIO.
+        Added load and save method for HproseBytesIO.
         Added unserializing from HproseBytesIO for hprose_unserilaize.
         Added HproseBytesIO serialize support.
         Changed C++ style comments to C-style comments.
@@ -141,7 +141,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
             <date>2015-04-07</date>
             <license uri="http://mit-license.org/">MIT</license>
             <notes>Optimized of the string for php7.
-                Added load & save method for HproseBytesIO.
+                Added load and save method for HproseBytesIO.
                 Added unserializing from HproseBytesIO for hprose_unserilaize.
                 Added HproseBytesIO serialize support.
                 Changed C++ style comments to C-style comments.
