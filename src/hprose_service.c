@@ -14,7 +14,7 @@
  *                                                        *
  * hprose service for pecl source file.                   *
  *                                                        *
- * LastModified: Apr 3, 2015                              *
+ * LastModified: Apr 7, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -216,14 +216,13 @@ static zend_always_inline void hprose_service_add_methods(hprose_service *_this,
 #endif
                 hprose_bytes_io_init(&alias, NULL, 0);
                 alias_prefix.pos = 0;
-                hprose_bytes_io_read_to(&alias_prefix, &alias, alias_prefix.len);
+                hprose_bytes_io_read_to(&alias_prefix, &alias, HB_LEN(alias_prefix));
 #if PHP_MAJOR_VERSION < 7
                 hprose_bytes_io_write(&alias, Z_STRVAL_PP(method), Z_STRLEN_PP(method));
-                add_next_index_stringl(_aliases, alias.buf, alias.len, 0);
+                add_next_index_stringl(_aliases, HB_BUF(alias), HB_LEN(alias), 0);
 #else
                 hprose_bytes_io_write(&alias, Z_STRVAL_P(method), Z_STRLEN_P(method));
-                add_next_index_stringl(_aliases, alias.buf, alias.len);
-                hprose_bytes_io_close(&alias);
+                add_next_index_str(_aliases, HB_STR(alias));
 #endif
                 zend_hash_move_forward(ht);
             }

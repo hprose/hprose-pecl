@@ -13,7 +13,7 @@
  *                                                        *
  * hprose service for pecl header file.                   *
  *                                                        *
- * LastModified: Apr 3, 2015                              *
+ * LastModified: Apr 7, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -222,7 +222,11 @@ static zend_always_inline void hprose_service_send_error(zval *service, zval *er
     hprose_writer_write_string(&writer, err);
     hprose_bytes_io_putc(&output, HPROSE_TAG_END);
     hprose_writer_destroy(&writer);
-    RETVAL_STRINGL_0(output.buf, output.len);
+#if PHP_MAJOR_VERSION < 7
+    RETVAL_STRINGL_0(HB_BUF(output), HB_LEN(output));
+#else
+    RETVAL_STR(HB_STR(output));
+#endif
     hprose_service_output_filter(HPROSE_GET_OBJECT_P(service, service)->_this, return_value, context TSRMLS_CC);
 }
 
@@ -403,7 +407,11 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
     } while (tag == HPROSE_TAG_CALL);
     hprose_reader_destroy(&reader);
     hprose_bytes_io_putc(&output, HPROSE_TAG_END);
-    RETVAL_STRINGL_0(output.buf, output.len);
+#if PHP_MAJOR_VERSION < 7
+    RETVAL_STRINGL_0(HB_BUF(output), HB_LEN(output));
+#else
+    RETVAL_STR(HB_STR(output));
+#endif
     hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
 }
 
@@ -417,7 +425,11 @@ static zend_always_inline void hprose_service_do_function_list(zval *service, zv
     hprose_writer_write_array(&writer, _this->names TSRMLS_CC);
     hprose_bytes_io_putc(&output, HPROSE_TAG_END);
     hprose_writer_destroy(&writer);
-    RETVAL_STRINGL_0(output.buf, output.len);
+#if PHP_MAJOR_VERSION < 7
+    RETVAL_STRINGL_0(HB_BUF(output), HB_LEN(output));
+#else
+    RETVAL_STR(HB_STR(output));
+#endif
     hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
 }
 
@@ -454,7 +466,11 @@ static zend_always_inline void hprose_service_catch_error(zval *service, zval *e
         hprose_bytes_io_write(&output, Z_STRVAL(result), Z_STRLEN(result));
         zval_dtor(&result);
     }
-    ZVAL_STRINGL_0(&result, output.buf, output.len);
+#if PHP_MAJOR_VERSION < 7
+    ZVAL_STRINGL_0(&result, HB_BUF(output), HB_LEN(output));
+#else
+    ZVAL_STR(&result, HB_STR(output));
+#endif
     hprose_service_send_error(service, &result, context, return_value TSRMLS_CC);
     zval_dtor(&result);
 }
@@ -488,7 +504,11 @@ static zend_always_inline void hprose_service_default_handle(zval *service, zval
     if (hprose_service_try_catch_error(service, context, return_value TSRMLS_CC)) {
         return;
     }
+#if PHP_MAJOR_VERSION < 7
     hprose_bytes_io_init_readonly(&input, Z_STRVAL_P(request), Z_STRLEN_P(request));
+#else
+    hprose_bytes_io_init_readonly(&input, Z_STR_P(request));
+#endif
     switch (hprose_bytes_io_getc(&input)) {
         case HPROSE_TAG_CALL:
             hprose_service_do_invoke(service, &input, context, return_value TSRMLS_CC); break;

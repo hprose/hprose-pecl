@@ -414,8 +414,8 @@ static inline void hprose_str_replace(char from, char to, char *s, int len, int 
 #define ZEND_ACC_TRAIT 0
 #endif
 
-static inline zend_bool hprose_class_exists(char *classname, size_t len, zend_bool autoload TSRMLS_DC) {
 #if PHP_MAJOR_VERSION < 7
+static inline zend_bool hprose_class_exists(char *classname, size_t len, zend_bool autoload TSRMLS_DC) {
     char *lc_name;
     zend_class_entry **ce = NULL;
     if (!autoload) {
@@ -438,16 +438,17 @@ static inline zend_bool hprose_class_exists(char *classname, size_t len, zend_bo
     else {
         return 0;
     }
+}
 #else /* PHP_MAJOR_VERSION < 7 */
-    zend_string *class_name = zend_string_init(classname, len, 0);
+static inline zend_bool _hprose_class_exists(zend_string *class_name, zend_bool autoload TSRMLS_DC) {
     zend_string *lc_name;
     zend_class_entry *ce;
 
     if (!autoload) {
         if (class_name->val[0] == '\\') {
             /* Ignore leading "\" */
-            lc_name = zend_string_alloc(len - 1, 0);
-            zend_str_tolower_copy(lc_name->val, classname + 1, len - 1);
+            lc_name = zend_string_alloc(class_name->len - 1, 0);
+            zend_str_tolower_copy(lc_name->val, class_name->val + 1, class_name->len - 1);
         }
         else {
             lc_name = zend_string_tolower(class_name);
@@ -458,15 +459,23 @@ static inline zend_bool hprose_class_exists(char *classname, size_t len, zend_bo
     else {
         ce = zend_lookup_class(class_name);
     }
-    zend_string_release(class_name);
     if (ce) {
         return ((ce->ce_flags & (ZEND_ACC_INTERFACE | ZEND_ACC_TRAIT)) == 0);
     }
     else {
         return 0;
     }
-#endif /* PHP_MAJOR_VERSION < 7 */
 }
+
+#define _class_exists(class_name, autoload) _hprose_class_exists((class_name), (autoload) TSRMLS_CC)
+
+static inline zend_bool hprose_class_exists(char *classname, size_t len, zend_bool autoload TSRMLS_DC) {
+    zend_string *class_name = zend_string_init(classname, len, 0);
+    zend_bool result = _hprose_class_exists(class_name, autoload TSRMLS_CC);
+    zend_string_release(class_name);
+    return result;
+}
+#endif /* PHP_MAJOR_VERSION < 7 */
 
 #define class_exists(classname, len, autoload) hprose_class_exists((classname), (len), (autoload) TSRMLS_CC)
 

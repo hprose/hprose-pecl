@@ -60,7 +60,7 @@ static zend_always_inline void hprose_writer_refer_set(void *_this, zval *val) {
             ulong h;
 #if PHP_MAJOR_VERSION < 7
             Z_ADDREF_P(val);
-            zend_llist_add_element(refer->ref, val);
+            zend_llist_add_element(refer->ref, &val);
             h = (ulong)Z_OBJ_HANDLE_P(val);
 #else
             Z_ADDREF_P(val);
@@ -121,9 +121,9 @@ static zend_always_inline void hprose_writer_refer_free(void *_this) {
 
 static void __hprose_writer_refer_dtor(void *data) {
 #if PHP_MAJOR_VERSION < 7
-        zval *val = (zval *)data;
+        zval **val = (zval **)data;
         if (data) {
-            zval_ptr_dtor(&val);
+            zval_ptr_dtor(val);
         }
 #else
         zend_object **obj = (zend_object **)data;
@@ -137,7 +137,7 @@ static zend_always_inline hprose_writer_refer * hprose_writer_refer_new() {
     hprose_writer_refer *_this = emalloc(sizeof(hprose_writer_refer));
     _this->ref = emalloc(sizeof(zend_llist));
 #if PHP_MAJOR_VERSION < 7
-    zend_llist_init(_this->ref, sizeof(zval), (llist_dtor_func_t)__hprose_writer_refer_dtor, 0);
+    zend_llist_init(_this->ref, sizeof(zval *), (llist_dtor_func_t)__hprose_writer_refer_dtor, 0);
 #else
     zend_llist_init(_this->ref, sizeof(zend_object *), (llist_dtor_func_t)__hprose_writer_refer_dtor, 0);
 #endif
@@ -535,22 +535,26 @@ static inline int32_t hprose_writer_write_class(hprose_writer *_this, char *alia
 
 static inline void hprose_writer_write_object(hprose_writer *_this, zval *val TSRMLS_DC) {
     HashTable *ht = Z_OBJPROP_P(val), *props_ht;
-    int32_t alen;
+    zval *props;
+    long index;
 #if PHP_MAJOR_VERSION < 7
     char *classname = (char *)Z_OBJCE_P(val)->name;
     int32_t nlen = strlen(classname);
+    int32_t alen;
     char *alias = hprose_class_manager_get_alias(classname, nlen, &alen);
-#else
-    zend_string *_classname = Z_OBJ_HT_P(val)->get_class_name(Z_OBJ_P(val));
-    char *alias = hprose_class_manager_get_alias(_classname->val, _classname->len, &alen);
-    zend_string_release(_classname);
-#endif
-    zval *props;
-    long index;
     if (!php_assoc_array_get_long(_this->classref, alias, alen, &index)) {
         index = hprose_writer_write_class(_this, alias, alen, ht TSRMLS_CC);
     }
     efree(alias);
+#else
+    zend_string *_classname = Z_OBJ_HT_P(val)->get_class_name(Z_OBJ_P(val));
+    zend_string *alias = hprose_class_manager_get_alias(_classname->val, _classname->len);
+    if (!php_assoc_array_get_long(_this->classref, alias->val, alias->len, &index)) {
+        index = hprose_writer_write_class(_this, alias->val, alias->len, ht TSRMLS_CC);
+    }
+    zend_string_release(_classname);
+    zend_string_release(alias);
+#endif
     props = php_array_get(_this->propsref, index);
     props_ht = Z_ARRVAL_P(props);
     int32_t i = zend_hash_num_elements(props_ht);

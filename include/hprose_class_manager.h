@@ -13,7 +13,7 @@
  *                                                        *
  * hprose class manager for pecl header file.             *
  *                                                        *
- * LastModified: Mar 17, 2015                             *
+ * LastModified: Apr 7, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -32,12 +32,26 @@ HPROSE_ACTIVATE_FUNCTION(class_manager);
 HPROSE_DEACTIVATE_FUNCTION(class_manager);
 
 PHP_HPROSE_API void _hprose_class_manager_register(char *name, int32_t nlen, char *alias, int32_t alen TSRMLS_DC);
-PHP_HPROSE_API char * _hprose_class_manager_get_alias(char *name, int32_t len, int32_t* len_ptr TSRMLS_DC);
-PHP_HPROSE_API char * _hprose_class_manager_get_class(char *alias, int32_t len, int32_t* len_ptr TSRMLS_DC);
 
 #define hprose_class_manager_register(name, nlen, alias, alen) _hprose_class_manager_register((name), (nlen), (alias), (alen) TSRMLS_CC)
+
+#if PHP_MAJOR_VERSION < 7
+
+PHP_HPROSE_API char *_hprose_class_manager_get_alias(char *name, int32_t len, int32_t *len_ptr TSRMLS_DC);
+PHP_HPROSE_API char *_hprose_class_manager_get_class(char *alias, int32_t len, int32_t *len_ptr TSRMLS_DC);
+
 #define hprose_class_manager_get_alias(name, len, len_ptr) _hprose_class_manager_get_alias((name), (len), (len_ptr) TSRMLS_CC)
 #define hprose_class_manager_get_class(alias, len, len_ptr) _hprose_class_manager_get_class((alias), (len), (len_ptr) TSRMLS_CC)
+
+#else
+
+PHP_HPROSE_API zend_string *_hprose_class_manager_get_alias(char *name, int32_t len TSRMLS_DC);
+PHP_HPROSE_API zend_string *_hprose_class_manager_get_class(char *alias, int32_t len TSRMLS_DC);
+
+#define hprose_class_manager_get_alias(name, len) _hprose_class_manager_get_alias((name), (len) TSRMLS_CC)
+#define hprose_class_manager_get_class(alias, len) _hprose_class_manager_get_class((alias), (len) TSRMLS_CC)
+
+#endif
 
 END_EXTERN_C()
 

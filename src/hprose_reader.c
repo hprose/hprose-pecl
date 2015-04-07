@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl source file.                    *
  *                                                        *
- * LastModified: Apr 3, 2015                              *
+ * LastModified: Apr 7, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -86,16 +86,24 @@ ZEND_METHOD(hprose_reader, readInteger) {
 
 ZEND_METHOD(hprose_reader, readLongWithoutTag) {
     HPROSE_THIS(reader);
+#if PHP_MAJOR_VERSION < 7
     int32_t len = 0;
     char *num = hprose_reader_read_long_without_tag(_this, &len);
     RETURN_STRINGL_0(num, len);
+#else
+    RETURN_STR(hprose_reader_read_long_without_tag(_this));
+#endif
 }
 
 ZEND_METHOD(hprose_reader, readLong) {
     HPROSE_THIS(reader);
+#if PHP_MAJOR_VERSION < 7
     int32_t len = 0;
     char *num = hprose_reader_read_long(_this, &len TSRMLS_CC);
     RETURN_STRINGL_0(num, len);
+#else
+    RETURN_STR(hprose_reader_read_long(_this TSRMLS_CC));
+#endif
 }
 
 ZEND_METHOD(hprose_reader, readDoubleWithoutTag) {

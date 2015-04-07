@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl source file.                  *
  *                                                        *
- * LastModified: Mar 17, 2015                             *
+ * LastModified: Apr 6, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -52,48 +52,67 @@ ZEND_METHOD(hprose_bytes_io, close) {
 
 ZEND_METHOD(hprose_bytes_io, length) {
     HPROSE_THIS(bytes_io);
-    RETURN_LONG(_this->len);
+    if (HB_INITED_P(_this)) {
+        RETURN_LONG(HB_LEN_P(_this));
+    }
+    else {
+        RETURN_LONG(0);
+    }
 }
 
 ZEND_METHOD(hprose_bytes_io, getc) {
     HPROSE_THIS(bytes_io);
-    if (_this->pos < _this->len) {
-        char *c = hprose_bytes_io_read(_this, 1);
-        RETURN_STRINGL_0(c, 1);
+    if (HB_INITED_P(_this) && (HB_POS_P(_this) < HB_LEN_P(_this))) {
+#if PHP_MAJOR_VERSION < 7
+        RETURN_STRINGL_0(hprose_bytes_io_read(_this, 1), 1);
+#else
+        RETURN_STR(hprose_bytes_io_read(_this, 1));
+#endif
     }
     RETURN_EMPTY_STRING();
 }
 
 ZEND_METHOD(hprose_bytes_io, read) {
-    char *s;
     long n;
     HPROSE_THIS(bytes_io);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &n) == FAILURE) {
         RETURN_NULL();
     }
-    if (_this->pos + n > _this->len) {
-        n = _this->len - _this->pos;
+    if (HB_INITED_P(_this) && (HB_POS_P(_this) + n > HB_LEN_P(_this))) {
+        n = HB_LEN_P(_this) - HB_POS_P(_this);
     }
-    s = hprose_bytes_io_read(_this, n);
-    RETURN_STRINGL_0(s, n);
+#if PHP_MAJOR_VERSION < 7
+    RETURN_STRINGL_0(hprose_bytes_io_read(_this, n), n);
+#else
+    RETURN_STR(hprose_bytes_io_read(_this, n));
+#endif
 }
 
 ZEND_METHOD(hprose_bytes_io, readfull) {
-    char *s;
-    int32_t l;
     HPROSE_THIS(bytes_io);
-    s = hprose_bytes_io_readfull(_this, &l);
+#if PHP_MAJOR_VERSION < 7
+    int32_t l;
+    char *s = hprose_bytes_io_readfull(_this, &l);
     RETURN_STRINGL_0(s, l);
+#else
+    RETURN_STR(hprose_bytes_io_readfull(_this));
+#endif
 }
 
 ZEND_METHOD(hprose_bytes_io, readuntil) {
-    char *s, *tag;
-    length_t len;
+#if PHP_MAJOR_VERSION < 7
+    char *s;
     int32_t l;
+#else
+    zend_string *s;
+#endif
+    char *tag;
+    length_t len;
     HPROSE_THIS(bytes_io);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &tag, &len) == FAILURE) {
         RETURN_NULL();
     }
+#if PHP_MAJOR_VERSION < 7
     if (len > 0) {
         s = hprose_bytes_io_readuntil(_this, tag[0], &l);
     }
@@ -101,18 +120,35 @@ ZEND_METHOD(hprose_bytes_io, readuntil) {
         s = hprose_bytes_io_readfull(_this, &l);
     }
     RETURN_STRINGL_0(s, l);
+#else
+    if (len > 0) {
+        s = hprose_bytes_io_readuntil(_this, tag[0]);
+    }
+    else {
+        s = hprose_bytes_io_readfull(_this);
+    }
+    RETURN_STR(s);
+#endif
 }
 
 ZEND_METHOD(hprose_bytes_io, readString) {
-    char *s;
     long n;
-    int32_t l;
     HPROSE_THIS(bytes_io);
+#if PHP_MAJOR_VERSION < 7
+    char *s;
+    int32_t l;
+#else
+    zend_string *s;
+#endif
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &n) == FAILURE) {
         RETURN_NULL();
     }
+#if PHP_MAJOR_VERSION < 7
     s = hprose_bytes_io_read_string(_this, n, &l);
     RETURN_STRINGL_0(s, l);
+#else
+    RETURN_STR(hprose_bytes_io_read_string(_this, n));
+#endif
 }
 
 ZEND_METHOD(hprose_bytes_io, mark) {
@@ -138,12 +174,12 @@ ZEND_METHOD(hprose_bytes_io, skip) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &n) == FAILURE) {
         return;
     }
-    if (n > 0) {
-        if (n > _this->len - _this->pos) {
-            _this->pos = _this->len;
+    if (HB_INITED_P(_this) && (n > 0)) {
+        if (n > HB_LEN_P(_this) - HB_POS_P(_this)) {
+            HB_POS_P(_this) = HB_LEN_P(_this);
         }
         else {
-            _this->pos += n;
+            HB_POS_P(_this) += n;
         }
     }
 }
@@ -166,10 +202,84 @@ ZEND_METHOD(hprose_bytes_io, write) {
 }
 
 ZEND_METHOD(hprose_bytes_io, toString) {
-    char *str;
     HPROSE_THIS(bytes_io);
-    str = hprose_bytes_io_to_string(_this);
-    RETURN_STRINGL_0(str, _this->len);
+#if PHP_MAJOR_VERSION < 7
+    RETURN_STRINGL_0(hprose_bytes_io_to_string(_this), _this->len);
+#else
+    RETURN_STR(hprose_bytes_io_to_string(_this));
+#endif
+}
+
+ZEND_METHOD(hprose_bytes_io, load) {
+    php_stream *stream;
+    char *filename;
+#if PHP_MAJOR_VERSION < 7
+    char *buf;
+#else
+    zend_string *s;
+#endif
+    length_t len;
+    HPROSE_OBJECT_INTERN(bytes_io);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &filename, &len) == FAILURE) {
+        return;
+    }
+    stream = php_stream_open_wrapper(filename, "rb", REPORT_ERRORS, NULL);
+    if (stream == NULL) {
+        RETURN_FALSE;
+    }
+#if PHP_MAJOR_VERSION < 7
+    if ((len = php_stream_copy_to_mem(stream, &buf, PHP_STREAM_COPY_ALL, HB_PERSISTENT_P(intern->_this))) > 0) {
+        hprose_bytes_io_close(intern->_this);
+        intern->_this->buf = buf;
+        HB_CAP_P(intern->_this) = len;
+        HB_LEN_P(intern->_this) = len;
+        HB_POS_P(intern->_this) = 0;
+        intern->mark = -1;
+    }
+#else
+    if ((s = php_stream_copy_to_mem(stream, PHP_STREAM_COPY_ALL, HB_PERSISTENT_P(intern->_this))) != NULL) {
+        hprose_bytes_io_close(intern->_this);
+        intern->_this->s = s;
+        HB_CAP_P(intern->_this) = HB_LEN_P(intern->_this);
+        HB_POS_P(intern->_this) = 0;
+        intern->mark = -1;
+    }
+#endif
+    else if (len == 0) {
+        hprose_bytes_io_close(intern->_this);
+        intern->mark = -1;
+    }
+    else {
+        php_stream_close(stream);
+        RETURN_FALSE;
+    }
+    php_stream_close(stream);
+    RETURN_TRUE;
+}
+
+ZEND_METHOD(hprose_bytes_io, save) {
+    php_stream *stream;
+    char *filename;
+    char *buf;
+    length_t len;
+    int32_t numbytes = 0;
+    HPROSE_THIS(bytes_io);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &filename, &len) == FAILURE) {
+        return;
+    }
+    stream = php_stream_open_wrapper(filename, "wb", REPORT_ERRORS, NULL);
+    if (stream == NULL) {
+        RETURN_FALSE;
+    }
+    if (HB_INITED_P(_this) && HB_LEN_P(_this)) {
+        numbytes = php_stream_write(stream, HB_BUF_P(_this), HB_LEN_P(_this));
+        if (numbytes != HB_LEN_P(_this)) {
+            php_error_docref(NULL TSRMLS_CC, E_WARNING, "Only %d of %d bytes written, possibly out of free disk space", numbytes, HB_LEN_P(_this));
+            numbytes = -1;
+        }
+    }
+    php_stream_close(stream);
+    RETURN_LONG(numbytes);    
 }
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_bytes_io_void_arginfo, 0, 0, 0)
@@ -192,6 +302,14 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_bytes_io_write_arginfo, 0, 0, 1)
     ZEND_ARG_INFO(0, n)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(hprose_bytes_io_load_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, filename)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_bytes_io_save_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, filename)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry hprose_bytes_io_methods[] = {
     ZEND_ME(hprose_bytes_io, __construct, hprose_bytes_io_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     ZEND_ME(hprose_bytes_io, __destruct, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
@@ -208,6 +326,8 @@ static zend_function_entry hprose_bytes_io_methods[] = {
     ZEND_ME(hprose_bytes_io, skip, hprose_bytes_io_long_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_bytes_io, eof, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_bytes_io, write, hprose_bytes_io_write_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_bytes_io, load, hprose_bytes_io_load_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_bytes_io, save, hprose_bytes_io_save_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_bytes_io, toString, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
     ZEND_MALIAS(hprose_bytes_io, __toString, toString, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END

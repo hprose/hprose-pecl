@@ -13,7 +13,7 @@
  *                                                        *
  * hprose class manager for pecl source file.             *
  *                                                        *
- * LastModified: Mar 24, 2015                             *
+ * LastModified: Apr 7, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -52,6 +52,7 @@ void _hprose_class_manager_register(char *name, int32_t nlen, char *alias, int32
     zend_hash_str_update_ptr(HPROSE_G(cache2), alias, alen, _name);
 }
 
+#if PHP_MAJOR_VERSION < 7
 char * _hprose_class_manager_get_alias(char *name, int32_t len, int32_t* len_ptr TSRMLS_DC) {
     char *alias;
     hprose_bytes_io *_alias;
@@ -62,12 +63,28 @@ char * _hprose_class_manager_get_alias(char *name, int32_t len, int32_t* len_ptr
         hprose_class_manager_register(name, len, alias, len);
     }
     else {
-        alias = hprose_bytes_io_to_string(_alias);
-        *len_ptr = _alias->len;
+        alias = estrndup(HB_BUF_P(_alias), HB_LEN_P(_alias));
+        *len_ptr = HB_LEN_P(_alias);
     }
     return alias;
 }
+#else
+zend_string *_hprose_class_manager_get_alias(char *name, int32_t len TSRMLS_DC) {
+    zend_string *alias;
+    hprose_bytes_io *_alias;
+    if (!HPROSE_G(cache1) || (_alias = zend_hash_str_find_ptr(HPROSE_G(cache1), name, len)) == NULL) {
+        alias = zend_string_init(name, len, 0);
+        str_replace('\\', '_', alias->val, len);
+        hprose_class_manager_register(name, len, alias->val, len);
+    }
+    else {
+        alias = zend_string_copy(HB_STR_P(_alias));
+    }
+    return alias;
+}
+#endif
 
+#if PHP_MAJOR_VERSION < 7
 char * _hprose_class_manager_get_class(char *alias, int32_t len, int32_t* len_ptr TSRMLS_DC) {
     char * name;
     hprose_bytes_io *_name;
@@ -87,11 +104,34 @@ char * _hprose_class_manager_get_class(char *alias, int32_t len, int32_t* len_pt
         }
     }
     else {
-        name = hprose_bytes_io_to_string(_name);
-        *len_ptr = _name->len;
+        name = estrndup(HB_BUF_P(_name), HB_LEN_P(_name));
+        *len_ptr = HB_LEN_P(_name);
     }
     return name;
 }
+#else
+zend_string *_hprose_class_manager_get_class(char *alias, int32_t len TSRMLS_DC) {
+    zend_string *name;
+    hprose_bytes_io *_name;
+    if (!HPROSE_G(cache2) || (_name = zend_hash_str_find_ptr(HPROSE_G(cache2), alias, len)) == NULL) {
+        name = zend_string_init(alias, len, 0);
+        if (!class_exists(alias, len, 0) && !class_exists(alias, len, 1)) {
+            str_replace('_', '\\', name->val, len);
+            if (_class_exists(name, 0) || _class_exists(name, 1)) {
+                hprose_class_manager_register(name->val, len, alias, len);
+            }
+            else {
+                zend_string_release(name);
+                name = zend_string_init("stdClass", sizeof("stdClass") - 1, 0);
+            }
+        }
+    }
+    else {
+        name = zend_string_copy(HB_STR_P(_name));
+    }
+    return name;
+}
+#endif
 
 ZEND_METHOD(hprose_class_manager, register) {
     char *name, *alias;
@@ -103,25 +143,45 @@ ZEND_METHOD(hprose_class_manager, register) {
 }
 
 ZEND_METHOD(hprose_class_manager, getAlias) {
-    char *name, *alias;
+    char *name;
     length_t nlen;
+#if PHP_MAJOR_VERSION < 7
+    char *alias;
     int32_t alen;
+#else
+    zend_string *alias;
+#endif
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name, &nlen) == FAILURE) {
         RETURN_NULL();
     }
+#if PHP_MAJOR_VERSION < 7
     alias = hprose_class_manager_get_alias(name, nlen, &alen);
     RETURN_STRINGL_0(alias, alen);
+#else
+    alias = hprose_class_manager_get_alias(name, nlen);
+    RETURN_STR(alias);
+#endif
 }
 
 ZEND_METHOD(hprose_class_manager, getClass) {
-    char *name, *alias;
-    int32_t nlen;
+    char *alias;
     length_t alen;
+#if PHP_MAJOR_VERSION < 7
+    char *name;
+    int32_t nlen;
+#else
+    zend_string *name;
+#endif
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &alias, &alen) == FAILURE) {
         RETURN_NULL();
     }
+#if PHP_MAJOR_VERSION < 7
     name = hprose_class_manager_get_class(alias, alen, &nlen);
     RETURN_STRINGL_0(name, nlen);
+#else
+    name = hprose_class_manager_get_class(alias, alen);
+    RETURN_STR(name);
+#endif
 }
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_class_manager_register_arginfo, 0, 0, 2)
