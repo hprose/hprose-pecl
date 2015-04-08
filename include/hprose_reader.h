@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl header file.                    *
  *                                                        *
- * LastModified: Apr 7, 2015                              *
+ * LastModified: Apr 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -26,7 +26,7 @@
 #include "hprose_bytes_io.h"
 #include "hprose_class_manager.h"
 #include "hprose_raw_reader.h"
-#if PHP_API_VERSION >= 20090626
+#if PHP_VERSION_ID >= 50311
 #include "ext/date/php_date.h"
 #endif
 
@@ -304,7 +304,7 @@ static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_re
             }
         }
     }
-#if PHP_API_VERSION < 20090626
+#if PHP_VERSION_ID < 50311
     if (tag == HPROSE_TAG_UTC) {
         zval timezone;
         function_invoke(timezone_open, &timezone, "s", ZEND_STRL("UTC"));
@@ -354,7 +354,7 @@ static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader
             }
         }
     }
-#if PHP_API_VERSION < 20090626
+#if PHP_VERSION_ID < 50311
     if (tag == HPROSE_TAG_UTC) {
         zval timezone;
         function_invoke(timezone_open, &timezone, "s", ZEND_STRL("UTC"));
