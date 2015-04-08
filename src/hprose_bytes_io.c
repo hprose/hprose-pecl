@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl source file.                  *
  *                                                        *
- * LastModified: Apr 6, 2015                              *
+ * LastModified: Apr 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -32,15 +32,6 @@ ZEND_METHOD(hprose_bytes_io, __construct) {
     }
     else {
         intern->_this = hprose_bytes_io_new();
-    }
-    intern->mark = -1;
-}
-
-ZEND_METHOD(hprose_bytes_io, __destruct) {
-    HPROSE_OBJECT_INTERN(bytes_io);
-    if (intern->_this) {
-        hprose_bytes_io_free(intern->_this);
-        intern->_this = NULL;
     }
 }
 
@@ -312,7 +303,6 @@ ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_bytes_io_methods[] = {
     ZEND_ME(hprose_bytes_io, __construct, hprose_bytes_io_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    ZEND_ME(hprose_bytes_io, __destruct, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
     ZEND_ME(hprose_bytes_io, close, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_bytes_io, length, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_bytes_io, getc, hprose_bytes_io_void_arginfo, ZEND_ACC_PUBLIC)
@@ -342,8 +332,14 @@ HPROSE_OBJECT_FREE_BEGIN(bytes_io)
     }
 HPROSE_OBJECT_FREE_END
 
-HPROSE_OBJECT_NEW_BEGIN(bytes_io)
-HPROSE_OBJECT_NEW_END(bytes_io)
+HPROSE_OBJECT_NEW_EX_BEGIN(bytes_io)
+    intern->mark = -1;
+HPROSE_OBJECT_NEW_EX_END(bytes_io)
+
+HPROSE_OBJECT_NEW(bytes_io)
+
+HPROSE_OBJECT_CLONE_BEGIN(bytes_io)
+HPROSE_OBJECT_CLONE_END
 
 HPROSE_CLASS_ENTRY(bytes_io)
 

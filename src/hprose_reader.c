@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl source file.                    *
  *                                                        *
- * LastModified: Apr 7, 2015                              *
+ * LastModified: Apr 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -26,14 +26,6 @@ ZEND_METHOD(hprose_reader, __construct) {
     HPROSE_OBJECT_INTERN(reader);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|b", &obj, &simple) == SUCCESS) {
         intern->_this = hprose_reader_create(HPROSE_GET_OBJECT_P(bytes_io, obj)->_this, simple);
-    }
-}
-
-ZEND_METHOD(hprose_reader, __destruct) {
-    HPROSE_OBJECT_INTERN(reader);
-    if (intern->_this) {
-        hprose_reader_free(intern->_this);
-        intern->_this = NULL;
     }
 }
 
@@ -370,7 +362,6 @@ ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_reader_methods[] = {
     ZEND_ME(hprose_reader, __construct, hprose_reader_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    ZEND_ME(hprose_reader, __destruct, hprose_reader_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
     ZEND_ME(hprose_reader, unserialize, hprose_reader_void_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_reader, checkTag, hprose_reader_check_tag_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_reader, checkTags, hprose_reader_check_tags_arginfo, ZEND_ACC_PUBLIC)
@@ -417,8 +408,7 @@ HPROSE_OBJECT_FREE_BEGIN(reader)
     }
 HPROSE_OBJECT_FREE_END
 
-HPROSE_OBJECT_NEW_BEGIN(reader)
-HPROSE_OBJECT_NEW_END(reader)
+HPROSE_OBJECT_SIMPLE_NEW(reader)
 
 HPROSE_CLASS_ENTRY(reader)
 

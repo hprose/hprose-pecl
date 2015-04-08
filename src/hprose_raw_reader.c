@@ -13,7 +13,7 @@
  *                                                        *
  * hprose raw reader for pecl source file.                *
  *                                                        *
- * LastModified: Mar 21, 2015                             *
+ * LastModified: Apr 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -28,14 +28,6 @@ ZEND_METHOD(hprose_raw_reader, __construct) {
     }
 }
 
-ZEND_METHOD(hprose_raw_reader, __destruct) {
-    HPROSE_OBJECT_INTERN(raw_reader);
-    if (intern->_this) {
-        hprose_raw_reader_free(intern->_this);
-        intern->_this = NULL;
-    }
-}
-
 ZEND_METHOD(hprose_raw_reader, readRaw) {
     HPROSE_THIS(raw_reader);
     object_init_ex(return_value, get_hprose_bytes_io_ce());
@@ -43,16 +35,15 @@ ZEND_METHOD(hprose_raw_reader, readRaw) {
     HPROSE_GET_OBJECT_P(bytes_io, return_value)->mark = -1;
 }
 
-ZEND_BEGIN_ARG_INFO_EX(hprose_raw_reader_void_arginfo, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(hprose_raw_reader_construct_arginfo, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(hprose_raw_reader_construct_arginfo, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(hprose_raw_reader_read_raw_arginfo, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_raw_reader_methods[] = {
     ZEND_ME(hprose_raw_reader, __construct, hprose_raw_reader_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    ZEND_ME(hprose_raw_reader, __destruct, hprose_raw_reader_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
-    ZEND_ME(hprose_raw_reader, readRaw, hprose_raw_reader_void_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_raw_reader, readRaw, hprose_raw_reader_read_raw_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 
@@ -65,8 +56,7 @@ HPROSE_OBJECT_FREE_BEGIN(raw_reader)
     }
 HPROSE_OBJECT_FREE_END
 
-HPROSE_OBJECT_NEW_BEGIN(raw_reader)
-HPROSE_OBJECT_NEW_END(raw_reader)
+HPROSE_OBJECT_SIMPLE_NEW(raw_reader)
 
 HPROSE_CLASS_ENTRY(raw_reader)
 

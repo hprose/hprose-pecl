@@ -14,7 +14,7 @@
  *                                                        *
  * hprose service for pecl source file.                   *
  *                                                        *
- * LastModified: Apr 7, 2015                              *
+ * LastModified: Apr 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -324,35 +324,6 @@ static void hprose_service_remote_call_dtor(zval *pDest) {
     efree((hprose_remote_call *)Z_PTR_P(pDest));
 }
 #endif
-
-ZEND_METHOD(hprose_service, __construct) {
-    char *url = "";
-    length_t len = 0;
-    HPROSE_OBJECT_INTERN(service);
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &url, &len) == FAILURE) {
-        return;
-    }
-    intern->_this = emalloc(sizeof(hprose_service));
-    intern->_this->simple = 0;
-    ALLOC_HASHTABLE(intern->_this->calls);
-    zend_hash_init(intern->_this->calls, 0, NULL, hprose_service_remote_call_dtor, 0);
-    hprose_zval_new(intern->_this->names);
-    array_init(intern->_this->names);
-    hprose_zval_new(intern->_this->filters);
-    array_init(intern->_this->filters);
-}
-
-ZEND_METHOD(hprose_service, __destruct) {
-    HPROSE_OBJECT_INTERN(service);
-    if (intern->_this) {
-        zend_hash_destroy(intern->_this->calls);
-        FREE_HASHTABLE(intern->_this->calls);
-        hprose_zval_free(intern->_this->names);
-        hprose_zval_free(intern->_this->filters);
-        efree(intern->_this);
-        intern->_this = NULL;
-    }
-}
 
 ZEND_METHOD(hprose_service, getErrorTypeString) {
     long e;
@@ -708,10 +679,6 @@ ZEND_METHOD(hprose_service, add) {
     WRONG_PARAM_COUNT;
 }
 
-ZEND_BEGIN_ARG_INFO_EX(hprose_service_construct_arginfo, 0, 0, 0)
-    ZEND_ARG_INFO(0, url)
-ZEND_END_ARG_INFO()
-
 ZEND_BEGIN_ARG_INFO_EX(hprose_service_void_arginfo, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
@@ -833,8 +800,6 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_service_add_arginfo, 0, 0, 1)
 ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_service_methods[] = {
-    ZEND_ME(hprose_service, __construct, hprose_service_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    ZEND_ME(hprose_service, __destruct, hprose_service_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
     ZEND_ME(hprose_service, getErrorTypeString, hprose_service_get_error_type_string_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, sendError, hprose_service_send_error_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, doInvoke, hprose_service_do_invoke_arginfo, ZEND_ACC_PROTECTED)
@@ -874,8 +839,18 @@ HPROSE_OBJECT_FREE_BEGIN(service)
     }
 HPROSE_OBJECT_FREE_END
 
-HPROSE_OBJECT_NEW_BEGIN(service)
-HPROSE_OBJECT_NEW_END(service)
+HPROSE_OBJECT_NEW_EX_BEGIN(service)
+    intern->_this = emalloc(sizeof(hprose_service));
+    intern->_this->simple = 0;
+    ALLOC_HASHTABLE(intern->_this->calls);
+    zend_hash_init(intern->_this->calls, 0, NULL, hprose_service_remote_call_dtor, 0);
+    hprose_zval_new(intern->_this->names);
+    array_init(intern->_this->names);
+    hprose_zval_new(intern->_this->filters);
+    array_init(intern->_this->filters);
+HPROSE_OBJECT_NEW_EX_END(service)
+
+HPROSE_OBJECT_NEW(service)
 
 HPROSE_CLASS_ENTRY(service)
 

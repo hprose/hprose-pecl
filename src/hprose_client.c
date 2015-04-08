@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl source file.                    *
  *                                                        *
- * LastModified: Apr 7, 2015                              *
+ * LastModified: Apr 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -311,31 +311,17 @@ ZEND_METHOD(hprose_proxy, __construct) {
     zval *client = NULL;
     char *ns = "";
     length_t len = 0;
-    HPROSE_OBJECT_INTERN(proxy);
+    HPROSE_THIS(proxy);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|s", &client, get_hprose_client_ce(), &ns, &len) == FAILURE) {
         return;
     }
-    intern->_this = emalloc(sizeof(hprose_proxy));
     Z_ADDREF_P(client);
 #if PHP_MAJOR_VERSION < 7
-    intern->_this->client = client;
+    _this->client = client;
 #else
-    intern->_this->client = Z_OBJ_P(client);
+    _this->client = Z_OBJ_P(client);
 #endif
-    intern->_this->ns = ns;
-}
-
-ZEND_METHOD(hprose_proxy, __destruct) {
-    HPROSE_OBJECT_INTERN(proxy);
-    if (intern->_this) {
-#if PHP_MAJOR_VERSION < 7
-        zval_ptr_dtor(&(intern->_this->client));
-#else
-        OBJ_RELEASE(intern->_this->client);
-#endif
-        efree(intern->_this);
-        intern->_this = NULL;
-    }
+    _this->ns = ns;
 }
 
 ZEND_METHOD(hprose_proxy, __call) {
@@ -418,9 +404,6 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_proxy_construct_arginfo, 0, 0, 1)
     ZEND_ARG_INFO(0, ns)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(hprose_proxy_void_arginfo, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
 ZEND_BEGIN_ARG_INFO_EX(hprose_proxy_call_arginfo, 0, 0, 2)
     ZEND_ARG_INFO(0, name)
     ZEND_ARG_ARRAY_INFO(0, args, 0)
@@ -433,7 +416,6 @@ ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_proxy_methods[] = {
     ZEND_ME(hprose_proxy, __construct, hprose_proxy_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    ZEND_ME(hprose_proxy, __destruct, hprose_proxy_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
     ZEND_ME(hprose_proxy, __call, hprose_proxy_call_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_proxy, __get, hprose_proxy_get_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
@@ -453,8 +435,14 @@ HPROSE_OBJECT_FREE_BEGIN(proxy)
     }
 HPROSE_OBJECT_FREE_END
 
-HPROSE_OBJECT_NEW_BEGIN(proxy)
-HPROSE_OBJECT_NEW_END(proxy)
+HPROSE_OBJECT_NEW_EX_BEGIN(proxy)
+    intern->_this = emalloc(sizeof(hprose_proxy));
+HPROSE_OBJECT_NEW_EX_END(proxy)
+
+HPROSE_OBJECT_NEW(proxy)
+
+HPROSE_OBJECT_CLONE_BEGIN(proxy)
+HPROSE_OBJECT_CLONE_END
 
 HPROSE_CLASS_ENTRY(proxy)
 
@@ -467,31 +455,16 @@ HPROSE_STARTUP_FUNCTION(proxy) {
 ZEND_METHOD(hprose_client, __construct) {
     char *url = "";
     length_t len = 0;
-    HPROSE_OBJECT_INTERN(client);
+    HPROSE_THIS(client);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &url, &len) == FAILURE) {
         return;
     }
-    intern->_this = emalloc(sizeof(hprose_client));
 #if PHP_MAJOR_VERSION < 7
-    intern->_this->client = getThis();
+    _this->client = getThis();
 #else
-    intern->_this->client = Z_OBJ_P(getThis());
+    _this->client = Z_OBJ_P(getThis());
 #endif
-    intern->_this->ns = "";
-    intern->_this->simple = 0;
-    hprose_zval_new(intern->_this->filters);
-    array_init(intern->_this->filters);
-    zend_update_property_stringl(get_hprose_client_ce(), getThis(), ZEND_STRL("url"), url, len TSRMLS_CC);    
-}
-
-ZEND_METHOD(hprose_client, __destruct) {
-    HPROSE_OBJECT_INTERN(client);
-    if (intern->_this) {
-        intern->_this->client = NULL;
-        hprose_zval_free(intern->_this->filters);
-        efree(intern->_this);
-        intern->_this = NULL;
-    }
+    zend_update_property_stringl(get_hprose_client_ce(), getThis(), ZEND_STRL("url"), url, len TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_client, sendAndReceive) {
@@ -635,9 +608,6 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_client_construct_arginfo, 0, 0, 0)
     ZEND_ARG_INFO(0, url)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(hprose_client_void_arginfo, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
 ZEND_BEGIN_ARG_INFO_EX(hprose_client_send_and_receive_arginfo, 0, 0, 1)
     ZEND_ARG_INFO(0, request)
 ZEND_END_ARG_INFO()
@@ -691,7 +661,6 @@ ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_client_methods[] = {
     ZEND_ME(hprose_client, __construct, hprose_client_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    ZEND_ME(hprose_client, __destruct, hprose_client_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
     ZEND_ME(hprose_client, sendAndReceive, hprose_client_send_and_receive_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_client, asyncSendAndReceive, hprose_client_async_send_and_receive_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_client, sendAndReceiveCallback, hprose_client_send_and_receive_callback_arginfo, ZEND_ACC_PROTECTED)
@@ -717,8 +686,16 @@ HPROSE_OBJECT_FREE_BEGIN(client)
     }
 HPROSE_OBJECT_FREE_END
 
-HPROSE_OBJECT_NEW_BEGIN(client)
-HPROSE_OBJECT_NEW_END(client)
+HPROSE_OBJECT_NEW_EX_BEGIN(client)
+    intern->_this = emalloc(sizeof(hprose_client));
+    intern->_this->client = NULL;
+    intern->_this->ns = "";
+    intern->_this->simple = 0;
+    hprose_zval_new(intern->_this->filters);
+    array_init(intern->_this->filters);
+HPROSE_OBJECT_NEW_EX_END(client)
+
+HPROSE_OBJECT_NEW(client)
 
 HPROSE_CLASS_ENTRY(client)
 

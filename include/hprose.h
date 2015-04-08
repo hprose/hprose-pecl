@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl header file.                           *
  *                                                        *
- * LastModified: Apr 3, 2015                              *
+ * LastModified: Apr 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -162,14 +162,17 @@ static void php_hprose_##type_name##_free(void *object TSRMLS_DC) {             
 
 #if PHP_API_VERSION < 20100412
 
-#define HPROSE_OBJECT_NEW_BEGIN(type_name)                              \
-static zend_object_value php_hprose_##type_name##_new(                  \
+#define HPROSE_OBJECT_NEW_EX_BEGIN(type_name)                           \
+static zend_object_value php_hprose_##type_name##_new_ex(               \
     zend_class_entry *ce TSRMLS_DC) {                                   \
     zend_object_value retval;                                           \
     php_hprose_##type_name *intern;                                     \
     zval *tmp;                                                          \
     intern = emalloc(sizeof(php_hprose_##type_name));                   \
     memset(intern, 0, sizeof(php_hprose_##type_name));                  \
+    if (ptr) {                                                          \
+        *ptr = intern;                                                  \
+    }                                                                   \
     zend_object_std_init(&intern->std, ce TSRMLS_CC);                   \
     zend_hash_copy(                                                     \
         intern->std.properties, &ce->default_properties,                \
@@ -177,19 +180,23 @@ static zend_object_value php_hprose_##type_name##_new(                  \
 
 #else  /* PHP_API_VERSION < 20100412 */
 
-#define HPROSE_OBJECT_NEW_BEGIN(type_name)                  \
-static zend_object_value php_hprose_##type_name##_new(      \
-    zend_class_entry *ce TSRMLS_DC) {                       \
+#define HPROSE_OBJECT_NEW_EX_BEGIN(type_name)               \
+static zend_object_value php_hprose_##type_name##_new_ex(   \
+    zend_class_entry *ce,                                   \
+    php_hprose_##type_name **ptr TSRMLS_DC) {               \
     zend_object_value retval;                               \
     php_hprose_##type_name *intern;                         \
     intern = emalloc(sizeof(php_hprose_##type_name));       \
     memset(intern, 0, sizeof(php_hprose_##type_name));      \
+    if (ptr) {                                              \
+        *ptr = intern;                                      \
+    }                                                       \
     zend_object_std_init(&intern->std, ce TSRMLS_CC);       \
     object_properties_init(&intern->std, ce);               \
 
 #endif /* PHP_API_VERSION < 20100412 */
 
-#define HPROSE_OBJECT_NEW_END(type_name)                                    \
+#define HPROSE_OBJECT_NEW_EX_END(type_name)                                 \
     retval.handle = zend_objects_store_put(                                 \
         intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,     \
         (zend_objects_free_object_storage_t)php_hprose_##type_name##_free,  \
@@ -197,6 +204,23 @@ static zend_object_value php_hprose_##type_name##_new(      \
     retval.handlers = &hprose_##type_name##_handlers;                       \
     return retval;                                                          \
 }                                                                           \
+
+#define HPROSE_OBJECT_NEW(type_name)                            \
+static zend_object_value php_hprose_##type_name##_new(          \
+    zend_class_entry *ce TSRMLS_DC) {                           \
+    return php_hprose_##type_name##_new_ex(ce, NULL TSRMLS_CC); \
+}                                                               \
+
+#define HPROSE_OBJECT_CLONE_BEGIN(type_name)                                                                \
+static zend_object_value php_hprose_##type_name##_clone(zval *this_ptr TSRMLS_DC) {                         \
+    php_hprose_##type_name *new_obj = NULL;                                                                 \
+    php_hprose_##type_name *old_obj = HPROSE_GET_OBJECT_P(type_name, this_ptr);                             \
+    zend_object_value new_ov = php_hprose_##type_name##_new_ex(old_obj->std.ce, &new_obj TSRMLS_CC);        \
+    zend_objects_clone_members(&new_obj->std, new_ov, &old_obj->std, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);   \
+
+#define HPROSE_OBJECT_CLONE_END \
+	return new_ov;          \
+}                               \
 
 #if PHP_API_VERSION < 20090626
 
@@ -254,18 +278,35 @@ static void php_hprose_##type_name##_free(zend_object *object) {                
     zend_object_std_dtor(&intern->std); \
 }                                       \
 
-#define HPROSE_OBJECT_NEW_BEGIN(type_name)                                                       \
-static zend_object *php_hprose_##type_name##_new(zend_class_entry *ce) {                         \
+#define HPROSE_OBJECT_NEW_EX_BEGIN(type_name)                                                    \
+static zend_object *php_hprose_##type_name##_new_ex(zend_class_entry *ce, int init_props) {      \
     php_hprose_##type_name *intern;                                                              \
     intern = ecalloc(1, sizeof(php_hprose_##type_name) + zend_object_properties_size(ce));       \
     memset(intern, 0, sizeof(php_hprose_##type_name) + zend_object_properties_size(ce));         \
     zend_object_std_init(&intern->std, ce);                                                      \
-    object_properties_init(&intern->std, ce);                                                    \
+    if (init_props) {                                                                            \
+        object_properties_init(&intern->std, ce);                                                \
+    }                                                                                            \
 
-#define HPROSE_OBJECT_NEW_END(type_name)                    \
+#define HPROSE_OBJECT_NEW_EX_END(type_name)                 \
     intern->std.handlers = &hprose_##type_name##_handlers;  \
     return &intern->std;                                    \
 }                                                           \
+
+#define HPROSE_OBJECT_NEW(type_name)                                        \
+static zend_object *php_hprose_##type_name##_new(zend_class_entry *ce) {    \
+    return php_hprose_##type_name##_new_ex(ce, 1);                          \
+}                                                                           \
+
+#define HPROSE_OBJECT_CLONE_BEGIN(type_name)                                                                                \
+static zend_object *php_hprose_##type_name##_clone(zval *this_ptr) {                                                        \
+    php_hprose_##type_name *old_obj = HPROSE_GET_OBJECT_P(type_name, this_ptr);                                             \
+    php_hprose_##type_name *new_obj = _HPROSE_GET_OBJECT_P(type_name, php_hprose_##type_name##_new_ex(old_obj->std.ce, 0)); \
+    zend_objects_clone_members(&new_obj->std, &old_obj->std);                                                               \
+
+#define HPROSE_OBJECT_CLONE_END \
+	return &new_obj->std;   \
+}                               \
 
 #define HPROSE_REGISTER_INTERFACE(ns, name, type_name)                  \
     zend_class_entry ce;                                                \
@@ -287,8 +328,16 @@ static zend_object *php_hprose_##type_name##_new(zend_class_entry *ce) {        
     hprose_##type_name##_handlers.offset = XtOffsetOf(php_hprose_##type_name, std);                          \
     hprose_##type_name##_handlers.free_obj = php_hprose_##type_name##_free;                                  \
 
-
 #endif /* PHP_MAJOR_VERSION < 7 */
+
+#define HPROSE_OBJECT_SIMPLE_NEW(type_name) \
+HPROSE_OBJECT_NEW_EX_BEGIN(type_name)       \
+HPROSE_OBJECT_NEW_EX_END(type_name)         \
+                                            \
+HPROSE_OBJECT_NEW(type_name)                \
+
+#define HPROSE_REGISTER_CLASS_CLONE_HANDLER(type_name)                          \
+    hprose_##type_name##_handlers.clone_obj = php_hprose_##type_name##_clone;   \
 
 #define HPROSE_OBJECT_INTERN(type_name) \
     php_hprose_##type_name *intern = HPROSE_GET_OBJECT_P(type_name, getThis());

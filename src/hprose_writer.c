@@ -13,7 +13,7 @@
  *                                                        *
  * hprose writer for pecl source file.                    *
  *                                                        *
- * LastModified: Mar 16, 2015                             *
+ * LastModified: Apr 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -26,14 +26,6 @@ ZEND_METHOD(hprose_writer, __construct) {
     HPROSE_OBJECT_INTERN(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|b", &obj, &simple) == SUCCESS) {
         intern->_this = hprose_writer_create(HPROSE_GET_OBJECT_P(bytes_io, obj)->_this, simple);
-    }
-}
-
-ZEND_METHOD(hprose_writer, __destruct) {
-    HPROSE_OBJECT_INTERN(writer);
-    if (intern->_this) {
-        hprose_writer_free(intern->_this);
-        intern->_this = NULL;
     }
 }
 
@@ -319,7 +311,6 @@ ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_writer_methods[] = {
     ZEND_ME(hprose_writer, __construct, hprose_writer_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    ZEND_ME(hprose_writer, __destruct, hprose_writer_void_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_DTOR)
     ZEND_ME(hprose_writer, serialize, hprose_writer_serialize_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_writer, writeInteger, hprose_writer_write_integer_arginfo, ZEND_ACC_PUBLIC)
     ZEND_MALIAS(hprose_writer, writeLong, writeInteger, hprose_writer_write_integer_arginfo, ZEND_ACC_PUBLIC)
@@ -361,8 +352,7 @@ HPROSE_OBJECT_FREE_BEGIN(writer)
     }
 HPROSE_OBJECT_FREE_END
 
-HPROSE_OBJECT_NEW_BEGIN(writer)
-HPROSE_OBJECT_NEW_END(writer)
+HPROSE_OBJECT_SIMPLE_NEW(writer)
 
 HPROSE_CLASS_ENTRY(writer)
 
