@@ -46,24 +46,18 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <email>mabingyao@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2015-04-07</date>
-    <time>19:35:52</time>
+    <date>2015-04-08</date>
+    <time>14:18:05</time>
     <version>
-        <release>1.2.0</release>
-        <api>1.2.0</api>
+        <release>1.3.0</release>
+        <api>1.3.0</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Optimized of the string for php7.
-        Added load and save method for HproseBytesIO.
-        Added unserializing from HproseBytesIO for hprose_unserilaize.
-        Added HproseBytesIO serialize support.
-        Changed C++ style comments to C-style comments.
-        Renamed hprose.c to php_hprose.c.
-    </notes>
+    <notes>Removed unnecessary __construct and __destruct.</notes>
     <contents>
         <dir name="/">
             <file role="doc" name="CREDITS" />
@@ -129,6 +123,19 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.3.0</release>
+                <api>1.3.0</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2015-04-08</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Removed unnecessary __construct and __destruct.</notes>
+        </release>
         <release>
             <version>
                 <release>1.2.0</release>
