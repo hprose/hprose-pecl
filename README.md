@@ -37,3 +37,8 @@ This project is the implementation of Hprose extension for PHP.
 This extension is a part of [Hprose for PHP](http://github.com/hprose/hprose-php), It only implements hprose serialize, unserialize and RPC protocol abstraction layer. The real http client and server implementation are written in PHP. If you want to know how to use it, look at here:
 
 http://github.com/hprose/hprose-php
+
+## Install
+```
+pecl install hprose
+```
