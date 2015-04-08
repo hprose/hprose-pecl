@@ -57,7 +57,10 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Removed unnecessary __construct and __destruct.</notes>
+    <notes>Removed unnecessary __construct and __destruct.
+        Added clone support for HproseBytesIO.
+        Added get_gc handler for all hprose class.
+    </notes>
     <contents>
         <dir name="/">
             <file role="doc" name="CREDITS" />
@@ -134,7 +137,10 @@ http://pear.php.net/dtd/package-2.0.xsd">
             </stability>
             <date>2015-04-08</date>
             <license uri="http://mit-license.org/">MIT</license>
-            <notes>Removed unnecessary __construct and __destruct.</notes>
+            <notes>Removed unnecessary __construct and __destruct.
+                Added clone support for HproseBytesIO.
+                Added get_gc handler for all hprose class.
+            </notes>
         </release>
         <release>
             <version>

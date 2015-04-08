@@ -139,6 +139,17 @@ typedef unsigned __int64 uint64_t;
 /**********************************************************\
 | Class & Object Macro definition                          |
 \**********************************************************/
+
+#if PHP_API_VERSION >= 20100412
+
+#if PHP_MAJOR_VERSION < 7
+PHP_HPROSE_API HashTable *php_hprose_get_gc(zval *object, zval ***table, int *n TSRMLS_DC);
+#else
+PHP_HPROSE_API HashTable *php_hprose_get_gc(zval *object, zval **table, int *n);
+#endif
+
+#endif
+
 #if PHP_MAJOR_VERSION < 7
 
 #define HPROSE_CLASS_BEGIN(type_name)   \
@@ -253,9 +264,20 @@ static zend_object_value php_hprose_##type_name##_clone(zval *this_ptr TSRMLS_DC
 
 #define HPROSE_REGISTER_CLASS(ns, name, type_name) HPROSE_REGISTER_CLASS_EX(ns, name, type_name, NULL, NULL)
 
+#if PHP_API_VERSION < 20100412
+
 #define HPROSE_REGISTER_CLASS_HANDLERS(type_name)                                                           \
     hprose_##type_name##_ce->create_object = php_hprose_##type_name##_new;                                  \
     memcpy(&hprose_##type_name##_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));   \
+
+#else /* PHP_API_VERSION < 20100412 */
+
+#define HPROSE_REGISTER_CLASS_HANDLERS(type_name)                                                           \
+    hprose_##type_name##_ce->create_object = php_hprose_##type_name##_new;                                  \
+    memcpy(&hprose_##type_name##_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));   \
+    hprose_##type_name##_handlers.get_gc = php_hprose_get_gc;                                              \
+
+#endif /* PHP_API_VERSION < 20100412 */
 
 #else  /* PHP_MAJOR_VERSION < 7 */
 
@@ -328,6 +350,7 @@ static zend_object *php_hprose_##type_name##_clone(zval *this_ptr) {            
     memcpy(&hprose_##type_name##_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));    \
     hprose_##type_name##_handlers.offset = XtOffsetOf(php_hprose_##type_name, std);                          \
     hprose_##type_name##_handlers.free_obj = php_hprose_##type_name##_free;                                  \
+    hprose_##type_name##_handlers.get_gc = php_hprose_get_gc;                                               \
 
 #endif /* PHP_MAJOR_VERSION < 7 */
 
@@ -453,7 +476,7 @@ static zend_always_inline zend_bool php_assoc_array_get_long(zval *val, char *ke
 | helper function definition                               |
 \**********************************************************/
 
-static inline void hprose_str_replace(char from, char to, char *s, int len, int start) {
+static zend_always_inline void hprose_str_replace(char from, char to, char *s, int len, int start) {
     register int i;
     for (i = start; i < len; i++) if (s[i] == from) s[i] = to;
 }
@@ -465,7 +488,7 @@ static inline void hprose_str_replace(char from, char to, char *s, int len, int 
 #endif
 
 #if PHP_MAJOR_VERSION < 7
-static inline zend_bool hprose_class_exists(char *classname, size_t len, zend_bool autoload TSRMLS_DC) {
+static zend_always_inline zend_bool hprose_class_exists(char *classname, size_t len, zend_bool autoload TSRMLS_DC) {
     char *lc_name;
     zend_class_entry **ce = NULL;
     if (!autoload) {
@@ -490,7 +513,7 @@ static inline zend_bool hprose_class_exists(char *classname, size_t len, zend_bo
     }
 }
 #else /* PHP_MAJOR_VERSION < 7 */
-static inline zend_bool _hprose_class_exists(zend_string *class_name, zend_bool autoload TSRMLS_DC) {
+static zend_always_inline zend_bool _hprose_class_exists(zend_string *class_name, zend_bool autoload TSRMLS_DC) {
     zend_string *lc_name;
     zend_class_entry *ce;
 
@@ -519,7 +542,7 @@ static inline zend_bool _hprose_class_exists(zend_string *class_name, zend_bool 
 
 #define _class_exists(class_name, autoload) _hprose_class_exists((class_name), (autoload) TSRMLS_CC)
 
-static inline zend_bool hprose_class_exists(char *classname, size_t len, zend_bool autoload TSRMLS_DC) {
+static zend_always_inline zend_bool hprose_class_exists(char *classname, size_t len, zend_bool autoload TSRMLS_DC) {
     zend_string *class_name = zend_string_init(classname, len, 0);
     zend_bool result = _hprose_class_exists(class_name, autoload TSRMLS_CC);
     zend_string_release(class_name);

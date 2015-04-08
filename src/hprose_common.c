@@ -13,12 +13,30 @@
  *                                                        *
  * hprose common for pecl source file.                    *
  *                                                        *
- * LastModified: Apr 3, 2015                              *
+ * LastModified: Apr 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
 
 #include "hprose.h"
+
+#if PHP_API_VERSION >= 20100412
+
+#if PHP_MAJOR_VERSION < 7
+HashTable *php_hprose_get_gc(zval *object, zval ***table, int *n TSRMLS_DC) {
+    *table = NULL;
+    *n = 0;
+    return zend_std_get_properties(object TSRMLS_CC);
+}
+#else
+HashTable *php_hprose_get_gc(zval *object, zval **table, int *n) {
+    *table = NULL;
+    *n = 0;
+    return zend_std_get_properties(object);
+}
+#endif
+
+#endif
 
 void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return_value, zend_bool dtor TSRMLS_DC, const char *params_format, ...) {
 #if PHP_MAJOR_VERSION < 7
