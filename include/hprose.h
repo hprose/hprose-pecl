@@ -164,7 +164,8 @@ static void php_hprose_##type_name##_free(void *object TSRMLS_DC) {             
 
 #define HPROSE_OBJECT_NEW_EX_BEGIN(type_name)                           \
 static zend_object_value php_hprose_##type_name##_new_ex(               \
-    zend_class_entry *ce TSRMLS_DC) {                                   \
+    zend_class_entry *ce,                                               \
+    php_hprose_##type_name **ptr TSRMLS_DC) {                           \
     zend_object_value retval;                                           \
     php_hprose_##type_name *intern;                                     \
     zval *tmp;                                                          \
