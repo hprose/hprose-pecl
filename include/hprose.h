@@ -114,6 +114,10 @@ typedef size_t length_t;
 #endif
 /* }}} */
 
+#ifndef array_init_size
+#define array_init_size(arg, size) array_init(arg)
+#endif
+
 #endif /* PHP_API_VERSION < 20090626 */
 
 /**********************************************************\
