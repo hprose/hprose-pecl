@@ -47,7 +47,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <active>yes</active>
     </lead>
     <date>2015-04-08</date>
-    <time>14:18:05</time>
+    <time>15:51:33</time>
     <version>
         <release>1.3.0</release>
         <api>1.3.0</api>
@@ -60,6 +60,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
     <notes>Removed unnecessary __construct and __destruct.
         Added clone support for HproseBytesIO.
         Added get_gc handler for all hprose class.
+        Added installation in README.
     </notes>
     <contents>
         <dir name="/">
@@ -140,6 +141,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
             <notes>Removed unnecessary __construct and __destruct.
                 Added clone support for HproseBytesIO.
                 Added get_gc handler for all hprose class.
+                Added installation in README.
             </notes>
         </release>
         <release>
