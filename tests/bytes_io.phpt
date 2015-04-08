@@ -35,6 +35,12 @@ unset($bytes);
 $bytes = new HproseBytesIO();
 $bytes->write("123", 2);
 echo $bytes->toString() . "\r\n";
+$clone = clone $bytes;
+echo ((string)$clone == (string)$bytes) . "\r\n";
+$clone->write("3");
+echo $bytes->toString() . "\r\n";
+echo $clone->toString() . "\r\n";
+echo ((string)$clone != (string)$bytes) . "\r\n";
 ?>
 --EXPECT--
 28
@@ -52,3 +58,7 @@ I'm coming back.
 bool(false)
 bool(true)
 12
+1
+12
+123
+1

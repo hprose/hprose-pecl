@@ -339,6 +339,16 @@ HPROSE_OBJECT_NEW_EX_END(bytes_io)
 HPROSE_OBJECT_NEW(bytes_io)
 
 HPROSE_OBJECT_CLONE_BEGIN(bytes_io)
+    if (old_obj->_this) {
+        if (HB_INITED_P(old_obj->_this)) {
+            new_obj->_this = hprose_bytes_io_pcreate(HB_BUF_P(old_obj->_this), HB_LEN_P(old_obj->_this), HB_PERSISTENT_P(old_obj->_this));
+            HB_POS_P(new_obj->_this) = HB_POS_P(old_obj->_this);
+        }
+        else {
+            new_obj->_this = hprose_bytes_io_pnew(HB_PERSISTENT_P(old_obj->_this));
+        }
+    }
+    new_obj->mark = old_obj->mark;
 HPROSE_OBJECT_CLONE_END
 
 HPROSE_CLASS_ENTRY(bytes_io)
@@ -346,5 +356,6 @@ HPROSE_CLASS_ENTRY(bytes_io)
 HPROSE_STARTUP_FUNCTION(bytes_io) {
     HPROSE_REGISTER_CLASS("Hprose", "BytesIO", bytes_io);
     HPROSE_REGISTER_CLASS_HANDLERS(bytes_io);
+    HPROSE_REGISTER_CLASS_CLONE_HANDLER(bytes_io);
     return SUCCESS;
 }
