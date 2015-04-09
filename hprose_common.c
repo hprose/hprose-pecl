@@ -46,7 +46,7 @@ void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return_value,
     zval retval;
     zval *params = NULL;
 #endif
-    zend_uint i, argc;
+    uint32_t i, argc;
     int result;
     zend_fcall_info fci;
 
@@ -283,7 +283,7 @@ zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *retur
     zval *params = NULL;
     zend_string *classname;
 #endif
-    zend_uint i, argc;
+    uint32_t i, argc;
     zend_fcall_info fci;
     zend_fcall_info_cache fcc;
 
