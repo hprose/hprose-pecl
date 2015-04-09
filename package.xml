@@ -47,18 +47,18 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <active>yes</active>
     </lead>
     <date>2015-04-09</date>
-    <time>14:41:49</time>
+    <time>21:05:17</time>
     <version>
-        <release>1.3.2</release>
-        <api>1.3.2</api>
+        <release>1.4.0</release>
+        <api>1.4.0</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Fixed pecl install in Mac OS X.
-        Changed packages directories.
+    <notes>Added windows support.
+        Faster write of HproseBytesIO for long string.
     </notes>
     <contents>
         <dir name="/">
@@ -121,6 +121,21 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.4.0</release>
+                <api>1.4.0</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2015-04-09</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Added windows support.
+                Faster write of HproseBytesIO for long string.
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.3.2</release>

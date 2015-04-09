@@ -13,12 +13,102 @@
  *                                                        *
  * hprose writer for pecl source file.                    *
  *                                                        *
- * LastModified: Apr 8, 2015                              *
+ * LastModified: Apr 9, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
 
 #include "hprose_writer.h"
+
+#if PHP_API_VERSION < 20090626
+static zend_always_inline zend_class_entry *php_date_get_date_ce() {
+    TSRMLS_FETCH();
+    static zend_class_entry **ce = NULL;
+    if (ce == NULL) {
+        zend_lookup_class(ZEND_STRL("DateTime"), &ce TSRMLS_CC);
+    }
+    return *ce;
+}
+#endif
+void hprose_writer_serialize(hprose_writer *_this, zval *val TSRMLS_DC) {
+    if (!val) {
+        hprose_writer_write_null(_this); return;
+    }
+    switch (Z_TYPE_P(val)) {
+        case IS_NULL:
+            hprose_writer_write_null(_this); break;
+        case IS_LONG:
+            hprose_writer_write_long(_this, Z_LVAL_P(val)); break;
+        case IS_DOUBLE:
+            hprose_writer_write_double(_this, Z_DVAL_P(val)); break;
+#if PHP_MAJOR_VERSION < 7
+        case IS_BOOL:
+            hprose_writer_write_bool(_this, Z_BVAL_P(val)); break;
+#else /* PHP_MAJOR_VERSION < 7 */
+        case IS_UNDEF:
+            hprose_writer_write_null(_this); break;
+        case IS_TRUE:
+            hprose_writer_write_true(_this); break;
+        case IS_FALSE:
+            hprose_writer_write_false(_this); break;
+        case IS_REFERENCE:
+            hprose_writer_serialize(_this, &(Z_REF_P(val)->val)); break;
+#endif /* PHP_MAJOR_VERSION < 7 */
+        case IS_ARRAY:
+            if (is_list(val)) {
+                hprose_writer_write_array(_this, val TSRMLS_CC);
+            }
+            else {
+                hprose_writer_write_assoc_array(_this, val TSRMLS_CC);
+            }
+            break;
+        case IS_OBJECT: {
+            zend_class_entry *ce = Z_OBJCE_P(val);
+            if (instanceof_function(ce, get_hprose_bytes_io_ce() TSRMLS_CC)) {
+                hprose_writer_write_bytes_io_with_ref(_this, val TSRMLS_CC);
+            }
+            else if (instanceof_function(ce, php_date_get_date_ce() TSRMLS_CC)) {
+                hprose_writer_write_datetime_with_ref(_this, val TSRMLS_CC);
+            }
+            else if (instanceof_function(ce, spl_ce_SplObjectStorage TSRMLS_CC)) {
+                hprose_writer_write_map_with_ref(_this, val TSRMLS_CC);
+            }
+            else if (instanceof_function(ce, zend_ce_traversable TSRMLS_CC)) {
+                hprose_writer_write_list_with_ref(_this, val TSRMLS_CC);
+            }
+            else if (instanceof_function(ce, zend_standard_class_def TSRMLS_CC)) {
+                hprose_writer_write_stdclass_with_ref(_this, val TSRMLS_CC);
+            }
+            else {
+                hprose_writer_write_object_with_ref(_this, val TSRMLS_CC);
+            }
+            break;
+        }
+        case IS_STRING: {
+            char * s = Z_STRVAL_P(val);
+            int32_t l = Z_STRLEN_P(val);
+            if (l == 0) {
+                hprose_writer_write_empty(_this);
+            }
+            else if (is_utf8(s, l)) {
+                if (l < 4 && ustrlen(s, l) == 1) {
+                    hprose_writer_write_utf8char(_this, val);
+                }
+                else {
+                    hprose_writer_write_string_with_ref(_this, val);
+                }
+            }
+            else {
+                hprose_writer_write_bytes_with_ref(_this, val);
+            }
+            break;
+        }
+        default:
+            zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
+                    "Not support to serialize this data: %d", Z_TYPE_P(val));
+            break;
+    }
+}
 
 ZEND_METHOD(hprose_writer, __construct) {
     zval *obj = NULL;

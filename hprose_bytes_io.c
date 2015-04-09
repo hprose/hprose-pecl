@@ -251,7 +251,6 @@ ZEND_METHOD(hprose_bytes_io, load) {
 ZEND_METHOD(hprose_bytes_io, save) {
     php_stream *stream;
     char *filename;
-    char *buf;
     length_t len;
     int32_t numbytes = 0;
     HPROSE_THIS(bytes_io);

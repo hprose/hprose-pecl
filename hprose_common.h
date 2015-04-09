@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl header file.                           *
  *                                                        *
- * LastModified: Apr 8, 2015                              *
+ * LastModified: Apr 9, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -123,22 +123,13 @@ typedef size_t length_t;
 /**********************************************************\
 | int type definition                                      |
 \**********************************************************/
-#if defined(_MSC_VER) && _MSC_VER < 1600
-typedef __int8 int8_t;
-typedef __int16 int16_t;
-typedef __int32 int32_t;
-typedef __int64 int64_t;
-typedef unsigned __int8 uint8_t;
-typedef unsigned __int16 uint16_t;
-typedef unsigned __int32 uint32_t;
-typedef unsigned __int64 uint64_t;
-#else
-#if defined(__FreeBSD__) && __FreeBSD__ < 5
+#if defined(_MSC_VER)
+#include "win32/php_stdint.h"
+#elif defined(__FreeBSD__) && __FreeBSD__ < 5
 /* FreeBSD 4 doesn't have stdint.h file */
 #include <inttypes.h>
 #else
 #include <stdint.h>
-#endif
 #endif
 
 /**********************************************************\

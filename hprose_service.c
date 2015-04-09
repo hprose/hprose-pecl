@@ -14,7 +14,7 @@
  *                                                        *
  * hprose service for pecl source file.                   *
  *                                                        *
- * LastModified: Apr 8, 2015                              *
+ * LastModified: Apr 9, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -486,7 +486,7 @@ ZEND_METHOD(hprose_service, addFunction) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|z!lz!", &func, &alias, &mode, &simple) == FAILURE) {
         return;
     }
-    hprose_service_add_function(_this, func, alias, mode, simple TSRMLS_CC);
+    hprose_service_add_function(_this, func, alias, (uint8_t)mode, simple TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_service, addMissingFunction) {
@@ -498,7 +498,7 @@ ZEND_METHOD(hprose_service, addMissingFunction) {
     }
     hprose_zval_new(alias);
     ZVAL_STRINGL_1(alias, "*", 1);
-    hprose_service_add_function(_this, func, alias, mode, simple TSRMLS_CC);
+    hprose_service_add_function(_this, func, alias, (uint8_t)mode, simple TSRMLS_CC);
     hprose_zval_free(alias);
 }
 
@@ -509,7 +509,7 @@ ZEND_METHOD(hprose_service, addFunctions) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|z!lz!", &funcs, &aliases, &mode, &simple) == FAILURE) {
         return;
     }
-    hprose_service_add_functions(_this, funcs, aliases, mode, simple TSRMLS_CC);
+    hprose_service_add_functions(_this, funcs, aliases, (uint8_t)mode, simple TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_service, addMethod) {
@@ -519,7 +519,7 @@ ZEND_METHOD(hprose_service, addMethod) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz|z!lz!", &methodname, &belongto, &alias, &mode, &simple) == FAILURE) {
         return;
     }
-    hprose_service_add_method(_this, methodname, belongto, alias, mode, simple TSRMLS_CC);
+    hprose_service_add_method(_this, methodname, belongto, alias, (uint8_t)mode, simple TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_service, addMethods) {
@@ -529,7 +529,7 @@ ZEND_METHOD(hprose_service, addMethods) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz|z!lz!", &methods, &belongto, &aliases, &mode, &simple) == FAILURE) {
         return;
     }
-    hprose_service_add_methods(_this, methods, belongto, aliases, mode, simple TSRMLS_CC);
+    hprose_service_add_methods(_this, methods, belongto, aliases, (uint8_t)mode, simple TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_service, addInstanceMethods) {
@@ -540,10 +540,10 @@ ZEND_METHOD(hprose_service, addInstanceMethods) {
         return;
     }
     if (Z_TYPE_P(obj) != IS_OBJECT) {
-        hprose_service_add_class_methods(_this, obj, class_name, alias_prefix, mode, simple TSRMLS_CC);        
+        hprose_service_add_class_methods(_this, obj, class_name, alias_prefix, (uint8_t)mode, simple TSRMLS_CC);        
     }
     else {
-        hprose_service_add_instance_methods(_this, obj, class_name, alias_prefix, mode, simple TSRMLS_CC);
+        hprose_service_add_instance_methods(_this, obj, class_name, alias_prefix, (uint8_t)mode, simple TSRMLS_CC);
     }
 }
 
@@ -554,7 +554,7 @@ ZEND_METHOD(hprose_service, addClassMethods) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|z!z!lz!", &class_name, &exec_class, &alias_prefix, &mode, &simple) == FAILURE) {
         return;
     }
-    hprose_service_add_class_methods(_this, class_name, exec_class, alias_prefix, mode, simple TSRMLS_CC);
+    hprose_service_add_class_methods(_this, class_name, exec_class, alias_prefix, (uint8_t)mode, simple TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_service, add) {
@@ -568,25 +568,25 @@ ZEND_METHOD(hprose_service, add) {
         case 1:
             if (arg1) {
                 if (is_callable_p(arg1)) {
-                    hprose_service_add_function(_this, arg1, NULL, mode, simple TSRMLS_CC);
+                    hprose_service_add_function(_this, arg1, NULL, (uint8_t)mode, simple TSRMLS_CC);
                     return;
                 }                
                 switch (Z_TYPE_P(arg1)) {
                     case IS_ARRAY:
-                        hprose_service_add_functions(_this, arg1, NULL, mode, simple TSRMLS_CC);
+                        hprose_service_add_functions(_this, arg1, NULL, (uint8_t)mode, simple TSRMLS_CC);
                         return;
                     case IS_OBJECT:
-                        hprose_service_add_instance_methods(_this, arg1, NULL, NULL, mode, simple TSRMLS_CC);
+                        hprose_service_add_instance_methods(_this, arg1, NULL, NULL, (uint8_t)mode, simple TSRMLS_CC);
                         return;
                     case IS_STRING:
-                        hprose_service_add_class_methods(_this, arg1, NULL, NULL, mode, simple TSRMLS_CC);
+                        hprose_service_add_class_methods(_this, arg1, NULL, NULL, (uint8_t)mode, simple TSRMLS_CC);
                         return;
                 }
             }
             break;
         case 2:
             if (is_callable_p(arg1) && is_string_p(arg2)) {
-                hprose_service_add_function(_this, arg1, arg2, mode, simple TSRMLS_CC);
+                hprose_service_add_function(_this, arg1, arg2, (uint8_t)mode, simple TSRMLS_CC);
                 return;
             }
             else if (is_string_p(arg1)) {
@@ -603,28 +603,28 @@ ZEND_METHOD(hprose_service, add) {
                     hprose_zval_free(a);
                     if (is_not_callable) {
                         if (class_exists(Z_STRVAL_P(arg2), Z_STRLEN_P(arg2), 1)) {
-                            hprose_service_add_class_methods(_this, arg1, arg2, NULL, mode, simple TSRMLS_CC);
+                            hprose_service_add_class_methods(_this, arg1, arg2, NULL, (uint8_t)mode, simple TSRMLS_CC);
                         }
                         else {
-                            hprose_service_add_class_methods(_this, arg1, NULL, arg2, mode, simple TSRMLS_CC);
+                            hprose_service_add_class_methods(_this, arg1, NULL, arg2, (uint8_t)mode, simple TSRMLS_CC);
                         }
                         return;
                     }
                 }
-                hprose_service_add_method(_this, arg1, arg2, NULL, mode, simple TSRMLS_CC);
+                hprose_service_add_method(_this, arg1, arg2, NULL, (uint8_t)mode, simple TSRMLS_CC);
                 return;
             }
             else if (is_array_p(arg1)) {
                 if (is_array_p(arg2)) {
-                    hprose_service_add_functions(_this, arg1, arg2, mode, simple TSRMLS_CC);
+                    hprose_service_add_functions(_this, arg1, arg2, (uint8_t)mode, simple TSRMLS_CC);
                 }
                 else {
-                    hprose_service_add_methods(_this, arg1, arg2, NULL, mode, simple TSRMLS_CC);
+                    hprose_service_add_methods(_this, arg1, arg2, NULL, (uint8_t)mode, simple TSRMLS_CC);
                 }
                 return;
             }
             else if (is_object_p(arg1)) {
-                hprose_service_add_instance_methods(_this, arg1, arg2, NULL, mode, simple TSRMLS_CC);
+                hprose_service_add_instance_methods(_this, arg1, arg2, NULL, (uint8_t)mode, simple TSRMLS_CC);
                 return;
             }
             break;
@@ -632,7 +632,7 @@ ZEND_METHOD(hprose_service, add) {
             if (is_callable_p(arg1) &&
                     ((arg2 == NULL) || (is_string_p(arg2) && Z_STRLEN_P(arg2) == 0)) &&
                     is_string_p(arg3)) {
-                hprose_service_add_function(_this, arg1, arg3, mode, simple TSRMLS_CC);
+                hprose_service_add_function(_this, arg1, arg3, (uint8_t)mode, simple TSRMLS_CC);
                 return;
             }
             else if (is_string_p(arg1) && is_string_p(arg3)) {
@@ -648,30 +648,30 @@ ZEND_METHOD(hprose_service, add) {
                     is_not_callable = !is_callable_p(a);
                     hprose_zval_free(a);
                     if (is_not_callable) {
-                        hprose_service_add_class_methods(_this, arg1, arg2, arg3, mode, simple TSRMLS_CC);
+                        hprose_service_add_class_methods(_this, arg1, arg2, arg3, (uint8_t)mode, simple TSRMLS_CC);
                         return;
                     }
                 }
                 if ((arg2 == NULL) || (is_string_p(arg2) && Z_STRLEN_P(arg2) == 0)) {
-                    hprose_service_add_class_methods(_this, arg1, NULL, arg3, mode, simple TSRMLS_CC);
+                    hprose_service_add_class_methods(_this, arg1, NULL, arg3, (uint8_t)mode, simple TSRMLS_CC);
                     return;
                 }
                 if (is_string_p(arg2) || is_object_p(arg2)) {
-                    hprose_service_add_method(_this, arg1, arg2, arg3, mode, simple TSRMLS_CC);
+                    hprose_service_add_method(_this, arg1, arg2, arg3, (uint8_t)mode, simple TSRMLS_CC);
                     return;
                 }
             }
             else if (is_array_p(arg1)) {
                 if (((arg2 == NULL) || (is_string_p(arg2) && Z_STRLEN_P(arg2) == 0)) && is_array_p(arg3)) {
-                    hprose_service_add_functions(_this, arg1, arg3, mode, simple TSRMLS_CC);
+                    hprose_service_add_functions(_this, arg1, arg3, (uint8_t)mode, simple TSRMLS_CC);
                 }
                 else {
-                    hprose_service_add_methods(_this, arg1, arg2, arg3, mode, simple TSRMLS_CC);
+                    hprose_service_add_methods(_this, arg1, arg2, arg3, (uint8_t)mode, simple TSRMLS_CC);
                 }
                 return;
             }
             else if (is_object_p(arg1)) {
-                hprose_service_add_instance_methods(_this, arg1, arg2, arg3, mode, simple TSRMLS_CC);
+                hprose_service_add_instance_methods(_this, arg1, arg2, arg3, (uint8_t)mode, simple TSRMLS_CC);
                 return;
             }
             break;

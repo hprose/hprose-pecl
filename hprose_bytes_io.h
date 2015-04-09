@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl header file.                  *
  *                                                        *
- * LastModified: Apr 7, 2015                              *
+ * LastModified: Apr 9, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -451,7 +451,7 @@ static zend_always_inline void hprose_bytes_io_putc(hprose_bytes_io *_this, char
 
 static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io *_this, int32_t num) {
     if (num >= 0 && num <= 9) {
-        hprose_bytes_io_putc(_this, '0' + num);
+        hprose_bytes_io_putc(_this, (char)('0' + num));
     }
     else if (num == INT32_MIN) {
         hprose_bytes_io_write(_this, HPROSE_INT32_MIN_STR, sizeof(HPROSE_INT32_MIN_STR) - 1);
@@ -477,7 +477,7 @@ static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io *_this,
 
 static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io *_this, int64_t num) {
     if (num >= 0 && num <= 9) {
-        hprose_bytes_io_putc(_this, '0' + num);
+        hprose_bytes_io_putc(_this, (char)('0' + num));
     }
     else if (num == INT64_MIN) {
         hprose_bytes_io_write(_this, HPROSE_INT64_MIN_STR, sizeof(HPROSE_INT64_MIN_STR) - 1);
@@ -503,7 +503,7 @@ static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io *_this
 
 static zend_always_inline void hprose_bytes_io_write_uint(hprose_bytes_io *_this, uint32_t num) {
     if (num <= 9) {
-        hprose_bytes_io_putc(_this, '0' + num);
+        hprose_bytes_io_putc(_this, (char)('0' + num));
     }
     else {
         char buf[32];
@@ -519,7 +519,7 @@ static zend_always_inline void hprose_bytes_io_write_uint(hprose_bytes_io *_this
 
 static zend_always_inline void hprose_bytes_io_write_ulong(hprose_bytes_io *_this, uint64_t num) {
     if (num <= 9) {
-        hprose_bytes_io_putc(_this, '0' + num);
+        hprose_bytes_io_putc(_this, (char)('0' + num));
     }
     else {
         char buf[32];

@@ -13,7 +13,7 @@
  *                                                        *
  * hprose common for pecl source file.                    *
  *                                                        *
- * LastModified: Apr 8, 2015                              *
+ * LastModified: Apr 9, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -46,9 +46,8 @@ void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return_value,
     zval retval;
     zval *params = NULL;
 #endif
-    int i;
+    zend_uint i, argc;
     int result;
-    int argc;
     zend_fcall_info fci;
 
     argc = strlen(params_format);
@@ -284,8 +283,7 @@ zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *retur
     zval *params = NULL;
     zend_string *classname;
 #endif
-    int i;
-    int argc;
+    zend_uint i, argc;
     zend_fcall_info fci;
     zend_fcall_info_cache fcc;
 
