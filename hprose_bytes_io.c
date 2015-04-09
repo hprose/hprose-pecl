@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl source file.                  *
  *                                                        *
- * LastModified: Apr 8, 2015                              *
+ * LastModified: Apr 9, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -188,7 +188,7 @@ ZEND_METHOD(hprose_bytes_io, write) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &str, &len, &n) == FAILURE) {
         return;
     }
-    if (n > len) n = len;
+    if (n > len || n < 0) n = len;
     hprose_bytes_io_write(_this, str, n);
 }
 
