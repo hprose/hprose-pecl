@@ -21,7 +21,7 @@
 #ifndef HPROSE_CLIENT_H
 #define	HPROSE_CLIENT_H
 
-#include "hprose.h"
+#include "hprose_common.h"
 
 BEGIN_EXTERN_C()
 

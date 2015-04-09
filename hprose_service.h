@@ -21,7 +21,7 @@
 #ifndef HPROSE_SERVICE_H
 #define	HPROSE_SERVICE_H
 
-#include "hprose.h"
+#include "hprose_common.h"
 #include "hprose_tags.h"
 #include "hprose_bytes_io.h"
 #include "hprose_writer.h"

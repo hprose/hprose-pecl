@@ -21,7 +21,7 @@
 #ifndef HPROSE_TAGS_H
 #define	HPROSE_TAGS_H
 
-#include "hprose.h"
+#include "hprose_common.h"
 
 BEGIN_EXTERN_C()
 

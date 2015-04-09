@@ -21,7 +21,7 @@
 #ifndef HPROSE_FORMATTER_H
 #define	HPROSE_FORMATTER_H
 
-#include "hprose.h"
+#include "hprose_common.h"
 #include "hprose_bytes_io.h"
 #include "hprose_writer.h"
 #include "hprose_reader.h"

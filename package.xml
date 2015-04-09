@@ -47,18 +47,17 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <active>yes</active>
     </lead>
     <date>2015-04-09</date>
-    <time>10:54:39</time>
+    <time>13:41:49</time>
     <version>
-        <release>1.3.1</release>
-        <api>1.3.1</api>
+        <release>1.3.2</release>
+        <api>1.3.2</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Added PHP 5.2 support.
-        Added old PHP 5.3 support.
+    <notes>Changed packages directories(try to fix pecl install in Mac OS X).
     </notes>
     <contents>
         <dir name="/">
@@ -70,34 +69,30 @@ http://pear.php.net/dtd/package-2.0.xsd">
             <file role="src" name="config.w32" />
             <file role="src" name="php_hprose.h" />
             <file role="src" name="php_hprose.c" />
-            <dir name="include">
-                <file role="src" name="hprose.h" />
-                <file role="src" name="hprose_tags.h" />
-                <file role="src" name="hprose_bytes_io.h" />
-                <file role="src" name="hprose_class_manager.h" />
-                <file role="src" name="hprose_writer.h" />
-                <file role="src" name="hprose_raw_reader.h" />
-                <file role="src" name="hprose_reader.h" />
-                <file role="src" name="hprose_formatter.h" />
-                <file role="src" name="hprose_result_mode.h" />
-                <file role="src" name="hprose_filter.h" />
-                <file role="src" name="hprose_client.h" />
-                <file role="src" name="hprose_service.h" />
-            </dir>
-            <dir name="src">
-                <file role="src" name="hprose_common.c" />
-                <file role="src" name="hprose_tags.c" />
-                <file role="src" name="hprose_bytes_io.c" />
-                <file role="src" name="hprose_class_manager.c" />
-                <file role="src" name="hprose_writer.c" />
-                <file role="src" name="hprose_raw_reader.c" />
-                <file role="src" name="hprose_reader.c" />
-                <file role="src" name="hprose_formatter.c" />
-                <file role="src" name="hprose_result_mode.c" />
-                <file role="src" name="hprose_filter.c" />
-                <file role="src" name="hprose_client.c" />
-                <file role="src" name="hprose_service.c" />
-            </dir>
+            <file role="src" name="hprose_common.h" />
+            <file role="src" name="hprose_common.c" />
+            <file role="src" name="hprose_tags.h" />
+            <file role="src" name="hprose_tags.c" />
+            <file role="src" name="hprose_bytes_io.h" />
+            <file role="src" name="hprose_bytes_io.c" />
+            <file role="src" name="hprose_class_manager.h" />
+            <file role="src" name="hprose_class_manager.c" />
+            <file role="src" name="hprose_writer.h" />
+            <file role="src" name="hprose_writer.c" />
+            <file role="src" name="hprose_raw_reader.h" />
+            <file role="src" name="hprose_raw_reader.c" />
+            <file role="src" name="hprose_reader.h" />
+            <file role="src" name="hprose_reader.c" />
+            <file role="src" name="hprose_formatter.h" />
+            <file role="src" name="hprose_formatter.c" />
+            <file role="src" name="hprose_result_mode.h" />
+            <file role="src" name="hprose_result_mode.c" />
+            <file role="src" name="hprose_filter.h" />
+            <file role="src" name="hprose_filter.c" />
+            <file role="src" name="hprose_client.h" />
+            <file role="src" name="hprose_client.c" />
+            <file role="src" name="hprose_service.h" />
+            <file role="src" name="hprose_service.c" />
             <dir name="tests">
                 <file role="test" name="tags.phpt" />
                 <file role="test" name="bytes_io.phpt" />
@@ -125,6 +120,20 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.3.2</release>
+                <api>1.3.2</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2015-04-09</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Changed packages directories(try to fix pecl install in Mac OS X).
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.3.1</release>

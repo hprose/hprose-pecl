@@ -18,7 +18,7 @@
  *                                                        *
 \**********************************************************/
 
-#include "hprose.h"
+#include "hprose_common.h"
 
 #if PHP_API_VERSION >= 20100412
 

@@ -21,7 +21,7 @@
 #ifndef HPROSE_WRITER_H
 #define	HPROSE_WRITER_H
 
-#include "hprose.h"
+#include "hprose_common.h"
 #include "hprose_tags.h"
 #include "hprose_bytes_io.h"
 #include "hprose_class_manager.h"

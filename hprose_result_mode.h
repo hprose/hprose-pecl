@@ -9,24 +9,29 @@
 
 /**********************************************************\
  *                                                        *
- * hprose_filter.h                                        *
+ * hprose_result_mode.h                                   *
  *                                                        *
- * hprose filter for pecl header file.                    *
+ * hprose result mode for pecl header file.               *
  *                                                        *
  * LastModified: Mar 24, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
 
-#ifndef HPROSE_FILTER_H
-#define	HPROSE_FILTER_H
+#ifndef HPROSE_RESULT_MODE_H
+#define	HPROSE_RESULT_MODE_H
 
-#include "hprose.h"
+#include "hprose_common.h"
 
 BEGIN_EXTERN_C()
 
-HPROSE_STARTUP_FUNCTION(filter);
+#define HPROSE_RESULT_MODE_NORMAL           0
+#define HPROSE_RESULT_MODE_SERIALIZED       1
+#define HPROSE_RESULT_MODE_RAW              2
+#define HPROSE_RESULT_MODE_RAW_WITH_END_TAG 3
+
+HPROSE_STARTUP_FUNCTION(result_mode);
 
 END_EXTERN_C()
 
-#endif	/* HPROSE_FILTER_H */
+#endif	/* HPROSE_RESULT_MODE_H */
