@@ -278,8 +278,8 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
             }
             if (call->byref) {
                 zval *_args;
-                zend_uint count = Z_ARRLEN_P(args);
-                zend_uint i, n = MIN(count, call->fcc.function_handler->common.num_args);
+                uint32_t count = Z_ARRLEN_P(args);
+                uint32_t i, n = MIN(count, call->fcc.function_handler->common.num_args);
                 hprose_zval_new(_args);
                 array_init_size(_args, count);
                 for (i = 0; i < n; ++i) {
