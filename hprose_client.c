@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl source file.                    *
  *                                                        *
- * LastModified: Apr 8, 2015                              *
+ * LastModified: Apr 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -108,13 +108,13 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
     else {
         hprose_bytes_io stream;
         hprose_reader reader;
+        char tag;
 #if PHP_MAJOR_VERSION < 7
         hprose_bytes_io_init_readonly(&stream, Z_STRVAL_P(response), Z_STRLEN_P(response));
 #else
         hprose_bytes_io_init_readonly(&stream, Z_STR_P(response));
 #endif
         hprose_reader_init(&reader, &stream, 0);
-        char tag;
         RETVAL_NULL();
         while ((tag = hprose_bytes_io_getc(&stream)) != HPROSE_TAG_END) {
             switch (tag) {
@@ -155,9 +155,9 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
                     break;
                 }
                 case HPROSE_TAG_ERROR: {
-                    hprose_reader_reset(&reader);
                     zval *errstr;
                     hprose_zval_new(errstr);
+                    hprose_reader_reset(&reader);
                     hprose_reader_read_string(&reader, errstr TSRMLS_CC);
                     zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                             "%s", Z_STRVAL_P(errstr));

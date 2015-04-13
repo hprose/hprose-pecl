@@ -13,7 +13,7 @@
  *                                                        *
  * hprose service for pecl header file.                   *
  *                                                        *
- * LastModified: Apr 9, 2015                              *
+ * LastModified: Apr 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -234,9 +234,9 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
     hprose_service *_this = HPROSE_GET_OBJECT_P(service, service)->_this;
     hprose_bytes_io output;
     hprose_reader reader;
+    char tag;
     hprose_bytes_io_init(&output, NULL, 0);
     hprose_reader_init(&reader, input, 0);
-    char tag;
     do {
         zval *_name, *args, *result = NULL;
         char *name, *alias;

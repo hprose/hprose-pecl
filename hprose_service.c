@@ -14,7 +14,7 @@
  *                                                        *
  * hprose service for pecl source file.                   *
  *                                                        *
- * LastModified: Apr 9, 2015                              *
+ * LastModified: Apr 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -166,11 +166,11 @@ static zend_always_inline void hprose_service_add_functions(hprose_service *_thi
 }
 
 static zend_always_inline void hprose_service_add_method(hprose_service *_this, zval *methodname, zval *belongto, zval *alias, uint8_t mode, zval *simple TSRMLS_DC) {
+    zval *func;
     if (Z_TYPE_P(methodname) != IS_STRING) {
         zend_throw_exception(NULL, "method name must be a string", 0 TSRMLS_CC);
         return;
     }
-    zval *func;
     hprose_zval_new(func);
     array_init_size(func, 2);
 #if PHP_MAJOR_VERSION < 7
@@ -199,9 +199,9 @@ static zend_always_inline void hprose_service_add_methods(hprose_service *_this,
     count = Z_ARRLEN_P(methods);
     if (aliases) {
         if (Z_TYPE_P(aliases) == IS_STRING) {
+            hprose_bytes_io alias_prefix;
             hprose_zval_new(_aliases);
             array_init_size(_aliases, count);
-            hprose_bytes_io alias_prefix;
             hprose_bytes_io_init(&alias_prefix, NULL, 0);
             hprose_bytes_io_write(&alias_prefix, Z_STRVAL_P(aliases), Z_STRLEN_P(aliases));
             hprose_bytes_io_putc(&alias_prefix, '_');
@@ -440,11 +440,11 @@ ZEND_METHOD(hprose_service, addFilter) {
 
 ZEND_METHOD(hprose_service, removeFilter) {
     zval *filter;
+    zval i;
     HPROSE_THIS(service);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &filter) == FAILURE) {
         return;
     }
-    zval i;
     function_invoke(array_search, &i, "zz", filter, _this->filters);
 #if PHP_MAJOR_VERSION < 7
     if ((Z_TYPE(i) == IS_BOOL && Z_BVAL(i) == 0) || Z_TYPE(i) == IS_NULL) {

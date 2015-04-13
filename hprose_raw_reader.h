@@ -13,7 +13,7 @@
  *                                                        *
  * hprose raw reader for pecl header file.                *
  *                                                        *
- * LastModified: Apr 9, 2015                              *
+ * LastModified: Apr 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -164,8 +164,8 @@ static zend_always_inline void hprose_raw_reader_read_guid_raw(hprose_raw_reader
 }
 
 static zend_always_inline void hprose_raw_reader_read_complex_raw(hprose_raw_reader *_this, hprose_bytes_io *ostream TSRMLS_DC) {
-    hprose_bytes_io_readuntil_to(_this->stream, ostream, HPROSE_TAG_OPENBRACE, 1);
     char tag;
+    hprose_bytes_io_readuntil_to(_this->stream, ostream, HPROSE_TAG_OPENBRACE, 1);
     while ((tag = hprose_bytes_io_getc(_this->stream)) != HPROSE_TAG_CLOSEBRACE) {
         __hprose_raw_reader_read_raw(_this, ostream, tag TSRMLS_CC);
     }

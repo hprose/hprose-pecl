@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl header file.                    *
  *                                                        *
- * LastModified: Apr 9, 2015                              *
+ * LastModified: Apr 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -470,8 +470,7 @@ static zend_always_inline void hprose_reader_read_string(hprose_reader *_this, z
 static zend_always_inline void hprose_reader_read_guid_without_tag(hprose_reader *_this, zval *return_value) {
     hprose_bytes_io_skip(_this->stream, 1);
 #if PHP_MAJOR_VERSION < 7
-    char *s = hprose_bytes_io_read(_this->stream, 36);
-    RETVAL_STRINGL_0(s, 36);
+    RETVAL_STRINGL_0(hprose_bytes_io_read(_this->stream, 36), 36);
 #else
     RETVAL_STR(hprose_bytes_io_read(_this->stream, 36));
 #endif

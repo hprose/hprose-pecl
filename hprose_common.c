@@ -13,7 +13,7 @@
  *                                                        *
  * hprose common for pecl source file.                    *
  *                                                        *
- * LastModified: Apr 9, 2015                              *
+ * LastModified: Apr 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -54,9 +54,9 @@ void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return_value,
 
     if (argc) {
 #if PHP_MAJOR_VERSION < 7
-        params = safe_emalloc(sizeof(zval **), argc, 0);
         va_list ap;
         va_start(ap, params_format);
+        params = safe_emalloc(sizeof(zval **), argc, 0);
         for (i = 0; i < argc; ++i) {
             params[i] = emalloc(sizeof(zval *));
             switch (params_format[i]) {
@@ -112,9 +112,9 @@ void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return_value,
         }
         va_end(ap);
 #else
-        params = safe_emalloc(sizeof(zval), argc, 0);
         va_list ap;
         va_start(ap, params_format);
+        params = safe_emalloc(sizeof(zval), argc, 0);
         for (i = 0; i < argc; ++i) {
             switch (params_format[i]) {
                 case 's': {
@@ -291,9 +291,9 @@ zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *retur
 
     if (argc) {
 #if PHP_MAJOR_VERSION < 7
-        params = safe_emalloc(sizeof(zval **), argc, 0);
         va_list ap;
         va_start(ap, params_format);
+        params = safe_emalloc(sizeof(zval **), argc, 0);
         for (i = 0; i < argc; ++i) {
             params[i] = emalloc(sizeof(zval *));
             switch (params_format[i]) {
@@ -349,9 +349,9 @@ zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *retur
         }
         va_end(ap);
 #else
-        params = safe_emalloc(sizeof(zval), argc, 0);
         va_list ap;
         va_start(ap, params_format);
+        params = safe_emalloc(sizeof(zval), argc, 0);
         for (i = 0; i < argc; ++i) {
             switch (params_format[i]) {
                 case 's': {

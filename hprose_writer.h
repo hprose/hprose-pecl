@@ -13,7 +13,7 @@
  *                                                        *
  * hprose writer for pecl header file.                    *
  *                                                        *
- * LastModified: Apr 9, 2015                              *
+ * LastModified: Apr 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -565,6 +565,7 @@ static zend_always_inline void hprose_writer_write_object(hprose_writer *_this, 
     HashTable *ht = Z_OBJPROP_P(val), *props_ht;
     zval *props;
     long index;
+    int32_t i;
 #if PHP_MAJOR_VERSION < 7
     char *classname = (char *)Z_OBJCE_P(val)->name;
     int32_t nlen = strlen(classname);
@@ -585,7 +586,7 @@ static zend_always_inline void hprose_writer_write_object(hprose_writer *_this, 
 #endif
     props = php_array_get(_this->propsref, index);
     props_ht = Z_ARRVAL_P(props);
-    int32_t i = zend_hash_num_elements(props_ht);
+    i = zend_hash_num_elements(props_ht);
     if (_this->refer) {
         hprose_writer_refer_set(_this->refer, val);
     }
@@ -596,15 +597,14 @@ static zend_always_inline void hprose_writer_write_object(hprose_writer *_this, 
         zend_hash_internal_pointer_reset(props_ht);
         for (; i > 0; --i) {
 #if PHP_MAJOR_VERSION < 7
-            zval **e;
+            zval **e, *value;
             zend_hash_get_current_data(props_ht, (void **)&e);
-            zval *value = zend_hash_str_find_ptr(ht, Z_STRVAL_PP(e), Z_STRLEN_PP(e));
-            hprose_writer_serialize(_this, value TSRMLS_CC);
+            value = zend_hash_str_find_ptr(ht, Z_STRVAL_PP(e), Z_STRLEN_PP(e));
 #else
             zval *e = zend_hash_get_current_data(props_ht);
             zval *value = zend_hash_str_find_ptr(ht, Z_STRVAL_P(e), Z_STRLEN_P(e));
-            hprose_writer_serialize(_this, value TSRMLS_CC);
 #endif
+            hprose_writer_serialize(_this, value TSRMLS_CC);
             zend_hash_move_forward(props_ht);
         }
     }

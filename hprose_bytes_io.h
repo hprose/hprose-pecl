@@ -334,12 +334,11 @@ static zend_always_inline zend_string *hprose_bytes_io_preaduntil_ex(hprose_byte
 #define hprose_bytes_io_read(_this, n) hprose_bytes_io_pread((_this), (n), 0)
 
 static zend_always_inline int32_t hprose_bytes_io_read_int(hprose_bytes_io *_this, char tag) {
-    int32_t result = 0;
+    int32_t result = 0, sign = 1;
     char c = hprose_bytes_io_getc(_this);
     if (c == tag) {
         return 0;
     }
-    int32_t sign = 1;
     switch (c) {
         case '-': sign = -1; /* fallthrough */
         case '+': c = hprose_bytes_io_getc(_this); break;
@@ -567,7 +566,7 @@ static zend_always_inline void hprose_bytes_io_readuntil_to(hprose_bytes_io *fro
 }
 
 static zend_always_inline int32_t hprose_bytes_io_read_int_to(hprose_bytes_io *from, hprose_bytes_io *to, char tag, zend_bool include_tag) {
-    int32_t result = 0, p = HB_POS_P(from);
+    int32_t result = 0, sign = 1, p = HB_POS_P(from);
     char c = hprose_bytes_io_getc(from);
     if (c == tag) {
         if (include_tag) {
@@ -575,7 +574,6 @@ static zend_always_inline int32_t hprose_bytes_io_read_int_to(hprose_bytes_io *f
         }
         return 0;
     }
-    int32_t sign = 1;
     switch (c) {
         case '-': sign = -1; /* fallthrough */
         case '+': c = hprose_bytes_io_getc(from); break;

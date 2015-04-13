@@ -124,7 +124,14 @@ typedef size_t length_t;
 | int type definition                                      |
 \**********************************************************/
 #if defined(_MSC_VER)
+#include <float.h>
 #include "win32/php_stdint.h"
+#ifndef isnan
+#define isnan(x) _isnan(x)
+#endif
+#ifndef isinf
+#define isinf(x) !_finite(x)
+#endif
 #elif defined(__FreeBSD__) && __FreeBSD__ < 5
 /* FreeBSD 4 doesn't have stdint.h file */
 #include <inttypes.h>
@@ -372,10 +379,10 @@ HPROSE_OBJECT_NEW(type_name)                \
     hprose_##type_name##_handlers.clone_obj = php_hprose_##type_name##_clone;   \
 
 #define HPROSE_OBJECT_INTERN(type_name) \
-    php_hprose_##type_name *intern = HPROSE_GET_OBJECT_P(type_name, getThis());
+    php_hprose_##type_name *intern = HPROSE_GET_OBJECT_P(type_name, getThis())
 
 #define HPROSE_OBJECT(type_name, name) \
-    hprose_##type_name *name = HPROSE_GET_OBJECT_P(type_name, getThis())->_this;
+    hprose_##type_name *name = HPROSE_GET_OBJECT_P(type_name, getThis())->_this
 
 #define HPROSE_THIS(type_name) HPROSE_OBJECT(type_name, _this)
 
