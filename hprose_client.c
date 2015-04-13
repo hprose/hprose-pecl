@@ -572,12 +572,12 @@ ZEND_METHOD(hprose_client, addFilter) {
 }
 
 ZEND_METHOD(hprose_client, removeFilter) {
+    zval i;
     zval *filter;
     HPROSE_THIS(client);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &filter) == FAILURE) {
         return;
     }
-    zval i;
     function_invoke(array_search, &i, "zz", filter, _this->filters);
 #if PHP_MAJOR_VERSION < 7
     if ((Z_TYPE(i) == IS_BOOL && Z_BVAL(i) == 0) || Z_TYPE(i) == IS_NULL) {
