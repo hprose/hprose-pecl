@@ -13,10 +13,14 @@
  *                                                        *
  * hprose for pecl source file.                           *
  *                                                        *
- * LastModified: Apr 6, 2015                              *
+ * LastModified: Apr 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "php_hprose.h"
 #include "hprose_tags.h"
