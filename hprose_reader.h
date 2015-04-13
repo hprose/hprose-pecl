@@ -32,10 +32,10 @@
 
 /* Workaround for old gcc. */
 #ifndef NAN
-#define NAN (0.0/0.0)
+#define NAN (HUGE_VAL/HUGE_VAL)
 #endif
 #ifndef INFINITY
-#define INFINITY (1.0/0.0)
+#define INFINITY HUGE_VAL
 #endif
 
 #ifndef Z_PHPDATE_P
