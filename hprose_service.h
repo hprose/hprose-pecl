@@ -230,7 +230,7 @@ static zend_always_inline void hprose_service_send_error(zval *service, zval *er
     hprose_service_output_filter(HPROSE_GET_OBJECT_P(service, service)->_this, return_value, context TSRMLS_CC);
 }
 
-static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_bytes_io *input, zval *context, zval *return_value TSRMLS_DC) {
+static void hprose_service_do_invoke(zval *service, hprose_bytes_io *input, zval *context, zval *return_value TSRMLS_DC) {
     hprose_service *_this = HPROSE_GET_OBJECT_P(service, service)->_this;
     hprose_bytes_io output;
     hprose_reader reader;
