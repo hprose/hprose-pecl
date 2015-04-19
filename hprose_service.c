@@ -801,7 +801,7 @@ ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_service_methods[] = {
     ZEND_ME(hprose_service, getErrorTypeString, hprose_service_get_error_type_string_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    ZEND_ME(hprose_service, sendError, hprose_service_send_error_arginfo, ZEND_ACC_PROTECTED)
+    ZEND_ME(hprose_service, sendError, hprose_service_send_error_arginfo, ZEND_ACC_PUBLIC)
     ZEND_ME(hprose_service, doInvoke, hprose_service_do_invoke_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, doFunctionList, hprose_service_do_function_list_arginfo, ZEND_ACC_PROTECTED)
     ZEND_ME(hprose_service, isDebugEnabled, hprose_service_is_debug_enabled_arginfo, ZEND_ACC_PUBLIC)
