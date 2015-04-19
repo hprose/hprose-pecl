@@ -13,7 +13,7 @@
  *                                                        *
  * hprose class manager for pecl source file.             *
  *                                                        *
- * LastModified: Apr 7, 2015                              *
+ * LastModified: Apr 20, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -31,22 +31,16 @@ static void hprose_bytes_io_dtor(zval *zv) {
 }
 #endif
 
-#ifdef ZTS
-#define PERSISTENT_CACHE 0
-#else
-#define PERSISTENT_CACHE 1
-#endif
-
 void _hprose_class_manager_register(char *name, int32_t nlen, char *alias, int32_t alen TSRMLS_DC) {
-    hprose_bytes_io *_name = hprose_bytes_io_pcreate(name, nlen, PERSISTENT_CACHE);
-    hprose_bytes_io *_alias = hprose_bytes_io_pcreate(alias, alen, PERSISTENT_CACHE);
+    hprose_bytes_io *_name = hprose_bytes_io_create(name, nlen);
+    hprose_bytes_io *_alias = hprose_bytes_io_create(alias, alen);
     if (!HPROSE_G(cache1)) {
         ALLOC_HASHTABLE(HPROSE_G(cache1));
-        zend_hash_init(HPROSE_G(cache1), 64, NULL, hprose_bytes_io_dtor, PERSISTENT_CACHE);
+        zend_hash_init(HPROSE_G(cache1), 64, NULL, hprose_bytes_io_dtor, 0);
     }
     if (!HPROSE_G(cache2)) {
         ALLOC_HASHTABLE(HPROSE_G(cache2));
-        zend_hash_init(HPROSE_G(cache2), 64, NULL, hprose_bytes_io_dtor, PERSISTENT_CACHE);
+        zend_hash_init(HPROSE_G(cache2), 64, NULL, hprose_bytes_io_dtor, 0);
     }
     zend_hash_str_update_ptr(HPROSE_G(cache1), name, nlen, _alias);
     zend_hash_str_update_ptr(HPROSE_G(cache2), alias, alen, _name);
@@ -212,15 +206,12 @@ HPROSE_STARTUP_FUNCTION(class_manager) {
 }
 
 HPROSE_ACTIVATE_FUNCTION(class_manager) {
-#ifdef ZTS
     HPROSE_G(cache1) = NULL;
     HPROSE_G(cache2) = NULL;
-#endif
     return SUCCESS;
 }
 
 HPROSE_DEACTIVATE_FUNCTION(class_manager) {
-#ifdef ZTS
     if (HPROSE_G(cache1)) {
         zend_hash_destroy(HPROSE_G(cache1));
         FREE_HASHTABLE(HPROSE_G(cache1));
@@ -231,6 +222,5 @@ HPROSE_DEACTIVATE_FUNCTION(class_manager) {
         FREE_HASHTABLE(HPROSE_G(cache2));
         HPROSE_G(cache2) = NULL;
     }
-#endif
     return SUCCESS;
 }
