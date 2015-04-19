@@ -13,7 +13,7 @@
  *                                                        *
  * hprose service for pecl header file.                   *
  *                                                        *
- * LastModified: Apr 13, 2015                             *
+ * LastModified: Apr 20, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -244,6 +244,7 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
         hprose_remote_call *call;
         zend_bool simple = _this->simple;
         zend_bool byref = 0;
+        zend_bool bailout = 0;
         hprose_zval_new(_name);
         hprose_reader_reset(&reader);
         hprose_reader_read_string(&reader, _name TSRMLS_CC);
@@ -323,12 +324,20 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
             hprose_zval_free(args);
             return;
         }
-        hprose_service_on_before_invoke(service, _name, args, byref, context TSRMLS_CC);
-        if (EG(exception)) {
+        zend_try {
+            hprose_service_on_before_invoke(service, _name, args, byref, context TSRMLS_CC);
+        }
+        zend_catch {
+            bailout = 1;
+        } zend_end_try();
+        if (bailout || EG(exception)) {
             hprose_reader_destroy(&reader);
             hprose_bytes_io_close(&output);
             hprose_zval_free(_name);
             hprose_zval_free(args);
+            if (bailout) {
+                zend_bailout();
+            }
             return;
         }
         if (zend_hash_str_find_ptr(_this->calls, ZEND_STRL("*")) == call) {
@@ -349,22 +358,38 @@ static zend_always_inline void hprose_service_do_invoke(zval *service, hprose_by
         }
         hprose_zval_new(result);
         ZVAL_NULL(result);
-        __function_invoke_args(call->fcc, NULL, result, args TSRMLS_CC);
-        if (EG(exception)) {
+        zend_try {
+            __function_invoke_args(call->fcc, NULL, result, args TSRMLS_CC);
+        }
+        zend_catch {
+            bailout = 1;
+        } zend_end_try();
+        if (bailout || EG(exception)) {
             hprose_reader_destroy(&reader);
             hprose_bytes_io_close(&output);
             hprose_zval_free(_name);
             hprose_zval_free(args);
             hprose_zval_free(result);
+            if (bailout) {
+                zend_bailout();
+            }
             return;
         }
-        hprose_service_on_after_invoke(service, _name, args, byref, result, context TSRMLS_CC);
-        if (EG(exception)) {
+        zend_try {
+            hprose_service_on_after_invoke(service, _name, args, byref, result, context TSRMLS_CC);
+        }
+        zend_catch {
+            bailout = 1;
+        } zend_end_try();
+        if (bailout || EG(exception)) {
             hprose_reader_destroy(&reader);
             hprose_bytes_io_close(&output);
             hprose_zval_free(_name);
             hprose_zval_free(args);
             hprose_zval_free(result);
+            if (bailout) {
+                zend_bailout();
+            }
             return;
         }
         if (call->mode == HPROSE_RESULT_MODE_RAW_WITH_END_TAG) {
