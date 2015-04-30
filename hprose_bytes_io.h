@@ -106,8 +106,9 @@ static zend_always_inline void _hprose_bytes_io_grow(hprose_bytes_io *_this, int
     register int32_t size;
     if (HB_INITED_P(_this)) {
         register int32_t len = HB_LEN_P(_this);
-        size = _hprose_pow2roundup(len + n + 1) << 1;
+        size = len + n + 1;
         if (size > HB_CAP_P(_this)) {
+            size = _hprose_pow2roundup(size);
 #if PHP_MAJOR_VERSION < 7
             HB_STR_P(_this) = perealloc(HB_STR_P(_this), size, HB_PERSISTENT_P(_this));
 #else
