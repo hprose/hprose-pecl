@@ -642,8 +642,8 @@ static zend_always_inline void hprose_service_add_functions(hprose_service *_thi
             else {
                 zend_throw_exception(NULL, "The count of functions is not matched with aliases", 0 TSRMLS_CC);
             }
-            return;
         }
+        return;
     }
     count = Z_ARRLEN_P(funcs);
     for (i = 0; i < count; ++i) {

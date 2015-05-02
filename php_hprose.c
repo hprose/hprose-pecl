@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl source file.                           *
  *                                                        *
- * LastModified: Apr 13, 2015                             *
+ * LastModified: May 2, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -32,6 +32,7 @@
 #include "hprose_formatter.h"
 #include "hprose_result_mode.h"
 #include "hprose_filter.h"
+#include "hprose_future.h"
 #include "hprose_client.h"
 #include "hprose_service.h"
 
@@ -47,6 +48,8 @@ ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(formatter);
     HPROSE_STARTUP(result_mode);
     HPROSE_STARTUP(filter);
+    HPROSE_STARTUP(completer);
+    HPROSE_STARTUP(future);
     HPROSE_STARTUP(proxy);
     HPROSE_STARTUP(client);
     HPROSE_STARTUP(service);

@@ -46,18 +46,21 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <email>mabingyao@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2015-04-20</date>
-    <time>00:42:32</time>
+    <date>2015-05-02</date>
+    <time>12:08:31</time>
     <version>
-        <release>1.4.2</release>
-        <api>1.4.2</api>
+        <release>1.5.0</release>
+        <api>1.5.0</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Fixed segmentation fault when serialize/unserialize custom PHP class object on Non Thread Safe (NTS) PHP.</notes>
+    <notes>Faster integer serialize.
+        Faster double serialize.
+        Added Completer and Future class.
+        Added async service support.</notes>
     <contents>
         <dir name="/">
             <file role="doc" name="CREDITS" />
@@ -119,6 +122,23 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.5.0</release>
+                <api>1.5.0</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2015-05-02</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Faster integer serialize.
+                Faster double serialize.
+                Added Completer and Future class.
+                Added async service support.
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.4.2</release>
