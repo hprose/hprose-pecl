@@ -13,7 +13,7 @@
  *                                                        *
  * hprose service for pecl header file.                   *
  *                                                        *
- * LastModified: Apr 20, 2015                             *
+ * LastModified: May 3, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -39,6 +39,7 @@ typedef struct {
     uint8_t mode;
     uint8_t simple;
     zend_bool byref;
+    zend_bool async;
 } hprose_remote_call;
 
 typedef struct {
@@ -47,6 +48,27 @@ typedef struct {
     zval *filters;
     zend_bool simple;
 } hprose_service;
+
+typedef struct {
+    zval *completer;
+} hprose_async_callback;
+
+typedef struct {
+    zval *service;
+    zval *completer;
+    zval *name;
+    zval *args;
+    zend_bool byref;
+    uint8_t mode;
+    zend_bool simple;
+    zval *context;
+} hprose_after_invoke_callback;
+
+HPROSE_CLASS_BEGIN(async_callback)
+HPROSE_CLASS_END(async_callback)
+
+HPROSE_CLASS_BEGIN(after_invoke_callback)
+HPROSE_CLASS_END(after_invoke_callback)
 
 HPROSE_CLASS_BEGIN(service)
 HPROSE_CLASS_END(service)
