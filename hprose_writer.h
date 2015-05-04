@@ -60,6 +60,7 @@ static zend_always_inline void hprose_writer_refer_set(void *_this, zval *val) {
             ulong h;
 #if PHP_MAJOR_VERSION < 7
             Z_ADDREF_P(val);
+            SEPARATE_ZVAL(&val);
             zend_llist_add_element(refer->ref, &val);
             h = (ulong)Z_OBJ_HANDLE_P(val);
 #else
