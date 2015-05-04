@@ -31,7 +31,7 @@ ZEND_METHOD(hprose_completer, complete) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &result) == FAILURE) {
         RETURN_NULL();
     }
-    hprose_completer_complete(_this, result);
+    hprose_completer_complete(_this, result TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_completer, completeError) {
@@ -40,7 +40,7 @@ ZEND_METHOD(hprose_completer, completeError) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &error) == FAILURE) {
         RETURN_NULL();
     }
-    hprose_completer_complete_error(_this, error);
+    hprose_completer_complete_error(_this, error TSRMLS_CC);
 }
 
 ZEND_METHOD(hprose_completer, future) {
@@ -105,7 +105,7 @@ ZEND_METHOD(hprose_future, then) {
         RETURN_NULL();
     }
     if (is_callable_p(handler)) {
-        hprose_future_then(_this, handler);
+        hprose_future_then(_this, handler TSRMLS_CC);
     }
 }
 
@@ -116,7 +116,7 @@ ZEND_METHOD(hprose_future, catchError) {
         RETURN_NULL();
     }
     if (is_callable_p(errorHandler)) {
-        hprose_future_catch_error(_this, errorHandler);
+        hprose_future_catch_error(_this, errorHandler TSRMLS_CC);
     }
 }
 

@@ -33,10 +33,10 @@ HPROSE_STARTUP_FUNCTION(future);
 HPROSE_STARTUP_FUNCTION(completer);
 
 typedef struct {
-    zval *callback;
-    zval *errorCallback;
     zval *results;
+    zval *callbacks;
     zval *errors;
+    zval *onerror;
     int ref_count;
 } hprose_future;
 
@@ -47,35 +47,77 @@ typedef struct {
 static zend_always_inline hprose_completer *hprose_completer_new() {
     hprose_completer *_this = emalloc(sizeof(hprose_completer));
     hprose_future *future = emalloc(sizeof(hprose_future));
-    future->callback = NULL;
-    future->errorCallback = NULL;
     hprose_zval_new(future->results);
     array_init(future->results);
+    hprose_zval_new(future->callbacks);
+    array_init(future->callbacks);
     hprose_zval_new(future->errors);
     array_init(future->errors);
+    future->onerror = NULL;
     future->ref_count = 1;
     _this->future = future;
     return _this;
 }
 
-static zend_always_inline void hprose_completer_complete(hprose_completer *_this, zval *result) {
-    if (_this->future->callback != NULL) {
-        callable_invoke(_this->future->callback, NULL, "z", result);
-    }
-    else {
-        Z_ADDREF_P(result);
-        add_next_index_zval(_this->future->results, result);
-    }
-}
 
-static zend_always_inline void hprose_completer_complete_error(hprose_completer *_this, zval *error) {
-    if (_this->future->errorCallback != NULL) {
-        callable_invoke(_this->future->errorCallback, NULL, "z", error);
+static zend_always_inline void hprose_future_complete_error(hprose_future *_this, zval *error TSRMLS_DC) {
+    if (_this->onerror != NULL) {
+        callable_invoke(_this->onerror, NULL, "z", error);
     }
     else {
         Z_ADDREF_P(error);
-        add_next_index_zval(_this->future->errors, error);
+        add_next_index_zval(_this->errors, error);
     }
+}
+
+static zend_always_inline void hprose_completer_complete_error(hprose_completer *_this, zval *error TSRMLS_DC) {
+    hprose_future_complete_error(_this->future, error TSRMLS_CC);
+}
+
+static zend_always_inline void hprose_completer_complete(hprose_completer *_this, zval *result TSRMLS_DC) {
+    int i, count;
+#if PHP_MAJOR_VERSION < 7
+    Z_ADDREF_P(result);
+    SEPARATE_ZVAL(&result);
+#else
+    Z_TRY_ADDREF_P(result);
+    SEPARATE_ZVAL(result);
+#endif
+    count = Z_ARRLEN_P(_this->future->callbacks);
+    if (count > 0) {
+        HashTable *ht = Z_ARRVAL_P(_this->future->callbacks);
+        zend_hash_internal_pointer_reset(ht);
+        for (i = 0; i < count; ++i) {
+#if PHP_MAJOR_VERSION < 7
+            zval **callback;
+            zend_hash_get_current_data(ht, (void **)&callback);
+            callable_invoke_ex(*callback, result, 1, "z", result);
+#else
+            zval *callback = zend_hash_get_current_data(ht);
+            callable_invoke_ex(callback, result, 1, "z", result);
+#endif
+            if (EG(exception)) {
+#if PHP_MAJOR_VERSION < 7
+                zval *err = EG(exception);
+                Z_ADDREF_P(err);
+                SEPARATE_ZVAL(&err);
+                zend_clear_exception(TSRMLS_C);
+                hprose_completer_complete_error(_this, err TSRMLS_CC);
+#else
+                zval err;
+                ZVAL_OBJ(&err, EG(exception));
+                Z_ADDREF(err);
+                SEPARATE_ZVAL(&err);
+                zend_clear_exception();
+                hprose_completer_complete_error(_this, &err TSRMLS_CC);
+#endif
+                zval_ptr_dtor(&err);
+            }
+            zend_hash_move_forward(ht);
+        }
+        zend_hash_clean(ht);
+    }
+    add_index_zval(_this->future->results, 0, result);
 }
 
 static zend_always_inline hprose_future *hprose_completer_future(hprose_completer *_this) {
@@ -83,43 +125,47 @@ static zend_always_inline hprose_future *hprose_completer_future(hprose_complete
     return _this->future;
 }
 
-static zend_always_inline hprose_future *hprose_future_then(hprose_future *_this, zval *handler) {
+static zend_always_inline hprose_future *hprose_future_then(hprose_future *_this, zval *callback TSRMLS_DC) {
     int i, count;
-    HashTable *ht = Z_ARRVAL_P(_this->results);
-#if PHP_MAJOR_VERSION < 7
-    Z_ADDREF_P(handler);
-    _this->callback = handler;
-#else
-    hprose_zval_new(_this->callback);
-    ZVAL_COPY(_this->callback, handler);
-#endif
-    zend_hash_internal_pointer_reset(ht);
     count = Z_ARRLEN_P(_this->results);
-    for (i = 0; i < count; ++i) {
+    if (count > 0) {
+        zval *result = php_array_get(_this->results, 0);
+        callable_invoke_ex(callback, result, 1, "z", result);
+        add_index_zval(_this->results, 0, result);
+        if (EG(exception)) {
 #if PHP_MAJOR_VERSION < 7
-        zval **result;
-        zend_hash_get_current_data(ht, (void **)&result);
-        callable_invoke(handler, NULL, "z", *result);
+            zval *err = EG(exception);
+            Z_ADDREF_P(err);
+            SEPARATE_ZVAL(&err);
+            zend_clear_exception(TSRMLS_C);
+            hprose_future_complete_error(_this, err TSRMLS_CC);
 #else
-        zval *result = zend_hash_get_current_data(ht);
-        callable_invoke(handler, NULL, "z", result);
+            zval err;
+            ZVAL_OBJ(&err, EG(exception));
+            Z_ADDREF(err);
+            SEPARATE_ZVAL(&err);
+            zend_clear_exception();
+            hprose_future_complete_error(_this, &err TSRMLS_CC);
 #endif
-        if (EG(exception)) break;
-        zend_hash_move_forward(ht);
+            zval_ptr_dtor(&err);
+        }
     }
-    zend_hash_clean(ht);
+    else {
+        Z_ADDREF_P(callback);
+        add_next_index_zval(_this->callbacks, callback);
+    }
     return _this;
 }
 
-static zend_always_inline hprose_future *hprose_future_catch_error(hprose_future *_this, zval *error_handler) {
+static zend_always_inline hprose_future *hprose_future_catch_error(hprose_future *_this, zval *onerror TSRMLS_DC) {
     int i, count;
     HashTable *ht = Z_ARRVAL_P(_this->errors);
 #if PHP_MAJOR_VERSION < 7
-    Z_ADDREF_P(error_handler);
-    _this->errorCallback = error_handler;
+    Z_ADDREF_P(onerror);
+    _this->onerror = onerror;
 #else
-    hprose_zval_new(_this->errorCallback);
-    ZVAL_COPY(_this->errorCallback, error_handler);
+    hprose_zval_new(_this->onerror);
+    ZVAL_COPY(_this->onerror, onerror);
 #endif
     zend_hash_internal_pointer_reset(ht);
     count = Z_ARRLEN_P(_this->errors);
@@ -127,10 +173,10 @@ static zend_always_inline hprose_future *hprose_future_catch_error(hprose_future
 #if PHP_MAJOR_VERSION < 7
         zval **error;
         zend_hash_get_current_data(ht, (void **)&error);
-        callable_invoke(error_handler, NULL, "z", *error);
+        callable_invoke(onerror, NULL, "z", *error);
 #else
         zval *error = zend_hash_get_current_data(ht);
-        callable_invoke(error_handler, NULL, "z", error);
+        callable_invoke(onerror, NULL, "z", error);
 #endif
         if (EG(exception)) break;
         zend_hash_move_forward(ht);
@@ -142,16 +188,13 @@ static zend_always_inline hprose_future *hprose_future_catch_error(hprose_future
 static zend_always_inline void hprose_future_free(hprose_future *_this) {
     _this->ref_count--;
     if (_this->ref_count <= 0) {
-        if (_this->callback != NULL) {
-            hprose_zval_free(_this->callback);
-            _this->callback = NULL;
-        }
-        if (_this->errorCallback != NULL) {
-            hprose_zval_free(_this->errorCallback);
-            _this->errorCallback = NULL;
-        }
         hprose_zval_free(_this->results);
+        hprose_zval_free(_this->callbacks);
         hprose_zval_free(_this->errors);
+        if (_this->onerror != NULL) {
+            hprose_zval_free(_this->onerror);
+            _this->onerror = NULL;
+        }
         efree(_this);
     }
 }
