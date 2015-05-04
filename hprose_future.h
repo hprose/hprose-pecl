@@ -65,7 +65,11 @@ static zend_always_inline void hprose_future_complete_error(hprose_future *_this
         callable_invoke(_this->onerror, NULL, "z", error);
     }
     else {
+#if PHP_MAJOR_VERSION < 7
         Z_ADDREF_P(error);
+#else
+        Z_TRY_ADDREF_P(error);
+#endif
         add_next_index_zval(_this->errors, error);
     }
 }
@@ -81,7 +85,6 @@ static zend_always_inline void hprose_completer_complete(hprose_completer *_this
     SEPARATE_ZVAL(&result);
 #else
     Z_TRY_ADDREF_P(result);
-    SEPARATE_ZVAL(result);
 #endif
     count = Z_ARRLEN_P(_this->future->callbacks);
     if (count > 0) {
@@ -131,6 +134,12 @@ static zend_always_inline hprose_future *hprose_future_then(hprose_future *_this
     if (count > 0) {
         zval *result = php_array_get(_this->results, 0);
         callable_invoke_ex(callback, result, 1, "z", result);
+#if PHP_MAJOR_VERSION < 7
+        Z_ADDREF_P(result);
+        SEPARATE_ZVAL(&result);
+#else
+        Z_TRY_ADDREF_P(result);
+#endif
         add_index_zval(_this->results, 0, result);
         if (EG(exception)) {
 #if PHP_MAJOR_VERSION < 7

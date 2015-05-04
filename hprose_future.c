@@ -57,7 +57,7 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_completer_complete_arginfo, 0, 0, 1)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_completer_complete_error_arginfo, 0, 0, 1)
-    ZEND_ARG_INFO(0, error)
+    ZEND_ARG_OBJ_INFO(0, error, Exception, 0)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_completer_future_arginfo, 0, 0, 0)
@@ -106,6 +106,7 @@ ZEND_METHOD(hprose_future, then) {
     }
     if (is_callable_p(handler)) {
         hprose_future_then(_this, handler TSRMLS_CC);
+        RETURN_ZVAL(getThis(), 1, 0);
     }
 }
 
@@ -117,6 +118,7 @@ ZEND_METHOD(hprose_future, catchError) {
     }
     if (is_callable_p(errorHandler)) {
         hprose_future_catch_error(_this, errorHandler TSRMLS_CC);
+        RETURN_ZVAL(getThis(), 1, 0);
     }
 }
 
