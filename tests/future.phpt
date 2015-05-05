@@ -23,9 +23,13 @@ function test2() {
     $future = $completer->future();
     $completer->complete("Hello");
     $future->then(function($result) {
-        return $result . " Tom";
+        $completer = new HproseCompleter();
+        $completer->complete($result . " Tom");
+        return $completer->future();
     })->then(function($result) {
-        return $result . " and Jerry!";
+        $completer = new HproseCompleter();
+        $completer->complete($result . " and Jerry!");
+        return $completer->future();
     })->then(function($result) {
         echo $result . "\r\n";
     });

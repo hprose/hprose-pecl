@@ -94,10 +94,24 @@ static zend_always_inline void hprose_completer_complete(hprose_completer *_this
 #if PHP_MAJOR_VERSION < 7
             zval **callback;
             zend_hash_get_current_data(ht, (void **)&callback);
-            callable_invoke_ex(*callback, result, 1, "z", result);
+            if (result && Z_TYPE_P(result) == IS_OBJECT &&
+                instanceof_function(Z_OBJCE_P(result),
+                    get_hprose_future_ce() TSRMLS_CC)) {
+                method_invoke_ex(result, then, result, 1, "z", *callback);
+            }
+            else {
+                callable_invoke_ex(*callback, result, 1, "z", result);
+            }
 #else
             zval *callback = zend_hash_get_current_data(ht);
-            callable_invoke_ex(callback, result, 1, "z", result);
+            if (result && Z_TYPE_P(result) == IS_OBJECT &&
+                instanceof_function(Z_OBJCE_P(result),
+                    get_hprose_future_ce() TSRMLS_CC)) {
+                method_invoke_ex(result, then, result, 1, "z", callback);
+            }
+            else {
+                callable_invoke_ex(callback, result, 1, "z", result);
+            }
 #endif
             if (EG(exception)) {
 #if PHP_MAJOR_VERSION < 7
@@ -133,7 +147,14 @@ static zend_always_inline hprose_future *hprose_future_then(hprose_future *_this
     count = Z_ARRLEN_P(_this->results);
     if (count > 0) {
         zval *result = php_array_get(_this->results, 0);
-        callable_invoke_ex(callback, result, 1, "z", result);
+        if (result && Z_TYPE_P(result) == IS_OBJECT &&
+            instanceof_function(Z_OBJCE_P(result),
+                get_hprose_future_ce() TSRMLS_CC)) {
+            method_invoke_ex(result, then, result, 1, "z", callback);
+        }
+        else {
+            callable_invoke_ex(callback, result, 1, "z", result);
+        }
 #if PHP_MAJOR_VERSION < 7
         Z_ADDREF_P(result);
         SEPARATE_ZVAL(&result);
