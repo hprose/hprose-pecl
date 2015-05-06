@@ -1689,9 +1689,7 @@ HPROSE_OBJECT_HANDLERS(async_callback)
 
 HPROSE_OBJECT_FREE_BEGIN(async_callback)
     if (intern->_this) {
-        if (intern->_this->completer) {
-            hprose_zval_free(intern->_this->completer);
-        }
+        hprose_zval_free(intern->_this->completer);
         efree(intern->_this);
         intern->_this = NULL;
     }
@@ -1814,8 +1812,15 @@ ZEND_METHOD(hprose_after_invoke_callback, errorHandler) {
     hprose_after_invoke_callback_error_handler(_this, error TSRMLS_CC);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(hprose_after_invoke_callback_construct_arginfo, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(hprose_after_invoke_callback_construct_arginfo, 0, 0, 8)
+    ZEND_ARG_OBJ_INFO(0, service, HproseService, 0)
     ZEND_ARG_OBJ_INFO(0, completer, HproseCompleter, 0)
+    ZEND_ARG_INFO(0, name)
+    ZEND_ARG_ARRAY_INFO(0, args, 0)
+    ZEND_ARG_INFO(0, byref)
+    ZEND_ARG_INFO(0, mode)
+    ZEND_ARG_INFO(0, simple)
+    ZEND_ARG_INFO(0, context)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_after_invoke_callback_handler_arginfo, 0, 0, 1)
@@ -1837,9 +1842,11 @@ HPROSE_OBJECT_HANDLERS(after_invoke_callback)
 
 HPROSE_OBJECT_FREE_BEGIN(after_invoke_callback)
     if (intern->_this) {
-        if (intern->_this->completer) {
-            hprose_zval_free(intern->_this->completer);
-        }
+        hprose_zval_free(intern->_this->service);
+        hprose_zval_free(intern->_this->completer);
+        hprose_zval_free(intern->_this->name);
+        hprose_zval_free(intern->_this->args);
+        hprose_zval_free(intern->_this->context);
         efree(intern->_this);
         intern->_this = NULL;
     }
