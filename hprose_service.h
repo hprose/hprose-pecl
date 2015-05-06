@@ -33,6 +33,8 @@ BEGIN_EXTERN_C()
 zend_class_entry *get_hprose_service_ce();
 
 HPROSE_STARTUP_FUNCTION(service);
+HPROSE_STARTUP_FUNCTION(async_callback);
+HPROSE_STARTUP_FUNCTION(after_invoke_callback);
 
 typedef struct {
     zend_fcall_info_cache fcc;

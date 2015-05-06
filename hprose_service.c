@@ -14,7 +14,7 @@
  *                                                        *
  * hprose service for pecl source file.                   *
  *                                                        *
- * LastModified: May 3, 2015                              *
+ * LastModified: May 6, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -212,60 +212,60 @@ static zend_always_inline void hprose_service_send_error(zval *service, zval *er
     hprose_service_output_filter(HPROSE_GET_OBJECT_P(service, service)->_this, return_value, context TSRMLS_CC);
 }
 
-//static void hprose_service_after_invoke(zval *service, zval *name, zval *args, zend_bool byref, uint8_t mode, zend_bool simple, zval *context, zval *result, hprose_bytes_io *output, zend_bool async, zval *return_value TSRMLS_DC) {
-//    zend_bool bailout = 0;
-//    zend_try {
-//        hprose_service_on_after_invoke(service, name, args, byref, result, context TSRMLS_CC);
-//    }
-//    zend_catch {
-//        bailout = 1;
-//    } zend_end_try();
-//    if (bailout || EG(exception)) {
-//        hprose_reader_destroy(&reader);
-//        hprose_bytes_io_close(&output);
-//        hprose_zval_free(_name);
-//        hprose_zval_free(args);
-//        hprose_zval_free(result);
-//        if (bailout) {
-//            zend_bailout();
-//        }
-//        return;
-//    }
-//    if (call->mode == HPROSE_RESULT_MODE_RAW_WITH_END_TAG) {
-//        convert_to_string(result);
-//        RETVAL_ZVAL(result, 0, 1);
-//        hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
-//        hprose_reader_destroy(&reader);
-//        hprose_bytes_io_close(&output);
-//        hprose_zval_free(_name);
-//        hprose_zval_free(args);
-//        return;
-//    }
-//    else if (call->mode == HPROSE_RESULT_MODE_RAW) {
-//        convert_to_string(result);
-//        hprose_bytes_io_write(&output, Z_STRVAL_P(result), Z_STRLEN_P(result));
-//    }
-//    else {
-//        hprose_writer writer;
-//        hprose_writer_init(&writer, &output, simple);
-//        hprose_bytes_io_putc(&output, HPROSE_TAG_RESULT);
-//        if (call->mode == HPROSE_RESULT_MODE_SERIALIZED) {
-//            convert_to_string(result);
-//            hprose_bytes_io_write(&output, Z_STRVAL_P(result), Z_STRLEN_P(result));
-//        }
-//        else {
-//            hprose_writer_reset(&writer);
-//            hprose_writer_serialize(&writer, result TSRMLS_CC);
-//            hprose_zval_free(result);
-//        }
-//        if (byref) {
-//            hprose_bytes_io_putc(&output, HPROSE_TAG_ARGUMENT);
-//            hprose_writer_reset(&writer);
-//            hprose_writer_write_array(&writer, args TSRMLS_CC);
-//        }
-//        hprose_writer_destroy(&writer);
-//    }
-//}
+static void hprose_service_after_invoke(zval *service, zval *name, zval *args, zend_bool byref, uint8_t mode, zend_bool simple, zval *context, zval *result, hprose_bytes_io *output, zend_bool async, zval *return_value, zend_bool *bailout TSRMLS_DC) {
+    hprose_service *_this = HPROSE_GET_OBJECT_P(service, service)->_this;
+    zend_try {
+        hprose_service_on_after_invoke(service, name, args, byref, result, context TSRMLS_CC);
+    }
+    zend_catch {
+        *bailout = 1;
+    } zend_end_try();
+    if (*bailout || EG(exception)) {
+        RETURN_NULL();
+    }
+    if (mode == HPROSE_RESULT_MODE_RAW_WITH_END_TAG) {
+        convert_to_string(result);
+        RETVAL_ZVAL(result, 0, 1);
+        hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
+        return;
+    }
+    else if (mode == HPROSE_RESULT_MODE_RAW) {
+        convert_to_string(result);
+        hprose_bytes_io_write(output, Z_STRVAL_P(result), Z_STRLEN_P(result));
+    }
+    else {
+        hprose_writer writer;
+        hprose_writer_init(&writer, output, simple);
+        hprose_bytes_io_putc(output, HPROSE_TAG_RESULT);
+        if (mode == HPROSE_RESULT_MODE_SERIALIZED) {
+            convert_to_string(result);
+            hprose_bytes_io_write(output, Z_STRVAL_P(result), Z_STRLEN_P(result));
+        }
+        else {
+            hprose_writer_reset(&writer);
+            hprose_writer_serialize(&writer, result TSRMLS_CC);
+            hprose_zval_free(result);
+        }
+        if (byref) {
+            hprose_bytes_io_putc(output, HPROSE_TAG_ARGUMENT);
+            hprose_writer_reset(&writer);
+            hprose_writer_write_array(&writer, args TSRMLS_CC);
+        }
+        hprose_writer_destroy(&writer);
+    }
+    if (async) {
+        hprose_bytes_io_putc(output, HPROSE_TAG_END);
+#if PHP_MAJOR_VERSION < 7
+        RETVAL_STRINGL_0(HB_BUF_P(output), HB_LEN_P(output));
+#else
+        RETVAL_STR(HB_STR_P(output));
+#endif
+        hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
+    }
+    else {
+        RETURN_NULL();
+    }
+}
 
 static void hprose_service_do_invoke(zval *service, hprose_bytes_io *input, zval *context, zval *return_value TSRMLS_DC) {
     hprose_service *_this = HPROSE_GET_OBJECT_P(service, service)->_this;
@@ -395,73 +395,115 @@ static void hprose_service_do_invoke(zval *service, hprose_bytes_io *input, zval
         }
         hprose_zval_new(result);
         ZVAL_NULL(result);
+        if (call->async) {
+            zval *completer, *async_callback, *callback;
+            hprose_zval_new(completer);
+            create_php_object_no_args(HproseCompleter, completer);
+            hprose_zval_new(async_callback);
+            create_php_object(HproseAsyncCallback, async_callback, "z", completer);
+            hprose_zval_new(callback);
+            array_init_size(callback, 2);
+#if PHP_MAJOR_VERSION < 7
+            Z_ADDREF_P(async_callback);
+#else
+            Z_TRY_ADDREF_P(async_callback);
+#endif
+            add_next_index_zval(callback, async_callback);
+#if PHP_MAJOR_VERSION < 7
+            add_next_index_string(callback, "handler", 1);
+#else
+            add_next_index_string(callback, "handler");
+#endif
+            hprose_zval_free(async_callback);
+#if PHP_MAJOR_VERSION < 7
+            Z_ADDREF_P(callback);
+#else
+            Z_TRY_ADDREF_P(callback);
+#endif
+            add_next_index_zval(args, callback);
+            hprose_zval_free(callback);
+            method_invoke_no_args(completer, future, result);
+            hprose_zval_free(completer);
+        }
         zend_try {
-            __function_invoke_args(call->fcc, NULL, result, args TSRMLS_CC);
-        }
-        zend_catch {
-            bailout = 1;
-        } zend_end_try();
-        if (bailout || EG(exception)) {
-            hprose_reader_destroy(&reader);
-            hprose_bytes_io_close(&output);
-            hprose_zval_free(_name);
-            hprose_zval_free(args);
-            hprose_zval_free(result);
-            if (bailout) {
-                zend_bailout();
-            }
-            return;
-        }
-        zend_try {
-            hprose_service_on_after_invoke(service, _name, args, byref, result, context TSRMLS_CC);
-        }
-        zend_catch {
-            bailout = 1;
-        } zend_end_try();
-        if (bailout || EG(exception)) {
-            hprose_reader_destroy(&reader);
-            hprose_bytes_io_close(&output);
-            hprose_zval_free(_name);
-            hprose_zval_free(args);
-            hprose_zval_free(result);
-            if (bailout) {
-                zend_bailout();
-            }
-            return;
-        }
-        if (call->mode == HPROSE_RESULT_MODE_RAW_WITH_END_TAG) {
-            convert_to_string(result);
-            RETVAL_ZVAL(result, 0, 1);
-            hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
-            hprose_reader_destroy(&reader);
-            hprose_bytes_io_close(&output);
-            hprose_zval_free(_name);
-            hprose_zval_free(args);
-            return;
-        }
-        else if (call->mode == HPROSE_RESULT_MODE_RAW) {
-            convert_to_string(result);
-            hprose_bytes_io_write(&output, Z_STRVAL_P(result), Z_STRLEN_P(result));
-        }
-        else {
-            hprose_writer writer;
-            hprose_writer_init(&writer, &output, simple);
-            hprose_bytes_io_putc(&output, HPROSE_TAG_RESULT);
-            if (call->mode == HPROSE_RESULT_MODE_SERIALIZED) {
-                convert_to_string(result);
-                hprose_bytes_io_write(&output, Z_STRVAL_P(result), Z_STRLEN_P(result));
+            if (call->async) {
+                __function_invoke_args(call->fcc, NULL, NULL, args TSRMLS_CC);
             }
             else {
-                hprose_writer_reset(&writer);
-                hprose_writer_serialize(&writer, result TSRMLS_CC);
-                hprose_zval_free(result);
+                __function_invoke_args(call->fcc, NULL, result, args TSRMLS_CC);
             }
-            if (byref) {
-                hprose_bytes_io_putc(&output, HPROSE_TAG_ARGUMENT);
-                hprose_writer_reset(&writer);
-                hprose_writer_write_array(&writer, args TSRMLS_CC);
+        }
+        zend_catch {
+            bailout = 1;
+        } zend_end_try();
+        if (bailout || EG(exception)) {
+            hprose_reader_destroy(&reader);
+            hprose_bytes_io_close(&output);
+            hprose_zval_free(_name);
+            hprose_zval_free(args);
+            hprose_zval_free(result);
+            if (bailout) {
+                zend_bailout();
             }
-            hprose_writer_destroy(&writer);
+            return;
+        }
+        if (Z_TYPE_P(result) == IS_OBJECT &&
+            instanceof_function(Z_OBJCE_P(result), get_hprose_future_ce() TSRMLS_CC)) {
+            zval *completer, *after_invoke_callback, *callback;
+            hprose_zval_new(completer);
+            create_php_object_no_args(HproseCompleter, completer);
+            hprose_zval_new(after_invoke_callback);
+            create_php_object(HproseAfterInvokeCallback, after_invoke_callback, "zzzzblbz", service, completer, _name, args, byref, (long)(call->mode), simple, context);
+            hprose_zval_new(callback);
+            array_init_size(callback, 2);
+#if PHP_MAJOR_VERSION < 7
+            Z_ADDREF_P(after_invoke_callback);
+#else
+            Z_TRY_ADDREF_P(after_invoke_callback);
+#endif
+            add_index_zval(callback, 0, after_invoke_callback);
+            hprose_zval_free(after_invoke_callback);
+#if PHP_MAJOR_VERSION < 7
+            add_index_string(callback, 1, "handler", 1);
+#else
+            add_index_string(callback, 1, "handler");
+#endif
+            method_invoke(result, then, NULL, "z", callback);
+#if PHP_MAJOR_VERSION < 7
+            add_index_string(callback, 1, "errorHandler", 1);
+#else
+            add_index_string(callback, 1, "errorHandler");
+#endif
+            method_invoke(result, catchError, NULL, "z", callback);
+            hprose_zval_free(callback);
+            method_invoke_no_args(completer, future, return_value);
+            hprose_zval_free(completer);
+            hprose_reader_destroy(&reader);
+            hprose_bytes_io_close(&output);
+            hprose_zval_free(_name);
+            hprose_zval_free(args);
+            hprose_zval_free(result);
+            return;
+        }
+        RETVAL_NULL();
+        hprose_service_after_invoke(service, _name, args, byref, call->mode, simple, context, result, &output, 0, return_value, &bailout TSRMLS_CC);
+        if (bailout || EG(exception)) {
+            hprose_reader_destroy(&reader);
+            hprose_bytes_io_close(&output);
+            hprose_zval_free(_name);
+            hprose_zval_free(args);
+            hprose_zval_free(result);
+            if (bailout) {
+                zend_bailout();
+            }
+            return;
+        }
+        if (Z_TYPE_P(return_value) != IS_NULL) {
+            hprose_reader_destroy(&reader);
+            hprose_bytes_io_close(&output);
+            hprose_zval_free(_name);
+            hprose_zval_free(args);
+            return;
         }
         hprose_zval_free(_name);
         hprose_zval_free(args);
@@ -1614,7 +1656,7 @@ ZEND_METHOD(hprose_async_callback, __construct) {
 #endif
 }
 
-ZEND_METHOD(hprose_async_callback, callback) {
+ZEND_METHOD(hprose_async_callback, handler) {
     zval *result;
     HPROSE_THIS(async_callback);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &result) == FAILURE) {
@@ -1625,7 +1667,7 @@ ZEND_METHOD(hprose_async_callback, callback) {
         hprose_completer_complete_error(HPROSE_GET_OBJECT_P(completer, _this->completer)->_this, result TSRMLS_CC);
     }
     else {
-        hprose_completer_complete(HPROSE_GET_OBJECT_P(completer, _this->completer)->_this, result TSRMLS_CC);    
+        hprose_completer_complete(HPROSE_GET_OBJECT_P(completer, _this->completer)->_this, result TSRMLS_CC);
     }
 }
 
@@ -1633,13 +1675,13 @@ ZEND_BEGIN_ARG_INFO_EX(hprose_async_callback_construct_arginfo, 0, 0, 1)
     ZEND_ARG_OBJ_INFO(0, completer, HproseCompleter, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(hprose_async_callback_callback_arginfo, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(hprose_async_callback_handler_arginfo, 0, 0, 1)
     ZEND_ARG_INFO(0, result)
 ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_async_callback_methods[] = {
     ZEND_ME(hprose_async_callback, __construct, hprose_async_callback_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    ZEND_ME(hprose_async_callback, callback, hprose_async_callback_callback_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_async_callback, handler, hprose_async_callback_handler_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 
@@ -1707,32 +1749,87 @@ ZEND_METHOD(hprose_after_invoke_callback, __construct) {
     intern->_this->simple = simple;
 }
 
-ZEND_METHOD(hprose_after_invoke_callback, callback) {
+static zend_always_inline void hprose_after_invoke_callback_handler(hprose_after_invoke_callback *_this, zval *result TSRMLS_DC) {
+    hprose_completer *completer = HPROSE_GET_OBJECT_P(completer, _this->completer)->_this;
+    zval *return_value;
+    zend_bool bailout = 0;
+    hprose_bytes_io output;
+    hprose_bytes_io_init(&output, NULL, 0);
+    hprose_zval_new(return_value);
+    hprose_service_after_invoke(_this->service,
+                                _this->name,
+                                _this->args,
+                                _this->byref,
+                                _this->mode,
+                                _this->simple,
+                                _this->context,
+                                result,
+                                &output,
+                                1,
+                                return_value,
+                                &bailout TSRMLS_CC);
+    if (bailout || EG(exception)) {
+        hprose_bytes_io_close(&output);
+        if (bailout) {
+            hprose_zval_free(return_value);
+            zend_bailout();
+            return;
+        }
+        hprose_service_try_catch_error(_this->service, _this->context, return_value TSRMLS_CC);
+    }
+    hprose_completer_complete(completer, return_value TSRMLS_CC);
+    hprose_zval_free(return_value);
+}
+
+static zend_always_inline void hprose_after_invoke_callback_error_handler(hprose_after_invoke_callback *_this, zval *err TSRMLS_DC) {
+    hprose_completer *completer = HPROSE_GET_OBJECT_P(completer, _this->completer)->_this;
+    zval *return_value;
+    hprose_zval_new(return_value);
+    hprose_service_catch_error(_this->service, err, _this->context, return_value TSRMLS_CC);
+    hprose_completer_complete(completer, return_value TSRMLS_CC);
+    hprose_zval_free(return_value);
+}
+
+ZEND_METHOD(hprose_after_invoke_callback, handler) {
     zval *result;
-    HPROSE_THIS(async_callback);
+    HPROSE_THIS(after_invoke_callback);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &result) == FAILURE) {
         RETURN_NULL();
     }
     if (Z_TYPE_P(result) == IS_OBJECT &&
         instanceof_function(Z_OBJCE_P(result), zend_exception_ce TSRMLS_CC)) {
-        hprose_completer_complete_error(HPROSE_GET_OBJECT_P(completer, _this->completer)->_this, result TSRMLS_CC);
+        hprose_after_invoke_callback_error_handler(_this, result TSRMLS_CC);
     }
     else {
-        hprose_completer_complete(HPROSE_GET_OBJECT_P(completer, _this->completer)->_this, result TSRMLS_CC);
+        hprose_after_invoke_callback_handler(_this, result TSRMLS_CC);
     }
+}
+
+ZEND_METHOD(hprose_after_invoke_callback, errorHandler) {
+    zval *error;
+    HPROSE_THIS(after_invoke_callback);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &error) == FAILURE) {
+        RETURN_NULL();
+    }
+    hprose_after_invoke_callback_error_handler(_this, error TSRMLS_CC);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_after_invoke_callback_construct_arginfo, 0, 0, 1)
     ZEND_ARG_OBJ_INFO(0, completer, HproseCompleter, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(hprose_after_invoke_callback_callback_arginfo, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(hprose_after_invoke_callback_handler_arginfo, 0, 0, 1)
     ZEND_ARG_INFO(0, result)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(hprose_after_invoke_callback_error_handler_arginfo, 0, 0, 1)
+    ZEND_ARG_OBJ_INFO(0, error, Exception, 0)
 ZEND_END_ARG_INFO()
 
 static zend_function_entry hprose_after_invoke_callback_methods[] = {
     ZEND_ME(hprose_after_invoke_callback, __construct, hprose_after_invoke_callback_construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    ZEND_ME(hprose_after_invoke_callback, callback, hprose_after_invoke_callback_callback_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_after_invoke_callback, handler, hprose_after_invoke_callback_handler_arginfo, ZEND_ACC_PUBLIC)
+    ZEND_ME(hprose_after_invoke_callback, errorHandler, hprose_after_invoke_callback_error_handler_arginfo, ZEND_ACC_PUBLIC)
     ZEND_FE_END
 };
 

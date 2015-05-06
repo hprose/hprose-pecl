@@ -53,6 +53,8 @@ ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(proxy);
     HPROSE_STARTUP(client);
     HPROSE_STARTUP(service);
+    HPROSE_STARTUP(async_callback);
+    HPROSE_STARTUP(after_invoke_callback);
     return SUCCESS;
 }
 
