@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl source file.                    *
  *                                                        *
- * LastModified: Apr 13, 2015                             *
+ * LastModified: May 6, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -258,50 +258,51 @@ static zend_always_inline void hprose_client_send_and_receive_callback(hprose_cl
     hprose_zval_new(result);
     ZVAL_NULL(result);
     php_array_get_long(use, 3, &mode);
-    if (n == 3) {
-        if (err == NULL) {
-            hprose_client_do_input(_this, response, args, mode, context, result TSRMLS_CC);
-            if (EG(exception)) {
+    if (err == NULL) {
+        hprose_client_do_input(_this, response, args, mode, context, result TSRMLS_CC);
+        if (EG(exception)) {
 #if PHP_MAJOR_VERSION < 7
-                err = EG(exception);
-                Z_ADDREF_P(err);
-                SEPARATE_ZVAL(&err);
-                zend_clear_exception(TSRMLS_C);
-                __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zzz", result, args, err);
-                zval_ptr_dtor(&err);
+            err = EG(exception);
+            Z_ADDREF_P(err);
+            SEPARATE_ZVAL(&err);
+            zend_clear_exception(TSRMLS_C);
+            switch (n) {
+                case 0: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, ""); break;
+                case 1: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "z", err); break;
+                case 2: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zz", err, args); break;
+                case 3: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zzz", result, args, err); break;
+            }
+            zval_ptr_dtor(&err);
 #else
-                zval e;
-                ZVAL_OBJ(&e, EG(exception));
-                Z_ADDREF(e);
-                SEPARATE_ZVAL(&e);
-                zend_clear_exception();
-                __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zzz", result, args, &e);
-                zval_ptr_dtor(&e);
+            zval e;
+            ZVAL_OBJ(&e, EG(exception));
+            Z_ADDREF(e);
+            SEPARATE_ZVAL(&e);
+            zend_clear_exception();
+            switch (n) {
+                case 0: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, ""); break;
+                case 1: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "z", &e); break;
+                case 2: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zz", &e, args); break;
+                case 3: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zzz", result, args, &e); break;
+            }
+            zval_ptr_dtor(&e);
 #endif
-            }
-            else {
-                __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zzz", result, args, NULL);
-            }
         }
         else {
-            __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zzz", result, args, err);
+            switch (n) {
+                case 0: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, ""); break;
+                case 1: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "z", result); break;
+                case 2: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zz", result, args); break;
+                case 3: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zzz", result, args, NULL); break;
+            }
         }
     }
     else {
-        if (err != NULL) {
-            hprose_zval_free(result);
-            zend_throw_exception_object(err TSRMLS_CC);
-            return;
-        }
-        hprose_client_do_input(_this, response, args, mode, context, result TSRMLS_CC);
-        if (EG(exception)) {
-            hprose_zval_free(result);
-            return;
-        }
         switch (n) {
             case 0: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, ""); break;
-            case 1: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "z", result); break;
-            case 2: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zz", result, args); break;
+            case 1: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "z", err); break;
+            case 2: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zz", err, args); break;
+            case 3: __function_invoke(fcc, NULL, NULL, 0 TSRMLS_CC, "zzz", result, args, err); break;
         }
     }
     hprose_zval_free(result);

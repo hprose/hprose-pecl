@@ -60,7 +60,9 @@ http://pear.php.net/dtd/package-2.0.xsd">
     <notes>Faster integer serialize.
         Faster double serialize.
         Added Completer and Future class.
-        Added async service support.</notes>
+        Added async service support.
+        Improved async client support.
+    </notes>
     <contents>
         <dir name="/">
             <file role="doc" name="CREDITS" />
@@ -140,6 +142,7 @@ http://pear.php.net/dtd/package-2.0.xsd">
                 Faster double serialize.
                 Added Completer and Future class.
                 Added async service support.
+                Improved async client support.
             </notes>
         </release>
         <release>
