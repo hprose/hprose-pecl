@@ -342,6 +342,11 @@ static void hprose_service_do_invoke(zval *service, hprose_bytes_io *input, zval
                 }
                 for (i = n; i < count; ++i) {
                     zval *e = php_array_get(args, i);
+#if PHP_MAJOR_VERSION < 7
+                    Z_ADDREF_P(e);
+#else
+                    Z_TRY_ADDREF_P(e);
+#endif
                     add_next_index_zval(_args, e);
                 }
                 hprose_zval_free(args);
@@ -462,20 +467,22 @@ static void hprose_service_do_invoke(zval *service, hprose_bytes_io *input, zval
             Z_TRY_ADDREF_P(after_invoke_callback);
 #endif
             add_index_zval(callback, 0, after_invoke_callback);
-            hprose_zval_free(after_invoke_callback);
 #if PHP_MAJOR_VERSION < 7
             add_index_string(callback, 1, "handler", 1);
 #else
             add_index_string(callback, 1, "handler");
 #endif
-            method_invoke(result, then, NULL, "z", callback);
+            hprose_future_then(HPROSE_GET_OBJECT_P(future, result)->_this, callback);
+            //method_invoke(result, then, NULL, "z", callback);
 #if PHP_MAJOR_VERSION < 7
             add_index_string(callback, 1, "errorHandler", 1);
 #else
             add_index_string(callback, 1, "errorHandler");
 #endif
-            method_invoke(result, catchError, NULL, "z", callback);
+            hprose_future_catch_error(HPROSE_GET_OBJECT_P(future, result)->_this, callback);
+            //method_invoke(result, catchError, NULL, "z", callback);
             hprose_zval_free(callback);
+            hprose_zval_free(after_invoke_callback);
             method_invoke_no_args(completer, future, return_value);
             hprose_zval_free(completer);
             hprose_reader_destroy(&reader);
