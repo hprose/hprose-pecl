@@ -13,7 +13,7 @@
  *                                                        *
  * hprose future for pecl header file.                    *
  *                                                        *
- * LastModified: May 3, 2015                              *
+ * LastModified: May 7, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -43,6 +43,12 @@ typedef struct {
 typedef struct {
     hprose_future *future;
 } hprose_completer;
+
+HPROSE_CLASS_BEGIN(completer)
+HPROSE_CLASS_END(completer)
+
+HPROSE_CLASS_BEGIN(future)
+HPROSE_CLASS_END(future)
 
 static zend_always_inline hprose_completer *hprose_completer_new() {
     hprose_completer *_this = emalloc(sizeof(hprose_completer));
@@ -90,11 +96,11 @@ static zend_always_inline void hprose_completer_complete(hprose_completer *_this
         zend_hash_internal_pointer_reset(ht);
         for (i = 0; i < count; ++i) {
 #if PHP_MAJOR_VERSION < 7
-            zval **callback;
             zval *return_value;
+            zval **callback;
+            zend_hash_get_current_data(ht, (void **)&callback);
             hprose_zval_new(return_value);
             ZVAL_NULL(return_value);
-            zend_hash_get_current_data(ht, (void **)&callback);
             if (result && Z_TYPE_P(result) == IS_OBJECT &&
                 instanceof_function(Z_OBJCE_P(result),
                     get_hprose_future_ce() TSRMLS_CC)) {
@@ -103,16 +109,22 @@ static zend_always_inline void hprose_completer_complete(hprose_completer *_this
             else {
                 callable_invoke(*callback, return_value, "z", result);
             }
+            hprose_zval_free(result);
+            result = return_value;
 #else
+            zval return_value;
             zval *callback = zend_hash_get_current_data(ht);
+            ZVAL_NULL(&return_value);
             if (result && Z_TYPE_P(result) == IS_OBJECT &&
                 instanceof_function(Z_OBJCE_P(result),
                     get_hprose_future_ce() TSRMLS_CC)) {
-                method_invoke(result, then, return_value, "z", callback);
+                method_invoke(result, then, &return_value, "z", callback);
             }
             else {
-                callable_invoke(callback, return_value, "z", result);
+                callable_invoke(callback, &return_value, "z", result);
             }
+            zval_ptr_dtor(result);
+            ZVAL_COPY_VALUE(result, &return_value);
 #endif
             if (EG(exception)) {
 #if PHP_MAJOR_VERSION < 7
@@ -131,8 +143,6 @@ static zend_always_inline void hprose_completer_complete(hprose_completer *_this
 #endif
                 zval_ptr_dtor(&err);
             }
-            hprose_zval_free(result);
-            result = return_value;
             zend_hash_move_forward(ht);
         }
         zend_hash_clean(ht);
@@ -140,9 +150,10 @@ static zend_always_inline void hprose_completer_complete(hprose_completer *_this
     add_index_zval(_this->future->results, 0, result);
 }
 
-static zend_always_inline hprose_future *hprose_completer_future(hprose_completer *_this) {
+static zend_always_inline void hprose_completer_future(hprose_completer *_this, zval *return_value TSRMLS_DC) {
     _this->future->ref_count++;
-    return _this->future;
+    object_init_ex(return_value, get_hprose_future_ce());
+    HPROSE_GET_OBJECT_P(future, return_value)->_this = _this->future;
 }
 
 static zend_always_inline hprose_future *hprose_future_then(hprose_future *_this, zval *callback TSRMLS_DC) {
@@ -151,10 +162,6 @@ static zend_always_inline hprose_future *hprose_future_then(hprose_future *_this
     if (count > 0) {
         zval *result = php_array_get(_this->results, 0);
 #if PHP_MAJOR_VERSION < 7
-        Z_ADDREF_P(result);
-#else
-        Z_TRY_ADDREF_P(result);
-#endif
         zval *return_value;
         hprose_zval_new(return_value);
         ZVAL_NULL(return_value);
@@ -166,13 +173,20 @@ static zend_always_inline hprose_future *hprose_future_then(hprose_future *_this
         else {
             callable_invoke(callback, return_value, "z", result);
         }
-#if PHP_MAJOR_VERSION < 7
-        Z_ADDREF_P(return_value);
-#else
-        Z_TRY_ADDREF_P(return_value);
-#endif
         add_index_zval(_this->results, 0, return_value);
-        hprose_zval_free(return_value);
+#else
+        zval return_value;
+        ZVAL_NULL(&return_value);
+        if (result && Z_TYPE_P(result) == IS_OBJECT &&
+            instanceof_function(Z_OBJCE_P(result),
+                get_hprose_future_ce() TSRMLS_CC)) {
+            method_invoke(result, then, &return_value, "z", callback);
+        }
+        else {
+            callable_invoke(callback, &return_value, "z", result);
+        }
+        add_index_zval(_this->results, 0, &return_value);
+#endif
         if (EG(exception)) {
 #if PHP_MAJOR_VERSION < 7
             zval *err = EG(exception);
@@ -248,12 +262,6 @@ static zend_always_inline void hprose_completer_free(hprose_completer *_this) {
     _this->future = NULL;
     efree(_this);
 }
-
-HPROSE_CLASS_BEGIN(completer)
-HPROSE_CLASS_END(completer)
-
-HPROSE_CLASS_BEGIN(future)
-HPROSE_CLASS_END(future)
 
 END_EXTERN_C()
 

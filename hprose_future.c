@@ -13,7 +13,7 @@
  *                                                        *
  * hprose future for pecl source file.                    *
  *                                                        *
- * LastModified: May 3, 2015                              *
+ * LastModified: May 7, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -44,9 +44,8 @@ ZEND_METHOD(hprose_completer, completeError) {
 }
 
 ZEND_METHOD(hprose_completer, future) {
-    HPROSE_OBJECT_INTERN(completer);
-    object_init_ex(return_value, get_hprose_future_ce());
-    HPROSE_GET_OBJECT_P(future, return_value)->_this = hprose_completer_future(intern->_this);
+    HPROSE_THIS(completer);
+    hprose_completer_future(_this, return_value TSRMLS_CC);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(hprose_completer_construct_arginfo, 0, 0, 0)

@@ -14,7 +14,7 @@
  *                                                        *
  * hprose service for pecl source file.                   *
  *                                                        *
- * LastModified: May 6, 2015                              *
+ * LastModified: May 7, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -427,7 +427,7 @@ static void hprose_service_do_invoke(zval *service, hprose_bytes_io *input, zval
 #endif
             add_next_index_zval(args, callback);
             hprose_zval_free(callback);
-            method_invoke_no_args(completer, future, result);
+            hprose_completer_future(HPROSE_GET_OBJECT_P(completer, completer)->_this, result TSRMLS_CC);
             hprose_zval_free(completer);
         }
         zend_try {
@@ -472,18 +472,16 @@ static void hprose_service_do_invoke(zval *service, hprose_bytes_io *input, zval
 #else
             add_index_string(callback, 1, "handler");
 #endif
-            hprose_future_then(HPROSE_GET_OBJECT_P(future, result)->_this, callback);
-            //method_invoke(result, then, NULL, "z", callback);
+            hprose_future_then(HPROSE_GET_OBJECT_P(future, result)->_this, callback TSRMLS_CC);
 #if PHP_MAJOR_VERSION < 7
             add_index_string(callback, 1, "errorHandler", 1);
 #else
             add_index_string(callback, 1, "errorHandler");
 #endif
-            hprose_future_catch_error(HPROSE_GET_OBJECT_P(future, result)->_this, callback);
-            //method_invoke(result, catchError, NULL, "z", callback);
+            hprose_future_catch_error(HPROSE_GET_OBJECT_P(future, result)->_this, callback TSRMLS_CC);
             hprose_zval_free(callback);
             hprose_zval_free(after_invoke_callback);
-            method_invoke_no_args(completer, future, return_value);
+            hprose_completer_future(HPROSE_GET_OBJECT_P(completer, completer)->_this, return_value TSRMLS_CC);
             hprose_zval_free(completer);
             hprose_reader_destroy(&reader);
             hprose_bytes_io_close(&output);
@@ -1669,6 +1667,11 @@ ZEND_METHOD(hprose_async_callback, handler) {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &result) == FAILURE) {
         RETURN_NULL();
     }
+#if PHP_MAJOR_VERSION < 7
+    Z_ADDREF_P(result);
+#else
+    Z_TRY_ADDREF_P(result);
+#endif
     if (Z_TYPE_P(result) == IS_OBJECT &&
         instanceof_function(Z_OBJCE_P(result), zend_exception_ce TSRMLS_CC)) {
         hprose_completer_complete_error(HPROSE_GET_OBJECT_P(completer, _this->completer)->_this, result TSRMLS_CC);
