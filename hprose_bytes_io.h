@@ -129,6 +129,13 @@ static const char HPROSE_DIGIT2_TABLE[] =
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
 
+#include <float.h>
+#if defined(DBL_MANT_DIG) && defined(DBL_MIN_EXP)
+#define HPROSE_DOUBLE_MAX_LENGTH (3 + DBL_MANT_DIG - DBL_MIN_EXP)
+#else
+#define HPROSE_DOUBLE_MAX_LENGTH 1080
+#endif
+
 static zend_always_inline int32_t _hprose_pow2roundup(int32_t x) {
 #if defined(__GNUC__)
     return 0x2 << (__builtin_clz(x - 1) ^ 0x1f);
@@ -581,9 +588,10 @@ static zend_always_inline void hprose_bytes_io_write_ulong(hprose_bytes_io *_thi
     hprose_bytes_io_write_uinteger(_this, i, uint64_t);
 }
 
-static zend_always_inline void hprose_bytes_io_write_double(hprose_bytes_io *_this, double num) {
-    char buf[32];
-    int n = sprintf(buf, "%.16g", num);
+static zend_always_inline void hprose_bytes_io_write_double(hprose_bytes_io *_this, double d) {
+    char buf[HPROSE_DOUBLE_MAX_LENGTH];
+    php_gcvt(d, (int)EG(precision), '.', 'e', &buf[0]);
+    int32_t n = strlen(buf);
     hprose_bytes_io_write(_this, buf, n);
 }
 
