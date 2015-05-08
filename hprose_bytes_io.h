@@ -80,13 +80,54 @@ typedef struct {
 #define HPROSE_BYTES_IO_PREALLOC 64
 #endif
 
-#ifndef HPROSE_INT32_MIN_STR
-#define HPROSE_INT32_MIN_STR "-2147483648"
-#endif
+static const char HPROSE_DIGIT3_TABLE[] =
+    "000001002003004005006007008009010011012013014015016017018019020021022023024"
+    "025026027028029030031032033034035036037038039040041042043044045046047048049"
+    "050051052053054055056057058059060061062063064065066067068069070071072073074"
+    "075076077078079080081082083084085086087088089090091092093094095096097098099"
+    "100101102103104105106107108109110111112113114115116117118119120121122123124"
+    "125126127128129130131132133134135136137138139140141142143144145146147148149"
+    "150151152153154155156157158159160161162163164165166167168169170171172173174"
+    "175176177178179180181182183184185186187188189190191192193194195196197198199"
+    "200201202203204205206207208209210211212213214215216217218219220221222223224"
+    "225226227228229230231232233234235236237238239240241242243244245246247248249"
+    "250251252253254255256257258259260261262263264265266267268269270271272273274"
+    "275276277278279280281282283284285286287288289290291292293294295296297298299"
+    "300301302303304305306307308309310311312313314315316317318319320321322323324"
+    "325326327328329330331332333334335336337338339340341342343344345346347348349"
+    "350351352353354355356357358359360361362363364365366367368369370371372373374"
+    "375376377378379380381382383384385386387388389390391392393394395396397398399"
+    "400401402403404405406407408409410411412413414415416417418419420421422423424"
+    "425426427428429430431432433434435436437438439440441442443444445446447448449"
+    "450451452453454455456457458459460461462463464465466467468469470471472473474"
+    "475476477478479480481482483484485486487488489490491492493494495496497498499"
+    "500501502503504505506507508509510511512513514515516517518519520521522523524"
+    "525526527528529530531532533534535536537538539540541542543544545546547548549"
+    "550551552553554555556557558559560561562563564565566567568569570571572573574"
+    "575576577578579580581582583584585586587588589590591592593594595596597598599"
+    "600601602603604605606607608609610611612613614615616617618619620621622623624"
+    "625626627628629630631632633634635636637638639640641642643644645646647648649"
+    "650651652653654655656657658659660661662663664665666667668669670671672673674"
+    "675676677678679680681682683684685686687688689690691692693694695696697698699"
+    "700701702703704705706707708709710711712713714715716717718719720721722723724"
+    "725726727728729730731732733734735736737738739740741742743744745746747748749"
+    "750751752753754755756757758759760761762763764765766767768769770771772773774"
+    "775776777778779780781782783784785786787788789790791792793794795796797798799"
+    "800801802803804805806807808809810811812813814815816817818819820821822823824"
+    "825826827828829830831832833834835836837838839840841842843844845846847848849"
+    "850851852853854855856857858859860861862863864865866867868869870871872873874"
+    "875876877878879880881882883884885886887888889890891892893894895896897898899"
+    "900901902903904905906907908909910911912913914915916917918919920921922923924"
+    "925926927928929930931932933934935936937938939940941942943944945946947948949"
+    "950951952953954955956957958959960961962963964965966967968969970971972973974"
+    "975976977978979980981982983984985986987988989990991992993994995996997998999";
 
-#ifndef HPROSE_INT64_MIN_STR
-#define HPROSE_INT64_MIN_STR "-9223372036854775808"
-#endif
+static const char HPROSE_DIGIT2_TABLE[] =
+    "0001020304050607080910111213141516171819"
+    "2021222324252627282930313233343536373839"
+    "4041424344454647484950515253545556575859"
+    "6061626364656667686970717273747576777879"
+    "8081828384858687888990919293949596979899";
 
 static zend_always_inline int32_t _hprose_pow2roundup(int32_t x) {
 #if defined(__GNUC__)
@@ -449,88 +490,95 @@ static zend_always_inline void hprose_bytes_io_putc(hprose_bytes_io *_this, char
     HB_BUF_P(_this)[++HB_LEN_P(_this)] = '\0';
 }
 
-static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io *_this, int32_t num) {
-    if (num >= 0 && num <= 9) {
-        hprose_bytes_io_putc(_this, (char)('0' + num));
+#define hprose_bytes_io_write_integer(_this, i, uint_type)                      \
+    if (i >= 0 && i < 10) {                                                     \
+        hprose_bytes_io_putc(_this, (char)('0' + i));                           \
+    }                                                                           \
+    else if (i >= 10 && i < 100) {                                              \
+        hprose_bytes_io_write(_this, &HPROSE_DIGIT2_TABLE[2 * i], 2);           \
+    }                                                                           \
+    else if (i >= 100 && i < 1000) {                                            \
+        hprose_bytes_io_write(_this, &HPROSE_DIGIT3_TABLE[3 * i], 3);           \
+    }                                                                           \
+    else {                                                                      \
+        char buf[32];                                                           \
+        char *p = &buf[32];                                                     \
+        zend_bool neg = (i < 0);                                                \
+        uint_type n = (neg) ? -i : i;                                           \
+        if (n) {                                                                \
+            while (n >= 100) {                                                  \
+                uint_type t = n / 1000;                                         \
+                p -= 3;                                                         \
+                memcpy(p, &HPROSE_DIGIT3_TABLE[3 * (n - (t * 1000))], 3);       \
+                n = t;                                                          \
+            }                                                                   \
+            while (n >= 10) {                                                   \
+                uint_type t = n / 100;                                          \
+                p -= 2;                                                         \
+                memcpy(p, &HPROSE_DIGIT2_TABLE[2 * (n - (t * 100))], 2);        \
+                n = t;                                                          \
+            }                                                                   \
+            if (n) {                                                            \
+                *(--p) = (char)('0' + n);                                       \
+            }                                                                   \
+            if (neg) {                                                          \
+                *(--p) = '-';                                                   \
+            }                                                                   \
+        } else {                                                                \
+            *(--p) = '0';                                                       \
+        }                                                                       \
+        hprose_bytes_io_write(_this, p, &buf[32] - p);                          \
     }
-    else if (num == INT32_MIN) {
-        hprose_bytes_io_write(_this, HPROSE_INT32_MIN_STR, sizeof(HPROSE_INT32_MIN_STR) - 1);
-    }
-    else {
-        char buf[32];
-        char *p = buf + 31;
-        zend_bool neg = (num < 0);
-        if (neg) {
-            num = -num;
-        }
-        *p = '\0';
-        while (num > 0) {
-            *(--p) = (char)(num % 10) + '0';
-            num /= 10;
-        }
-        if (neg) {
-            *(--p) = '-';
-        }
-        hprose_bytes_io_write(_this, p, buf + 31 - p);
-    }
+
+static zend_always_inline void hprose_bytes_io_write_int(hprose_bytes_io *_this, int32_t i) {
+    hprose_bytes_io_write_integer(_this, i, uint32_t);
 }
 
-static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io *_this, int64_t num) {
-    if (num >= 0 && num <= 9) {
-        hprose_bytes_io_putc(_this, (char)('0' + num));
-    }
-    else if (num == INT64_MIN) {
-        hprose_bytes_io_write(_this, HPROSE_INT64_MIN_STR, sizeof(HPROSE_INT64_MIN_STR) - 1);
-    }
-    else {
-        char buf[32];
-        char *p = buf + 31;
-        zend_bool neg = (num < 0);
-        if (neg) {
-            num = -num;
-        }
-        *p = '\0';
-        while (num > 0) {
-            *(--p) = (char)(num % 10) + '0';
-            num /= 10;
-        }
-        if (neg) {
-            *(--p) = '-';
-        }
-        hprose_bytes_io_write(_this, p, buf + 31 - p);
-    }
+static zend_always_inline void hprose_bytes_io_write_long(hprose_bytes_io *_this, int64_t i) {
+    hprose_bytes_io_write_integer(_this, i, uint64_t);
 }
 
-static zend_always_inline void hprose_bytes_io_write_uint(hprose_bytes_io *_this, uint32_t num) {
-    if (num <= 9) {
-        hprose_bytes_io_putc(_this, (char)('0' + num));
+#define hprose_bytes_io_write_uinteger(_this, i, uint_type)                     \
+    if (i >= 0 && i < 10) {                                                     \
+        hprose_bytes_io_putc(_this, (char)('0' + i));                           \
+    }                                                                           \
+    else if (i >= 10 && i < 100) {                                              \
+        hprose_bytes_io_write(_this, &HPROSE_DIGIT2_TABLE[2 * i], 2);           \
+    }                                                                           \
+    else if (i >= 100 && i < 1000) {                                            \
+        hprose_bytes_io_write(_this, &HPROSE_DIGIT3_TABLE[3 * i], 3);           \
+    }                                                                           \
+    else {                                                                      \
+        char buf[32];                                                           \
+        char *p = &buf[32];                                                     \
+        if (i) {                                                                \
+            while (i >= 100) {                                                  \
+                uint_type t = i / 1000;                                         \
+                p -= 3;                                                         \
+                memcpy(p, &HPROSE_DIGIT3_TABLE[3 * (i - (t * 1000))], 3);       \
+                i = t;                                                          \
+            }                                                                   \
+            while (i >= 10) {                                                   \
+                uint_type t = i / 100;                                          \
+                p -= 2;                                                         \
+                memcpy(p, &HPROSE_DIGIT2_TABLE[2 * (i - (t * 100))], 2);        \
+                i = t;                                                          \
+            }                                                                   \
+            if (i) {                                                            \
+                *(--p) = (char)('0' + i);                                       \
+            }                                                                   \
+        } else {                                                                \
+            *(--p) = '0';                                                       \
+        }                                                                       \
+        hprose_bytes_io_write(_this, p, &buf[32] - p);                          \
     }
-    else {
-        char buf[32];
-        char *p = buf + 31;
-        *p = '\0';
-        while (num > 0) {
-            *(--p) = (char)(num % 10) + '0';
-            num /= 10;
-        }
-        hprose_bytes_io_write(_this, p, buf + 31 - p);
-    }
+
+static zend_always_inline void hprose_bytes_io_write_uint(hprose_bytes_io *_this, uint32_t i) {
+    hprose_bytes_io_write_uinteger(_this, i, uint32_t);
 }
 
-static zend_always_inline void hprose_bytes_io_write_ulong(hprose_bytes_io *_this, uint64_t num) {
-    if (num <= 9) {
-        hprose_bytes_io_putc(_this, (char)('0' + num));
-    }
-    else {
-        char buf[32];
-        char *p = buf + 31;
-        *p = '\0';
-        while (num > 0) {
-            *(--p) = (char)(num % 10) + '0';
-            num /= 10;
-        }
-        hprose_bytes_io_write(_this, p, buf + 31 - p);
-    }
+static zend_always_inline void hprose_bytes_io_write_ulong(hprose_bytes_io *_this, uint64_t i) {
+    hprose_bytes_io_write_uinteger(_this, i, uint64_t);
 }
 
 static zend_always_inline void hprose_bytes_io_write_double(hprose_bytes_io *_this, double num) {
