@@ -13,7 +13,7 @@
  *                                                        *
  * hprose future for pecl header file.                    *
  *                                                        *
- * LastModified: May 7, 2015                              *
+ * LastModified: May 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -84,14 +84,14 @@ static zend_always_inline void hprose_completer_complete_error(hprose_completer 
 }
 
 static zend_always_inline void hprose_completer_complete(hprose_completer *_this, zval *result TSRMLS_DC) {
-    int i, count;
+    int count = Z_ARRLEN_P(_this->future->callbacks);
 #if PHP_MAJOR_VERSION < 7
     Z_ADDREF_P(result);
 #else
     Z_TRY_ADDREF_P(result);
 #endif
-    count = Z_ARRLEN_P(_this->future->callbacks);
     if (count > 0) {
+        int i;
         HashTable *ht = Z_ARRVAL_P(_this->future->callbacks);
         zend_hash_internal_pointer_reset(ht);
         for (i = 0; i < count; ++i) {
@@ -157,8 +157,7 @@ static zend_always_inline void hprose_completer_future(hprose_completer *_this, 
 }
 
 static zend_always_inline hprose_future *hprose_future_then(hprose_future *_this, zval *callback TSRMLS_DC) {
-    int i, count;
-    count = Z_ARRLEN_P(_this->results);
+    int count = Z_ARRLEN_P(_this->results);
     if (count > 0) {
         zval *result = php_array_get(_this->results, 0);
 #if PHP_MAJOR_VERSION < 7
@@ -213,7 +212,7 @@ static zend_always_inline hprose_future *hprose_future_then(hprose_future *_this
 }
 
 static zend_always_inline hprose_future *hprose_future_catch_error(hprose_future *_this, zval *onerror TSRMLS_DC) {
-    int i, count;
+    int i, count = Z_ARRLEN_P(_this->errors);
     HashTable *ht = Z_ARRVAL_P(_this->errors);
 #if PHP_MAJOR_VERSION < 7
     Z_ADDREF_P(onerror);
@@ -223,7 +222,6 @@ static zend_always_inline hprose_future *hprose_future_catch_error(hprose_future
     ZVAL_COPY(_this->onerror, onerror);
 #endif
     zend_hash_internal_pointer_reset(ht);
-    count = Z_ARRLEN_P(_this->errors);
     for (i = 0; i < count; ++i) {
 #if PHP_MAJOR_VERSION < 7
         zval **error;
