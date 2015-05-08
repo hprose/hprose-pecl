@@ -13,7 +13,7 @@
  *                                                        *
  * hprose writer for pecl source file.                    *
  *                                                        *
- * LastModified: Apr 9, 2015                              *
+ * LastModified: May 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -30,57 +30,57 @@ static zend_always_inline zend_class_entry *php_date_get_date_ce() {
     return *ce;
 }
 #endif
-void hprose_writer_serialize(hprose_writer *_this, zval *val TSRMLS_DC) {
+void _hprose_writer_serialize(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
     if (!val) {
-        hprose_writer_write_null(_this); return;
+        _hprose_writer_write_null(stream); return;
     }
     switch (Z_TYPE_P(val)) {
         case IS_NULL:
-            hprose_writer_write_null(_this); break;
+            _hprose_writer_write_null(stream); break;
         case IS_LONG:
-            hprose_writer_write_long(_this, Z_LVAL_P(val)); break;
+            _hprose_writer_write_long(stream, Z_LVAL_P(val)); break;
         case IS_DOUBLE:
-            hprose_writer_write_double(_this, Z_DVAL_P(val)); break;
+            _hprose_writer_write_double(stream, Z_DVAL_P(val)); break;
 #if PHP_MAJOR_VERSION < 7
         case IS_BOOL:
-            hprose_writer_write_bool(_this, Z_BVAL_P(val)); break;
+            _hprose_writer_write_bool(stream, Z_BVAL_P(val)); break;
 #else /* PHP_MAJOR_VERSION < 7 */
         case IS_UNDEF:
-            hprose_writer_write_null(_this); break;
+            _hprose_writer_write_null(stream); break;
         case IS_TRUE:
-            hprose_writer_write_true(_this); break;
+            _hprose_writer_write_true(stream); break;
         case IS_FALSE:
-            hprose_writer_write_false(_this); break;
+            _hprose_writer_write_false(stream); break;
         case IS_REFERENCE:
-            hprose_writer_serialize(_this, &(Z_REF_P(val)->val)); break;
+            _hprose_writer_serialize(_this, refer, stream, &(Z_REF_P(val)->val) TSRMLS_CC); break;
 #endif /* PHP_MAJOR_VERSION < 7 */
         case IS_ARRAY:
             if (is_list(val)) {
-                hprose_writer_write_array(_this, val TSRMLS_CC);
+                _hprose_writer_write_array(_this, refer, stream, val TSRMLS_CC);
             }
             else {
-                hprose_writer_write_assoc_array(_this, val TSRMLS_CC);
+                _hprose_writer_write_assoc_array(_this, refer, stream, val TSRMLS_CC);
             }
             break;
         case IS_OBJECT: {
             zend_class_entry *ce = Z_OBJCE_P(val);
             if (instanceof_function(ce, get_hprose_bytes_io_ce() TSRMLS_CC)) {
-                hprose_writer_write_bytes_io_with_ref(_this, val TSRMLS_CC);
+                _hprose_writer_write_bytes_io_with_ref(refer, stream, val TSRMLS_CC);
             }
             else if (instanceof_function(ce, php_date_get_date_ce() TSRMLS_CC)) {
-                hprose_writer_write_datetime_with_ref(_this, val TSRMLS_CC);
+                _hprose_writer_write_datetime_with_ref(refer, stream, val TSRMLS_CC);
             }
             else if (instanceof_function(ce, spl_ce_SplObjectStorage TSRMLS_CC)) {
-                hprose_writer_write_map_with_ref(_this, val TSRMLS_CC);
+                _hprose_writer_write_map_with_ref(_this, refer, stream, val TSRMLS_CC);
             }
             else if (instanceof_function(ce, zend_ce_traversable TSRMLS_CC)) {
-                hprose_writer_write_list_with_ref(_this, val TSRMLS_CC);
+                _hprose_writer_write_list_with_ref(_this, refer, stream, val TSRMLS_CC);
             }
             else if (instanceof_function(ce, zend_standard_class_def TSRMLS_CC)) {
-                hprose_writer_write_stdclass_with_ref(_this, val TSRMLS_CC);
+                _hprose_writer_write_stdclass_with_ref(_this, refer, stream, val TSRMLS_CC);
             }
             else {
-                hprose_writer_write_object_with_ref(_this, val TSRMLS_CC);
+                _hprose_writer_write_object_with_ref(_this, refer, stream, val TSRMLS_CC);
             }
             break;
         }
@@ -88,18 +88,18 @@ void hprose_writer_serialize(hprose_writer *_this, zval *val TSRMLS_DC) {
             char * s = Z_STRVAL_P(val);
             int32_t l = Z_STRLEN_P(val);
             if (l == 0) {
-                hprose_writer_write_empty(_this);
+                _hprose_writer_write_empty(stream);
             }
             else if (is_utf8(s, l)) {
                 if (l < 4 && ustrlen(s, l) == 1) {
-                    hprose_writer_write_utf8char(_this, val);
+                    _hprose_writer_write_utf8char(stream, val);
                 }
                 else {
-                    hprose_writer_write_string_with_ref(_this, val);
+                    _hprose_writer_write_string_with_ref(refer, stream, val);
                 }
             }
             else {
-                hprose_writer_write_bytes_with_ref(_this, val);
+                _hprose_writer_write_bytes_with_ref(refer, stream, val);
             }
             break;
         }
@@ -123,7 +123,7 @@ ZEND_METHOD(hprose_writer, serialize) {
     zval *val = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!", &val) == SUCCESS) {
-        hprose_writer_serialize(_this, val TSRMLS_CC);
+        hprose_writer_serialize(_this, val);
     }
 }
 
@@ -218,7 +218,7 @@ ZEND_METHOD(hprose_writer, writeBytesIO) {
     zval *stream = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &stream) == SUCCESS) {
-        hprose_writer_write_bytes_io(_this, stream TSRMLS_CC);
+        hprose_writer_write_bytes_io(_this, stream);
     }    
 }
 
@@ -226,7 +226,7 @@ ZEND_METHOD(hprose_writer, writeBytesIOWithRef) {
     zval *stream = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &stream) == SUCCESS) {
-        hprose_writer_write_bytes_io_with_ref(_this, stream TSRMLS_CC);
+        hprose_writer_write_bytes_io_with_ref(_this, stream);
     }
 }
 
@@ -234,7 +234,7 @@ ZEND_METHOD(hprose_writer, writeDateTime) {
     zval *dt = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &dt) == SUCCESS) {
-        hprose_writer_write_datetime(_this, dt TSRMLS_CC);
+        hprose_writer_write_datetime(_this, dt);
     }    
 }
 
@@ -242,7 +242,7 @@ ZEND_METHOD(hprose_writer, writeDateTimeWithRef) {
     zval *dt = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &dt) == SUCCESS) {
-        hprose_writer_write_datetime_with_ref(_this, dt TSRMLS_CC);
+        hprose_writer_write_datetime_with_ref(_this, dt);
     }
 }
 
@@ -250,7 +250,7 @@ ZEND_METHOD(hprose_writer, writeArray) {
     zval *arr = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &arr) == SUCCESS) {
-        hprose_writer_write_array(_this, arr TSRMLS_CC);
+        hprose_writer_write_array(_this, arr);
     }
 }
 
@@ -258,7 +258,7 @@ ZEND_METHOD(hprose_writer, writeAssocArray) {
     zval *arr = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &arr) == SUCCESS) {
-        hprose_writer_write_assoc_array(_this, arr TSRMLS_CC);
+        hprose_writer_write_assoc_array(_this, arr);
     }
 }
 
@@ -266,7 +266,7 @@ ZEND_METHOD(hprose_writer, writeList) {
     zval *list = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &list) == SUCCESS) {
-        hprose_writer_write_list(_this, list TSRMLS_CC);
+        hprose_writer_write_list(_this, list);
     }
 }
 
@@ -274,7 +274,7 @@ ZEND_METHOD(hprose_writer, writeListWithRef) {
     zval *list = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &list) == SUCCESS) {
-        hprose_writer_write_list_with_ref(_this, list TSRMLS_CC);
+        hprose_writer_write_list_with_ref(_this, list);
     }
 }
 
@@ -282,7 +282,7 @@ ZEND_METHOD(hprose_writer, writeMap) {
     zval *map = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &map) == SUCCESS) {
-        hprose_writer_write_map(_this, map TSRMLS_CC);
+        hprose_writer_write_map(_this, map);
     }
 }
 
@@ -290,7 +290,7 @@ ZEND_METHOD(hprose_writer, writeMapWithRef) {
     zval *map = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &map) == SUCCESS) {
-        hprose_writer_write_map_with_ref(_this, map TSRMLS_CC);
+        hprose_writer_write_map_with_ref(_this, map);
     }
 }
 
@@ -298,7 +298,7 @@ ZEND_METHOD(hprose_writer, writeStdClass) {
     zval *obj = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &obj) == SUCCESS) {
-        hprose_writer_write_stdclass(_this, obj TSRMLS_CC);
+        hprose_writer_write_stdclass(_this, obj);
     }
 }
 
@@ -306,7 +306,7 @@ ZEND_METHOD(hprose_writer, writeStdClassWithRef) {
     zval *obj = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &obj) == SUCCESS) {
-        hprose_writer_write_stdclass_with_ref(_this, obj TSRMLS_CC);
+        hprose_writer_write_stdclass_with_ref(_this, obj);
     }
 }
 
@@ -314,7 +314,7 @@ ZEND_METHOD(hprose_writer, writeObject) {
     zval *obj = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &obj) == SUCCESS) {
-        hprose_writer_write_object(_this, obj TSRMLS_CC);
+        hprose_writer_write_object(_this, obj);
     }
 }
 
@@ -322,7 +322,7 @@ ZEND_METHOD(hprose_writer, writeObjectWithRef) {
     zval *obj = NULL;
     HPROSE_THIS(writer);
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &obj) == SUCCESS) {
-        hprose_writer_write_object_with_ref(_this, obj TSRMLS_CC);
+        hprose_writer_write_object_with_ref(_this, obj);
     }
 }
 

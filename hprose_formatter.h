@@ -13,7 +13,7 @@
  *                                                        *
  * hprose formatter for pecl header file.                 *
  *                                                        *
- * LastModified: Mar 30, 2015                             *
+ * LastModified: May 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -35,7 +35,7 @@ HPROSE_STARTUP_FUNCTION(formatter);
 static zend_always_inline void hprose_serialize(hprose_bytes_io *stream, zval *val, zend_bool simple TSRMLS_DC) {
     hprose_writer writer;
     hprose_writer_init(&writer, stream, simple);
-    hprose_writer_serialize(&writer, val TSRMLS_CC);
+    hprose_writer_serialize(&writer, val);
     hprose_writer_destroy(&writer);
 }
 

@@ -14,7 +14,7 @@
  *                                                        *
  * hprose service for pecl source file.                   *
  *                                                        *
- * LastModified: May 7, 2015                              *
+ * LastModified: May 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -243,13 +243,13 @@ static void hprose_service_after_invoke(zval *service, zval *name, zval *args, z
         }
         else {
             hprose_writer_reset(&writer);
-            hprose_writer_serialize(&writer, result TSRMLS_CC);
+            hprose_writer_serialize(&writer, result);
             hprose_zval_free(result);
         }
         if (byref) {
             hprose_bytes_io_putc(output, HPROSE_TAG_ARGUMENT);
             hprose_writer_reset(&writer);
-            hprose_writer_write_array(&writer, args TSRMLS_CC);
+            hprose_writer_write_array(&writer, args);
         }
         hprose_writer_destroy(&writer);
     }
@@ -530,7 +530,7 @@ static zend_always_inline void hprose_service_do_function_list(zval *service, zv
     hprose_bytes_io_init(&output, NULL, 0);
     hprose_writer_init(&writer, &output, 1);
     hprose_bytes_io_putc(&output, HPROSE_TAG_FUNCTIONS);
-    hprose_writer_write_array(&writer, _this->names TSRMLS_CC);
+    hprose_writer_write_array(&writer, _this->names);
     hprose_bytes_io_putc(&output, HPROSE_TAG_END);
     hprose_writer_destroy(&writer);
 #if PHP_MAJOR_VERSION < 7

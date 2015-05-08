@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl source file.                    *
  *                                                        *
- * LastModified: May 6, 2015                              *
+ * LastModified: May 8, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -36,7 +36,7 @@ static zend_always_inline void hprose_client_do_output(hprose_client *_this, zva
     hprose_writer_write_string(&writer, name);
     if (Z_ARRLEN_P(args) > 0 || byref) {
         hprose_writer_reset(&writer);
-        hprose_writer_write_array(&writer, args TSRMLS_CC);
+        hprose_writer_write_array(&writer, args);
         if (byref) {
             hprose_writer_write_true(&writer);
         }
