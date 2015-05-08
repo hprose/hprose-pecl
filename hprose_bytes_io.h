@@ -584,8 +584,9 @@ static zend_always_inline void hprose_bytes_io_write_ulong(hprose_bytes_io *_thi
 
 static zend_always_inline void hprose_bytes_io_write_double(hprose_bytes_io *_this, double d) {
     char buf[1024];
+    int32_t n;
     php_gcvt(d, 14, '.', 'e', &buf[0]);
-    int32_t n = strlen(buf);
+    n = strlen(buf);
     hprose_bytes_io_write(_this, buf, n);
 }
 
