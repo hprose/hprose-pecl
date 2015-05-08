@@ -32,20 +32,6 @@ zend_class_entry *get_hprose_formatter_ce();
 
 HPROSE_STARTUP_FUNCTION(formatter);
 
-static zend_always_inline void hprose_serialize(hprose_bytes_io *stream, zval *val, zend_bool simple TSRMLS_DC) {
-    hprose_writer writer;
-    hprose_writer_init(&writer, stream, simple);
-    hprose_writer_serialize(&writer, val);
-    hprose_writer_destroy(&writer);
-}
-
-static zend_always_inline void hprose_unserialize(hprose_bytes_io *stream, zend_bool simple, zval *return_value TSRMLS_DC) {
-    hprose_reader reader;
-    hprose_reader_init(&reader, stream, simple);
-    hprose_reader_unserialize(&reader, return_value TSRMLS_CC);
-    hprose_reader_destroy(&reader);
-}
-
 ZEND_FUNCTION(hprose_serialize);
 ZEND_FUNCTION(hprose_unserialize);
 
