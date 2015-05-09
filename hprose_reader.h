@@ -403,7 +403,7 @@ static zend_always_inline void _hprose_reader_read_bytes_without_tag(hprose_byte
 #if PHP_MAJOR_VERSION < 7
     RETVAL_STRINGL_0(hprose_bytes_io_read(stream, count), count);
 #else
-    RETVAL_STR(hprose_bytes_io_read(_this->stream, count));
+    RETVAL_STR(hprose_bytes_io_read(stream, count));
 #endif
     hprose_bytes_io_skip(stream, 1);
 }
