@@ -13,7 +13,7 @@
  *                                                        *
  * hprose formatter for pecl source file.                 *
  *                                                        *
- * LastModified: Apr 8, 2015                              *
+ * LastModified: May 9, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -64,22 +64,8 @@ static zend_always_inline void hprose_serialize(hprose_bytes_io *stream, zval *v
     hprose_writer_destroy(&writer);
 }
 
-static zend_always_inline void hprose_unserialize(hprose_bytes_io *stream, zend_bool simple, zval *return_value TSRMLS_DC) {
-    hprose_reader reader;
-    hprose_reader_init(&reader, stream, simple);
-    hprose_reader_unserialize(&reader, return_value TSRMLS_CC);
-    hprose_reader_destroy(&reader);
-}
-
-/* {{{ proto string hprose_serialize(mixed $val, bool $simple = false)
-   serialize php value to hprose format data  */
-ZEND_FUNCTION(hprose_serialize) {
-    zval *val;
-    zend_bool simple = 0;
+static zend_always_inline void hprose_fast_serialize(zval *val, zend_bool simple, zval *return_value TSRMLS_DC) {
     hprose_bytes_io stream;
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!|b", &val, &simple) == FAILURE) {
-        return;
-    }
     hprose_bytes_io_init(&stream, NULL, 0);
     if (!val) {
         _hprose_writer_write_null(&stream); return;
@@ -142,6 +128,123 @@ ZEND_FUNCTION(hprose_serialize) {
     RETVAL_STR(HB_STR(stream));
 #endif
 }
+
+static zend_always_inline void hprose_reader_fast_unserialize(hprose_reader *_this, char tag, zval *return_value TSRMLS_DC) {
+    switch (tag) {
+        case HPROSE_TAG_LIST: {
+            hprose_reader_read_list_without_tag(_this, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_MAP: {
+            hprose_reader_read_map_without_tag(_this, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_CLASS: {
+            hprose_reader_read_class(_this TSRMLS_CC);
+            hprose_reader_unserialize(_this, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_OBJECT: {
+            hprose_reader_read_object_without_tag(_this, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_REF: {
+            hprose_reader_read_ref(_this, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_ERROR: {
+            _hprose_reader_read_string(_this, return_value TSRMLS_CC);
+            zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
+                                    "%s", Z_STRVAL_P(return_value));
+            return;
+        }
+        default: unexpected_tag(tag, NULL TSRMLS_CC);
+    }
+}
+
+static zend_always_inline void hprose_unserialize(hprose_bytes_io *stream, zend_bool simple, char tag, zval *return_value TSRMLS_DC) {
+    hprose_reader reader;
+    hprose_reader_init(&reader, stream, simple);
+    hprose_reader_fast_unserialize(&reader, tag, return_value TSRMLS_CC);
+    hprose_reader_destroy(&reader);
+}
+
+static zend_always_inline void hprose_fast_unserialize(hprose_bytes_io *stream, zend_bool simple, zval *return_value TSRMLS_DC) {
+    char tag = hprose_bytes_io_getc(stream);
+    switch (tag) {
+        case '0': RETURN_LONG(0);
+        case '1': RETURN_LONG(1);
+        case '2': RETURN_LONG(2);
+        case '3': RETURN_LONG(3);
+        case '4': RETURN_LONG(4);
+        case '5': RETURN_LONG(5);
+        case '6': RETURN_LONG(6);
+        case '7': RETURN_LONG(7);
+        case '8': RETURN_LONG(8);
+        case '9': RETURN_LONG(9);
+        case HPROSE_TAG_INTEGER:
+            RETURN_LONG(_hprose_reader_read_integer_without_tag(stream));
+        case HPROSE_TAG_LONG: {
+#if PHP_MAJOR_VERSION < 7
+            int32_t len = 0;
+            char *num = _hprose_reader_read_long_without_tag(stream, &len);
+            RETURN_STRINGL_0(num, len);
+#else
+            RETURN_STR(_hprose_reader_read_long_without_tag(stream));
+#endif
+        }
+        case HPROSE_TAG_DOUBLE: {
+            RETURN_DOUBLE(_hprose_reader_read_double_without_tag(stream));
+        }
+        case HPROSE_TAG_NAN:
+            RETURN_DOUBLE(NAN);
+        case HPROSE_TAG_INFINITY:
+            RETURN_DOUBLE(_hprose_reader_read_infinity_without_tag(stream));
+        case HPROSE_TAG_NULL: RETURN_NULL();
+        case HPROSE_TAG_EMPTY: RETURN_EMPTY_STRING();
+        case HPROSE_TAG_TRUE: RETURN_TRUE;
+        case HPROSE_TAG_FALSE: RETURN_FALSE;
+        case HPROSE_TAG_DATE: {
+            _hprose_reader_read_datetime_without_tag(stream, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_TIME: {
+            _hprose_reader_read_time_without_tag(stream, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_BYTES: {
+            _hprose_reader_read_bytes_without_tag(stream, return_value);
+            return;
+        }
+        case HPROSE_TAG_UTF8CHAR: {
+            _hprose_reader_read_utf8char_without_tag(stream, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_STRING: {
+            _hprose_reader_read_string_without_tag(stream, return_value TSRMLS_CC);
+            return;
+        }
+        case HPROSE_TAG_GUID: {
+            _hprose_reader_read_guid_without_tag(stream, return_value);
+            return;
+        }
+        default: {
+            hprose_unserialize(stream, simple, tag, return_value TSRMLS_CC);
+            return;
+        }
+    }
+}
+
+/* {{{ proto string hprose_serialize(mixed $val, bool $simple = false)
+   serialize php value to hprose format data  */
+ZEND_FUNCTION(hprose_serialize) {
+    zval *val;
+    zend_bool simple = 0;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!|b", &val, &simple) == FAILURE) {
+        return;
+    }
+    hprose_fast_serialize(val, simple, return_value TSRMLS_CC);
+}
 /* }}} */
 
 /* {{{ proto mixed hprose_unserialize(mixed $data, bool $simple = false)
@@ -160,12 +263,12 @@ ZEND_FUNCTION(hprose_unserialize) {
 #else
         hprose_bytes_io_init_readonly(&stream, Z_STR_P(data));
 #endif
-        hprose_unserialize(&stream, simple, return_value TSRMLS_CC);
+        hprose_fast_unserialize(&stream, simple, return_value TSRMLS_CC);
         return;
     }
     else if (Z_TYPE_P(data) == IS_OBJECT) {
         if (instanceof_function(Z_OBJCE_P(data), get_hprose_bytes_io_ce() TSRMLS_CC)) {
-            hprose_unserialize(HPROSE_GET_OBJECT_P(bytes_io, data)->_this, simple, return_value TSRMLS_CC);
+            hprose_fast_unserialize(HPROSE_GET_OBJECT_P(bytes_io, data)->_this, simple, return_value TSRMLS_CC);
             return;
         }
     }

@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl header file.                    *
  *                                                        *
- * LastModified: Apr 13, 2015                             *
+ * LastModified: May 9, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -114,9 +114,11 @@ static zend_always_inline void hprose_reader_reset(hprose_reader *_this) {
     }
 }
 
-static zend_always_inline long hprose_reader_read_integer_without_tag(hprose_reader *_this) {
-    return hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_SEMICOLON);
+static zend_always_inline long _hprose_reader_read_integer_without_tag(hprose_bytes_io *stream) {
+    return hprose_bytes_io_read_int(stream, HPROSE_TAG_SEMICOLON);
 }
+
+#define hprose_reader_read_integer_without_tag(_this) _hprose_reader_read_integer_without_tag((_this)->stream)
 
 static zend_always_inline long hprose_reader_read_integer(hprose_reader *_this TSRMLS_DC) {
     char expected_tags[] = {'0', '1', '2', '3', '4',
@@ -141,9 +143,12 @@ static zend_always_inline long hprose_reader_read_integer(hprose_reader *_this T
 }
 
 #if PHP_MAJOR_VERSION < 7
-static zend_always_inline char * hprose_reader_read_long_without_tag(hprose_reader *_this, int32_t *len_ptr) {
-    return hprose_bytes_io_readuntil(_this->stream, HPROSE_TAG_SEMICOLON, len_ptr);
+
+static zend_always_inline char * _hprose_reader_read_long_without_tag(hprose_bytes_io *stream, int32_t *len_ptr) {
+    return hprose_bytes_io_readuntil(stream, HPROSE_TAG_SEMICOLON, len_ptr);
 }
+
+#define hprose_reader_read_long_without_tag(_this, len_ptr) _hprose_reader_read_long_without_tag((_this)->stream, len_ptr)
 
 static zend_always_inline char * hprose_reader_read_long(hprose_reader *_this, int32_t *len_ptr TSRMLS_DC) {
     char expected_tags[] = {'0', '1', '2', '3', '4',
@@ -169,9 +174,11 @@ static zend_always_inline char * hprose_reader_read_long(hprose_reader *_this, i
     }
 }
 #else
-static zend_always_inline zend_string *hprose_reader_read_long_without_tag(hprose_reader *_this) {
-    return hprose_bytes_io_readuntil(_this->stream, HPROSE_TAG_SEMICOLON);
+static zend_always_inline zend_string *_hprose_reader_read_long_without_tag(hprose_bytes_io *stream) {
+    return hprose_bytes_io_readuntil(stream, HPROSE_TAG_SEMICOLON);
 }
+
+#define hprose_reader_read_long_without_tag(_this) _hprose_reader_read_long_without_tag((_this)->stream)
 
 static zend_always_inline zend_string *hprose_reader_read_long(hprose_reader *_this TSRMLS_DC) {
     char expected_tags[] = {'0', '1', '2', '3', '4',
@@ -199,23 +206,27 @@ static zend_always_inline zend_string *hprose_reader_read_long(hprose_reader *_t
 
 #endif
 
-static zend_always_inline double hprose_reader_read_double_without_tag(hprose_reader *_this) {
+static zend_always_inline double _hprose_reader_read_double_without_tag(hprose_bytes_io *stream) {
 #if PHP_MAJOR_VERSION < 7
     int32_t l;
-    char *s = hprose_bytes_io_readuntil(_this->stream, HPROSE_TAG_SEMICOLON, &l);
+    char *s = hprose_bytes_io_readuntil(stream, HPROSE_TAG_SEMICOLON, &l);
     double d = atof(s);
     efree(s);
 #else
-    zend_string *s = hprose_bytes_io_readuntil(_this->stream, HPROSE_TAG_SEMICOLON);
+    zend_string *s = hprose_bytes_io_readuntil(stream, HPROSE_TAG_SEMICOLON);
     double d = atof(s->val);
     zend_string_release(s);
 #endif
     return d;
 }
 
-static zend_always_inline double hprose_reader_read_infinity_without_tag(hprose_reader *_this) {
-    return (hprose_bytes_io_getc(_this->stream) == HPROSE_TAG_NEG) ? -INFINITY : INFINITY;
+#define hprose_reader_read_double_without_tag(_this) _hprose_reader_read_double_without_tag((_this)->stream)
+
+static zend_always_inline double _hprose_reader_read_infinity_without_tag(hprose_bytes_io *stream) {
+    return (hprose_bytes_io_getc(stream) == HPROSE_TAG_NEG) ? -INFINITY : INFINITY;
 }
+
+#define hprose_reader_read_infinity_without_tag(_this) _hprose_reader_read_infinity_without_tag((_this)->stream)
 
 static zend_always_inline double hprose_reader_read_double(hprose_reader *_this TSRMLS_DC) {
     char expected_tags[] = {'0', '1', '2', '3', '4',
@@ -272,34 +283,34 @@ static zend_always_inline void hprose_reader_read_ref(hprose_reader *_this, zval
             "Unexpected serialize tag '%c' in stream", HPROSE_TAG_REF);
 }
 
-static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+static zend_always_inline void _hprose_reader_read_datetime_without_tag(hprose_bytes_io *stream, zval *return_value TSRMLS_DC) {
     char tag;
     hprose_bytes_io *tmp = hprose_bytes_io_new();
-    hprose_bytes_io_read_to(_this->stream, tmp, 4);
+    hprose_bytes_io_read_to(stream, tmp, 4);
     hprose_bytes_io_putc(tmp, '-');
-    hprose_bytes_io_read_to(_this->stream, tmp, 2);
+    hprose_bytes_io_read_to(stream, tmp, 2);
     hprose_bytes_io_putc(tmp, '-');
-    hprose_bytes_io_read_to(_this->stream, tmp, 2);
-    tag = hprose_bytes_io_getc(_this->stream);
+    hprose_bytes_io_read_to(stream, tmp, 2);
+    tag = hprose_bytes_io_getc(stream);
     if (tag == HPROSE_TAG_TIME) {
         hprose_bytes_io_putc(tmp, tag);
-        hprose_bytes_io_read_to(_this->stream, tmp, 2);
+        hprose_bytes_io_read_to(stream, tmp, 2);
         hprose_bytes_io_putc(tmp, ':');
-        hprose_bytes_io_read_to(_this->stream, tmp, 2);
+        hprose_bytes_io_read_to(stream, tmp, 2);
         hprose_bytes_io_putc(tmp, ':');
-        hprose_bytes_io_read_to(_this->stream, tmp, 2);
-        tag = hprose_bytes_io_getc(_this->stream);
+        hprose_bytes_io_read_to(stream, tmp, 2);
+        tag = hprose_bytes_io_getc(stream);
         if (tag == HPROSE_TAG_POINT) {
             hprose_bytes_io_putc(tmp, tag);
-            hprose_bytes_io_read_to(_this->stream, tmp, 3);
-            tag = hprose_bytes_io_getc(_this->stream);
+            hprose_bytes_io_read_to(stream, tmp, 3);
+            tag = hprose_bytes_io_getc(stream);
             if ((tag >= '0') && (tag <= '9')) {
                 hprose_bytes_io_putc(tmp, tag);
-                hprose_bytes_io_read_to(_this->stream, tmp, 2);
-                tag = hprose_bytes_io_getc(_this->stream);
+                hprose_bytes_io_read_to(stream, tmp, 2);
+                tag = hprose_bytes_io_getc(stream);
                 if ((tag >= '0') && (tag <= '9')) {
-                    hprose_bytes_io_skip(_this->stream, 2);
-                    tag = hprose_bytes_io_getc(_this->stream);
+                    hprose_bytes_io_skip(stream, 2);
+                    tag = hprose_bytes_io_getc(stream);
                 }
             }
         }
@@ -326,31 +337,35 @@ static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_re
     }
 #endif
     hprose_bytes_io_free(tmp);
+}
+
+static zend_always_inline void hprose_reader_read_datetime_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+    _hprose_reader_read_datetime_without_tag(_this->stream, return_value TSRMLS_CC);
     hprose_reader_refer_set(_this->refer, return_value);
 }
 
-static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+static zend_always_inline void _hprose_reader_read_time_without_tag(hprose_bytes_io *stream, zval *return_value TSRMLS_DC) {
     char tag;
     hprose_bytes_io *tmp = hprose_bytes_io_new();
     hprose_bytes_io_write(tmp, "1970-01-01", 10);
     hprose_bytes_io_putc(tmp, HPROSE_TAG_TIME);
-    hprose_bytes_io_read_to(_this->stream, tmp, 2);
+    hprose_bytes_io_read_to(stream, tmp, 2);
     hprose_bytes_io_putc(tmp, ':');
-    hprose_bytes_io_read_to(_this->stream, tmp, 2);
+    hprose_bytes_io_read_to(stream, tmp, 2);
     hprose_bytes_io_putc(tmp, ':');
-    hprose_bytes_io_read_to(_this->stream, tmp, 2);
-    tag = hprose_bytes_io_getc(_this->stream);
+    hprose_bytes_io_read_to(stream, tmp, 2);
+    tag = hprose_bytes_io_getc(stream);
     if (tag == HPROSE_TAG_POINT) {
         hprose_bytes_io_putc(tmp, tag);
-        hprose_bytes_io_read_to(_this->stream, tmp, 3);
-        tag = hprose_bytes_io_getc(_this->stream);
+        hprose_bytes_io_read_to(stream, tmp, 3);
+        tag = hprose_bytes_io_getc(stream);
         if ((tag >= '0') && (tag <= '9')) {
             hprose_bytes_io_putc(tmp, tag);
-            hprose_bytes_io_read_to(_this->stream, tmp, 2);
-            tag = hprose_bytes_io_getc(_this->stream);
+            hprose_bytes_io_read_to(stream, tmp, 2);
+            tag = hprose_bytes_io_getc(stream);
             if ((tag >= '0') && (tag <= '9')) {
-                hprose_bytes_io_skip(_this->stream, 2);
-                tag = hprose_bytes_io_getc(_this->stream);
+                hprose_bytes_io_skip(stream, 2);
+                tag = hprose_bytes_io_getc(stream);
             }
         }
     }
@@ -376,44 +391,54 @@ static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader
     }
 #endif
     hprose_bytes_io_free(tmp);
+}
+
+static zend_always_inline void hprose_reader_read_time_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+    _hprose_reader_read_time_without_tag(_this->stream, return_value TSRMLS_CC);
     hprose_reader_refer_set(_this->refer, return_value);
 }
 
-static zend_always_inline void hprose_reader_read_bytes_without_tag(hprose_reader *_this, zval *return_value) {
-    int32_t count = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_QUOTE);
+static zend_always_inline void _hprose_reader_read_bytes_without_tag(hprose_bytes_io *stream, zval *return_value) {
+    int32_t count = hprose_bytes_io_read_int(stream, HPROSE_TAG_QUOTE);
 #if PHP_MAJOR_VERSION < 7
-    RETVAL_STRINGL_0(hprose_bytes_io_read(_this->stream, count), count);
+    RETVAL_STRINGL_0(hprose_bytes_io_read(stream, count), count);
 #else
     RETVAL_STR(hprose_bytes_io_read(_this->stream, count));
 #endif
-    hprose_bytes_io_skip(_this->stream, 1);
+    hprose_bytes_io_skip(stream, 1);
+}
+
+static zend_always_inline void hprose_reader_read_bytes_without_tag(hprose_reader *_this, zval *return_value) {
+    _hprose_reader_read_bytes_without_tag(_this->stream, return_value);
     hprose_reader_refer_set(_this->refer, return_value);
 }
 
-static zend_always_inline void hprose_reader_read_utf8char_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
+static zend_always_inline void _hprose_reader_read_utf8char_without_tag(hprose_bytes_io *stream, zval *return_value TSRMLS_DC) {
 #if PHP_MAJOR_VERSION < 7
     int32_t len;
-    char *uc = hprose_bytes_io_read_string(_this->stream, 1, &len);
+    char *uc = hprose_bytes_io_read_string(stream, 1, &len);
     RETVAL_STRINGL_0(uc, len);
 #else
-    RETVAL_STR(hprose_bytes_io_read_string(_this->stream, 1));
+    RETVAL_STR(hprose_bytes_io_read_string(stream, 1));
 #endif
 }
 
-static zend_always_inline void _hprose_reader_read_string_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
-    int32_t count = hprose_bytes_io_read_int(_this->stream, HPROSE_TAG_QUOTE);
+#define hprose_reader_read_utf8char_without_tag(_this, return_value) _hprose_reader_read_utf8char_without_tag((_this)->stream, return_value TSRMLS_CC)
+
+static zend_always_inline void _hprose_reader_read_string_without_tag(hprose_bytes_io *stream, zval *return_value TSRMLS_DC) {
+    int32_t count = hprose_bytes_io_read_int(stream, HPROSE_TAG_QUOTE);
 #if PHP_MAJOR_VERSION < 7
     int32_t len;
-    char *str = hprose_bytes_io_read_string(_this->stream, count, &len);
+    char *str = hprose_bytes_io_read_string(stream, count, &len);
     RETVAL_STRINGL_0(str, len);
 #else
-    RETVAL_STR(hprose_bytes_io_read_string(_this->stream, count));
+    RETVAL_STR(hprose_bytes_io_read_string(stream, count));
 #endif
-    hprose_bytes_io_skip(_this->stream, 1);
+    hprose_bytes_io_skip(stream, 1);
 }
 
 static zend_always_inline void hprose_reader_read_string_without_tag(hprose_reader *_this, zval *return_value TSRMLS_DC) {
-    _hprose_reader_read_string_without_tag(_this, return_value TSRMLS_CC);
+    _hprose_reader_read_string_without_tag(_this->stream, return_value TSRMLS_CC);
     hprose_reader_refer_set(_this->refer, return_value);
 }
 
@@ -467,14 +492,18 @@ static zend_always_inline void hprose_reader_read_string(hprose_reader *_this, z
     }
 }
 
-static zend_always_inline void hprose_reader_read_guid_without_tag(hprose_reader *_this, zval *return_value) {
-    hprose_bytes_io_skip(_this->stream, 1);
+static zend_always_inline void _hprose_reader_read_guid_without_tag(hprose_bytes_io *stream, zval *return_value) {
+    hprose_bytes_io_skip(stream, 1);
 #if PHP_MAJOR_VERSION < 7
-    RETVAL_STRINGL_0(hprose_bytes_io_read(_this->stream, 36), 36);
+    RETVAL_STRINGL_0(hprose_bytes_io_read(stream, 36), 36);
 #else
-    RETVAL_STR(hprose_bytes_io_read(_this->stream, 36));
+    RETVAL_STR(hprose_bytes_io_read(stream, 36));
 #endif
-    hprose_bytes_io_skip(_this->stream, 1);
+    hprose_bytes_io_skip(stream, 1);
+}
+
+static zend_always_inline void hprose_reader_read_guid_without_tag(hprose_reader *_this, zval *return_value) {
+    _hprose_reader_read_guid_without_tag(_this->stream, return_value);
     hprose_reader_refer_set(_this->refer, return_value);
 }
 
