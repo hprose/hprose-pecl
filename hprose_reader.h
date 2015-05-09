@@ -449,7 +449,7 @@ static zend_always_inline void _hprose_reader_read_string(hprose_reader *_this, 
     char tag = hprose_bytes_io_getc(_this->stream);
     switch (tag) {
         case HPROSE_TAG_UTF8CHAR: {
-            hprose_reader_read_utf8char_without_tag(_this, return_value TSRMLS_CC);
+            hprose_reader_read_utf8char_without_tag(_this, return_value);
             return;
         }
         case HPROSE_TAG_STRING: {
@@ -476,7 +476,7 @@ static zend_always_inline void hprose_reader_read_string(hprose_reader *_this, z
         case HPROSE_TAG_NULL: RETURN_NULL();
         case HPROSE_TAG_EMPTY: RETURN_EMPTY_STRING();
         case HPROSE_TAG_UTF8CHAR: {
-            hprose_reader_read_utf8char_without_tag(_this, return_value TSRMLS_CC);
+            hprose_reader_read_utf8char_without_tag(_this, return_value);
             return;
         }
         case HPROSE_TAG_STRING: {

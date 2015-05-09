@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl source file.                    *
  *                                                        *
- * LastModified: Apr 9, 2015                              *
+ * LastModified: May 9, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -68,7 +68,7 @@ void hprose_reader_unserialize(hprose_reader *_this, zval *return_value TSRMLS_D
             return;
         }
         case HPROSE_TAG_UTF8CHAR: {
-            hprose_reader_read_utf8char_without_tag(_this, return_value TSRMLS_CC);
+            hprose_reader_read_utf8char_without_tag(_this, return_value);
             return;
         }
         case HPROSE_TAG_STRING: {
@@ -327,7 +327,7 @@ ZEND_METHOD(hprose_reader, readBytes) {
 
 ZEND_METHOD(hprose_reader, readUTF8CharWithoutTag) {
     HPROSE_THIS(reader);
-    hprose_reader_read_utf8char_without_tag(_this, return_value TSRMLS_CC);
+    hprose_reader_read_utf8char_without_tag(_this, return_value);
 }
 
 ZEND_METHOD(hprose_reader, readUTF8Char) {
@@ -335,7 +335,7 @@ ZEND_METHOD(hprose_reader, readUTF8Char) {
     char expected_tags[] = {HPROSE_TAG_UTF8CHAR, '\0'};
     char tag = hprose_bytes_io_getc(_this->stream);
     if (tag == HPROSE_TAG_UTF8CHAR) {
-        hprose_reader_read_utf8char_without_tag(_this, return_value TSRMLS_CC);
+        hprose_reader_read_utf8char_without_tag(_this, return_value);
         return;            
     }
     unexpected_tag(tag, expected_tags TSRMLS_CC);
