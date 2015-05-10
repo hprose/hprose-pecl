@@ -47,17 +47,17 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <active>yes</active>
     </lead>
     <date>2015-05-10</date>
-    <time>09:09:09</time>
+    <time>17:05:13</time>
     <version>
-        <release>1.5.1</release>
-        <api>1.5.1</api>
+        <release>1.5.2</release>
+        <api>1.5.2</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Fast compiling on Windows and Linux.
+    <notes>Fixed a bug of async service.
     </notes>
     <contents>
         <dir name="/">
@@ -123,6 +123,20 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.5.2</release>
+                <api>1.5.2</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2015-05-10</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Fixed a bug of async service.
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.5.1</release>
