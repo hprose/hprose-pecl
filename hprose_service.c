@@ -473,6 +473,15 @@ static void hprose_service_do_invoke(zval *service, hprose_bytes_io *input, zval
             add_index_string(callback, 1, "handler");
 #endif
             hprose_future_then(HPROSE_GET_OBJECT_P(future, result)->_this, callback TSRMLS_CC);
+            hprose_zval_free(callback);
+            hprose_zval_new(callback);
+            array_init_size(callback, 2);
+#if PHP_MAJOR_VERSION < 7
+            Z_ADDREF_P(after_invoke_callback);
+#else
+            Z_TRY_ADDREF_P(after_invoke_callback);
+#endif
+            add_index_zval(callback, 0, after_invoke_callback);
 #if PHP_MAJOR_VERSION < 7
             add_index_string(callback, 1, "errorHandler", 1);
 #else
