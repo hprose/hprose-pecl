@@ -13,14 +13,14 @@
  *                                                        *
  * hprose formatter for pecl source file.                 *
  *                                                        *
- * LastModified: May 9, 2015                              *
+ * LastModified: May 10, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
 
 #include "hprose_formatter.h"
 
-static zend_always_inline void hprose_writer_fast_serialize(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
+static void hprose_writer_fast_serialize(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
     switch (Z_TYPE_P(val)) {
 #if PHP_MAJOR_VERSION >= 7
         case IS_REFERENCE:
@@ -57,7 +57,7 @@ static zend_always_inline void hprose_writer_fast_serialize(hprose_writer *_this
     }
 }
 
-static zend_always_inline void hprose_serialize(hprose_bytes_io *stream, zval *val, zend_bool simple TSRMLS_DC) {
+static void hprose_serialize(hprose_bytes_io *stream, zval *val, zend_bool simple TSRMLS_DC) {
     hprose_writer writer;
     hprose_writer_init(&writer, stream, simple);
     hprose_writer_fast_serialize(&writer, writer.refer, writer.stream, val TSRMLS_CC);
@@ -129,7 +129,7 @@ static zend_always_inline void hprose_fast_serialize(zval *val, zend_bool simple
 #endif
 }
 
-static zend_always_inline void hprose_reader_fast_unserialize(hprose_reader *_this, char tag, zval *return_value TSRMLS_DC) {
+static void hprose_reader_fast_unserialize(hprose_reader *_this, char tag, zval *return_value TSRMLS_DC) {
     switch (tag) {
         case HPROSE_TAG_LIST: {
             hprose_reader_read_list_without_tag(_this, return_value TSRMLS_CC);
@@ -162,7 +162,7 @@ static zend_always_inline void hprose_reader_fast_unserialize(hprose_reader *_th
     }
 }
 
-static zend_always_inline void hprose_unserialize(hprose_bytes_io *stream, zend_bool simple, char tag, zval *return_value TSRMLS_DC) {
+static void hprose_unserialize(hprose_bytes_io *stream, zend_bool simple, char tag, zval *return_value TSRMLS_DC) {
     hprose_reader reader;
     hprose_reader_init(&reader, stream, simple);
     hprose_reader_fast_unserialize(&reader, tag, return_value TSRMLS_CC);

@@ -13,7 +13,7 @@
  *                                                        *
  * hprose client for pecl source file.                    *
  *                                                        *
- * LastModified: May 8, 2015                              *
+ * LastModified: May 10, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -25,7 +25,7 @@
 #include "hprose_result_mode.h"
 #include "hprose_client.h"
 
-static zend_always_inline void hprose_client_do_output(hprose_client *_this, zval *name, zval *args, zend_bool byref, zend_bool simple, zval *context, zval *return_value TSRMLS_DC) {
+static void hprose_client_do_output(hprose_client *_this, zval *name, zval *args, zend_bool byref, zend_bool simple, zval *context, zval *return_value TSRMLS_DC) {
     hprose_bytes_io stream;
     hprose_writer writer;
     HashTable *ht;
@@ -67,7 +67,7 @@ static zend_always_inline void hprose_client_do_output(hprose_client *_this, zva
     }
 }
 
-static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval *response, zval *args, int mode, zval *context, zval *return_value TSRMLS_DC) {
+static void hprose_client_do_input(hprose_client *_this, zval *response, zval *args, int mode, zval *context, zval *return_value TSRMLS_DC) {
     HashTable *ht = Z_ARRVAL_P(_this->filters);
     int32_t i = zend_hash_num_elements(ht);
     if (i) {
@@ -176,7 +176,7 @@ static zend_always_inline void hprose_client_do_input(hprose_client *_this, zval
     }
 }
 
-static zend_always_inline void hprose_client_sync_invoke(zval *client, zval *name, zval *args, zend_bool byref, int mode, zend_bool simple, zval *return_value TSRMLS_DC) {
+static void hprose_client_sync_invoke(zval *client, zval *name, zval *args, zend_bool byref, int mode, zend_bool simple, zval *return_value TSRMLS_DC) {
     zval *context, *userdata, *request, response;
     hprose_client *_this = HPROSE_GET_OBJECT_P(client, client)->_this;
     hprose_zval_new(context);
@@ -208,7 +208,7 @@ static zend_always_inline void hprose_client_sync_invoke(zval *client, zval *nam
     hprose_zval_free(userdata);
 }
 
-static zend_always_inline void hprose_client_async_invoke(zval *client, zval *name, zval *args, zend_bool byref, int mode, zend_bool simple, zval *callback TSRMLS_DC) {
+static void hprose_client_async_invoke(zval *client, zval *name, zval *args, zend_bool byref, int mode, zend_bool simple, zval *callback TSRMLS_DC) {
     zval *context, *userdata, *request, *use;
     hprose_client *_this = HPROSE_GET_OBJECT_P(client, client)->_this;
     hprose_zval_new(context);
@@ -247,7 +247,7 @@ static zend_always_inline void hprose_client_async_invoke(zval *client, zval *na
     hprose_zval_free(use);
 }
 
-static zend_always_inline void hprose_client_send_and_receive_callback(hprose_client *_this, zval *response, zval *err, zval *use TSRMLS_DC) {
+static void hprose_client_send_and_receive_callback(hprose_client *_this, zval *response, zval *err, zval *use TSRMLS_DC) {
     zval *args = php_array_get(use, 0);
     zval *context = php_array_get(use, 1);
     zval *callback = php_array_get(use, 2);

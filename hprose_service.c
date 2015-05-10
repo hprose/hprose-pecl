@@ -14,7 +14,7 @@
  *                                                        *
  * hprose service for pecl source file.                   *
  *                                                        *
- * LastModified: May 8, 2015                              *
+ * LastModified: May 10, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -33,7 +33,7 @@
 #define zend_exception_ce zend_exception_get_base()
 #endif
 
-static zend_always_inline zend_bool is_magic_method(char *name, int32_t len) {
+static zend_bool is_magic_method(char *name, int32_t len) {
     static const char *magic_methods[14] = {
         "__construct",
         "__destruct",
@@ -83,7 +83,7 @@ static zend_always_inline zend_bool is_magic_method(char *name, int32_t len) {
     return 0;
 }
 
-static zend_always_inline char * get_error_type_string(long e) {
+static char * get_error_type_string(long e) {
     switch (e) {
         case E_ERROR: return "Error";
         case E_WARNING: return "Warning";
@@ -194,7 +194,7 @@ static zend_always_inline void hprose_service_on_after_invoke(zval *service, zva
 #endif
 }
 
-static zend_always_inline void hprose_service_send_error(zval *service, zval *err, zval *context, zval *return_value TSRMLS_DC) {
+static void hprose_service_send_error(zval *service, zval *err, zval *context, zval *return_value TSRMLS_DC) {
     hprose_bytes_io output;
     hprose_writer writer;
     hprose_bytes_io_init(&output, NULL, 0);
@@ -523,7 +523,7 @@ static void hprose_service_do_invoke(zval *service, hprose_bytes_io *input, zval
     hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
 }
 
-static zend_always_inline void hprose_service_do_function_list(zval *service, zval *context, zval *return_value TSRMLS_DC) {
+static void hprose_service_do_function_list(zval *service, zval *context, zval *return_value TSRMLS_DC) {
     hprose_service *_this = HPROSE_GET_OBJECT_P(service, service)->_this;
     hprose_bytes_io output;
     hprose_writer writer;
@@ -541,7 +541,7 @@ static zend_always_inline void hprose_service_do_function_list(zval *service, zv
     hprose_service_output_filter(_this, return_value, context TSRMLS_CC);
 }
 
-static zend_always_inline void hprose_service_catch_error(zval *service, zval *err, zval *context, zval *return_value TSRMLS_DC) {
+static void hprose_service_catch_error(zval *service, zval *err, zval *context, zval *return_value TSRMLS_DC) {
     hprose_bytes_io output;
     zval result;
 #if PHP_MAJOR_VERSION < 7
@@ -630,7 +630,7 @@ static zend_always_inline void hprose_service_default_handle(zval *service, zval
     hprose_service_try_catch_error(service, context, return_value TSRMLS_CC);
 }
 
-static zend_always_inline void hprose_service_get_declared_only_methods(zval *class, zval *return_value TSRMLS_DC) {
+static void hprose_service_get_declared_only_methods(zval *class, zval *return_value TSRMLS_DC) {
     zval *parent_class, *all_methods;
     int32_t i;
     hprose_zval_new(parent_class);
@@ -672,7 +672,7 @@ static zend_always_inline void hprose_service_get_declared_only_methods(zval *cl
     hprose_zval_free(all_methods);
 }
 
-static zend_always_inline void hprose_service_add_function(hprose_service *_this, zval *func, zval *alias, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
+static void hprose_service_add_function(hprose_service *_this, zval *func, zval *alias, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
     zend_fcall_info_cache fcc = _get_fcall_info_cache(func TSRMLS_CC);
     char *name;
     int32_t len, i, n;
@@ -726,7 +726,7 @@ static zend_always_inline void hprose_service_add_function(hprose_service *_this
     efree(name);
 }
 
-static zend_always_inline void hprose_service_add_functions(hprose_service *_this, zval *funcs, zval *aliases, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
+static void hprose_service_add_functions(hprose_service *_this, zval *funcs, zval *aliases, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
     int32_t i, count;
     HashTable *ht = Z_ARRVAL_P(funcs);
     zend_hash_internal_pointer_reset(ht);
@@ -770,7 +770,7 @@ static zend_always_inline void hprose_service_add_functions(hprose_service *_thi
     }
 }
 
-static zend_always_inline void hprose_service_add_method(hprose_service *_this, zval *methodname, zval *belongto, zval *alias, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
+static void hprose_service_add_method(hprose_service *_this, zval *methodname, zval *belongto, zval *alias, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
     zval *func;
     if (Z_TYPE_P(methodname) != IS_STRING) {
         zend_throw_exception(NULL, "method name must be a string", 0 TSRMLS_CC);
@@ -791,7 +791,7 @@ static zend_always_inline void hprose_service_add_method(hprose_service *_this, 
     hprose_zval_free(func);    
 }
 
-static zend_always_inline void hprose_service_add_methods(hprose_service *_this, zval *methods, zval *belongto, zval *aliases, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
+static void hprose_service_add_methods(hprose_service *_this, zval *methods, zval *belongto, zval *aliases, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
     int32_t i, count;
     zval *_aliases = NULL;
     HashTable *ht = Z_ARRVAL_P(methods);
@@ -885,7 +885,7 @@ static zend_always_inline void hprose_service_add_methods(hprose_service *_this,
     hprose_zval_free(_aliases);
 }
 
-static zend_always_inline void hprose_service_add_instance_methods(hprose_service *_this, zval *obj, zval *class_name, zval *alias_prefix, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
+static void hprose_service_add_instance_methods(hprose_service *_this, zval *obj, zval *class_name, zval *alias_prefix, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
     zval *methods = NULL;
     if (class_name) {
         convert_to_string(class_name);
@@ -906,7 +906,7 @@ static zend_always_inline void hprose_service_add_instance_methods(hprose_servic
     hprose_zval_free(methods);
 }
 
-static zend_always_inline void hprose_service_add_class_methods(hprose_service *_this, zval *class_name, zval *exec_class, zval *alias_prefix, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
+static void hprose_service_add_class_methods(hprose_service *_this, zval *class_name, zval *exec_class, zval *alias_prefix, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
     zval *methods = NULL;
     hprose_zval_new(methods);
     convert_to_string(class_name);
@@ -920,7 +920,7 @@ static zend_always_inline void hprose_service_add_class_methods(hprose_service *
     hprose_zval_free(methods);
 }
 
-static zend_always_inline void hprose_service_add(hprose_service *_this, int num, zval *arg1, zval *arg2, zval *arg3, zend_bool async TSRMLS_DC) {
+static void hprose_service_add(hprose_service *_this, int num, zval *arg1, zval *arg2, zval *arg3, zend_bool async TSRMLS_DC) {
     zval *simple = NULL;
     long mode = HPROSE_RESULT_MODE_NORMAL;
     switch (num) {

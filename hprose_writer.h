@@ -13,7 +13,7 @@
  *                                                        *
  * hprose writer for pecl header file.                    *
  *                                                        *
- * LastModified: May 8, 2015                              *
+ * LastModified: May 10, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -50,7 +50,7 @@ static zend_always_inline void hprose_writer_refer_write_ref(hprose_bytes_io *st
     hprose_bytes_io_putc(stream, HPROSE_TAG_SEMICOLON);
 }
 
-static zend_always_inline void hprose_writer_refer_set(hprose_writer_refer *refer, zval *val) {
+static void hprose_writer_refer_set(hprose_writer_refer *refer, zval *val) {
     switch (Z_TYPE_P(val)) {
         case IS_STRING:
             add_assoc_long_ex(refer->sref, Z_STRVAL_P(val), Z_STRLEN_P(val), refer->refcount);
@@ -73,7 +73,7 @@ static zend_always_inline void hprose_writer_refer_set(hprose_writer_refer *refe
     }
     ++(refer->refcount);
 }
-static zend_always_inline zend_bool hprose_writer_refer_write(hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val) {
+static zend_bool hprose_writer_refer_write(hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val) {
     long index;
     switch (Z_TYPE_P(val)) {
         case IS_STRING:
@@ -105,7 +105,7 @@ static zend_always_inline void hprose_writer_refer_reset(hprose_writer_refer *re
     refer->refcount = 0;
 }
 
-static zend_always_inline void hprose_writer_refer_free(hprose_writer_refer *refer) {
+static void hprose_writer_refer_free(hprose_writer_refer *refer) {
     zend_llist_destroy(refer->ref);
     efree(refer->ref);
     refer->ref = NULL;
@@ -130,7 +130,7 @@ static void __hprose_writer_refer_dtor(void *data) {
 #endif
 }
 
-static zend_always_inline hprose_writer_refer * hprose_writer_refer_new() {
+static hprose_writer_refer * hprose_writer_refer_new() {
     hprose_writer_refer *_this = emalloc(sizeof(hprose_writer_refer));
     _this->ref = emalloc(sizeof(zend_llist));
 #if PHP_MAJOR_VERSION < 7
@@ -369,7 +369,7 @@ static zend_always_inline void _hprose_writer_write_datetime_with_ref(hprose_wri
 
 #define hprose_writer_write_datetime_with_ref(_this, val) _hprose_writer_write_datetime_with_ref((_this)->refer, (_this)->stream, (val) TSRMLS_CC)
 
-static zend_always_inline void _hprose_writer_write_array(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
+static void _hprose_writer_write_array(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
     HashTable *ht = Z_ARRVAL_P(val);
     int32_t i = zend_hash_num_elements(ht);
     if (refer) {
@@ -399,7 +399,7 @@ static zend_always_inline void _hprose_writer_write_array(hprose_writer *_this, 
 
 #define hprose_writer_write_array(_this, val) _hprose_writer_write_array((_this), (_this)->refer, (_this)->stream, (val) TSRMLS_CC)
 
-static zend_always_inline void _hprose_writer_write_hashtable(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, HashTable *ht TSRMLS_DC) {
+static void _hprose_writer_write_hashtable(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, HashTable *ht TSRMLS_DC) {
     int32_t i = zend_hash_num_elements(ht);
     hprose_bytes_io_putc(stream, HPROSE_TAG_MAP);
     if (i) {
@@ -451,7 +451,7 @@ static zend_always_inline void _hprose_writer_write_assoc_array(hprose_writer *_
 
 #define hprose_writer_write_assoc_array(_this, val) _hprose_writer_write_assoc_array((_this), (_this)->refer, (_this)->stream, (val) TSRMLS_CC)
 
-static zend_always_inline void _hprose_writer_write_map(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
+static void _hprose_writer_write_map(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
     zval count;
     int32_t i;
     if (refer) {
@@ -488,7 +488,7 @@ static zend_always_inline void _hprose_writer_write_map_with_ref(hprose_writer *
 
 #define hprose_writer_write_map_with_ref(_this, val) _hprose_writer_write_map_with_ref((_this), (_this)->refer, (_this)->stream, (val) TSRMLS_CC)
 
-static zend_always_inline void _hprose_writer_write_list(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
+static void _hprose_writer_write_list(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
     zval count;
     int32_t i;
     if (refer) {
@@ -537,7 +537,7 @@ static zend_always_inline void _hprose_writer_write_stdclass_with_ref(hprose_wri
 
 #define hprose_writer_write_stdclass_with_ref(_this, val) _hprose_writer_write_stdclass_with_ref((_this), (_this)->refer, (_this)->stream, (val) TSRMLS_CC)
 
-static zend_always_inline int32_t _hprose_writer_write_class(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, char *alias, int32_t len, HashTable *ht) {
+static int32_t _hprose_writer_write_class(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, char *alias, int32_t len, HashTable *ht) {
     int32_t i = zend_hash_num_elements(ht);
     int32_t index = Z_ARRLEN_P(_this->propsref);
 #if PHP_MAJOR_VERSION < 7
@@ -613,7 +613,7 @@ static zend_always_inline int32_t _hprose_writer_write_class(hprose_writer *_thi
     return index;
 }
 
-static zend_always_inline void _hprose_writer_write_object(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
+static void _hprose_writer_write_object(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
     HashTable *ht = Z_OBJPROP_P(val), *props_ht;
     zval *props;
     long index;

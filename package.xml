@@ -46,23 +46,18 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <email>mabingyao@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2015-05-09</date>
-    <time>15:45:00</time>
+    <date>2015-05-10</date>
+    <time>09:09:09</time>
     <version>
-        <release>1.5.0</release>
-        <api>1.5.0</api>
+        <release>1.5.1</release>
+        <api>1.5.1</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Faster integer serialize.
-        Faster double serialize.
-        Faster basic type serialize/unserialize.
-        Added Completer and Future class.
-        Added async service support.
-        Improved async client support.
+    <notes>Fast compiling on Windows and Linux.
     </notes>
     <contents>
         <dir name="/">
@@ -128,6 +123,20 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.5.1</release>
+                <api>1.5.1</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2015-05-10</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Fast compiling on Windows and Linux.
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.5.0</release>
