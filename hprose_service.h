@@ -13,7 +13,7 @@
  *                                                        *
  * hprose service for pecl header file.                   *
  *                                                        *
- * LastModified: May 3, 2015                              *
+ * LastModified: May 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -46,6 +46,7 @@ typedef struct {
 
 typedef struct {
     HashTable *calls;
+    zend_llist *objects;
     zval *names;
     zval *filters;
     zend_bool simple;

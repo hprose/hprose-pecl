@@ -14,7 +14,7 @@
  *                                                        *
  * hprose service for pecl source file.                   *
  *                                                        *
- * LastModified: May 10, 2015                             *
+ * LastModified: May 13, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -690,6 +690,18 @@ static void hprose_service_add_function(hprose_service *_this, zval *func, zval 
     if (EG(exception)) {
         return;
     }
+    if (Z_TYPE_P(func) == IS_ARRAY) {
+        zval *val = php_array_get(func, 0);
+        if (Z_TYPE_P(val) == IS_OBJECT) {
+#if PHP_MAJOR_VERSION < 7
+            Z_ADDREF_P(val);
+            zend_llist_add_element(_this->objects, &val);
+#else
+            Z_ADDREF_P(val);
+            zend_llist_add_element(_this->objects, &(Z_OBJ_P(val)));
+#endif
+        }
+    }
     if (simple) {
         convert_to_boolean(simple);
 #if PHP_MAJOR_VERSION < 7
@@ -797,7 +809,7 @@ static void hprose_service_add_method(hprose_service *_this, zval *methodname, z
     add_next_index_zval(func, belongto);
     add_next_index_zval(func, methodname);
     hprose_service_add_function(_this, func, alias, mode, simple, async TSRMLS_CC);
-    hprose_zval_free(func);    
+    hprose_zval_free(func);
 }
 
 static void hprose_service_add_methods(hprose_service *_this, zval *methods, zval *belongto, zval *aliases, uint8_t mode, zval *simple, zend_bool async TSRMLS_DC) {
@@ -1056,6 +1068,20 @@ static void hprose_service_remote_call_dtor(zval *pDest) {
     efree((hprose_remote_call *)Z_PTR_P(pDest));
 }
 #endif
+
+static void hprose_service_object_dtor(void *data) {
+#if PHP_MAJOR_VERSION < 7
+        zval **val = (zval **)data;
+        if (data) {
+            zval_ptr_dtor(val);
+        }
+#else
+        zend_object **obj = (zend_object **)data;
+        if (data) {
+            OBJ_RELEASE(*obj);
+        }
+#endif
+}
 
 ZEND_METHOD(hprose_service, getErrorTypeString) {
     long e;
@@ -1620,6 +1646,9 @@ HPROSE_OBJECT_FREE_BEGIN(service)
     if (intern->_this) {
         zend_hash_destroy(intern->_this->calls);
         FREE_HASHTABLE(intern->_this->calls);
+        zend_llist_destroy(intern->_this->objects);
+        efree(intern->_this->objects);
+        intern->_this->objects = NULL;
         hprose_zval_free(intern->_this->names);
         hprose_zval_free(intern->_this->filters);
         efree(intern->_this);
@@ -1632,6 +1661,12 @@ HPROSE_OBJECT_NEW_EX_BEGIN(service)
     intern->_this->simple = 0;
     ALLOC_HASHTABLE(intern->_this->calls);
     zend_hash_init(intern->_this->calls, 0, NULL, hprose_service_remote_call_dtor, 0);
+    intern->_this->objects = emalloc(sizeof(zend_llist));
+#if PHP_MAJOR_VERSION < 7
+    zend_llist_init(intern->_this->objects, sizeof(zval *), (llist_dtor_func_t)hprose_service_object_dtor, 0);
+#else
+    zend_llist_init(intern->_this->objects, sizeof(zend_object *), (llist_dtor_func_t)hprose_service_object_dtor, 0);
+#endif
     hprose_zval_new(intern->_this->names);
     array_init(intern->_this->names);
     hprose_zval_new(intern->_this->filters);
