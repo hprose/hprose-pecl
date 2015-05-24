@@ -46,18 +46,18 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <email>mabingyao@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2015-05-13</date>
-    <time>16:04:37</time>
+    <date>2015-05-24</date>
+    <time>10:21:11</time>
     <version>
-        <release>1.5.3</release>
-        <api>1.5.3</api>
+        <release>1.5.4</release>
+        <api>1.5.4</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Fixed a bug of instance method service.
+    <notes>Fixed a bug of serializing an object of a class which implements IteratorAggregate interface.
     </notes>
     <contents>
         <dir name="/">
@@ -123,6 +123,20 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.5.4</release>
+                <api>1.5.4</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2015-05-24</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Fixed a bug of serializing an object of a class which implements IteratorAggregate interface.
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.5.3</release>
