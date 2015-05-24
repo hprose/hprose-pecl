@@ -488,7 +488,7 @@ static zend_always_inline void _hprose_writer_write_map_with_ref(hprose_writer *
 
 #define hprose_writer_write_map_with_ref(_this, val) _hprose_writer_write_map_with_ref((_this), (_this)->refer, (_this)->stream, (val) TSRMLS_CC)
 
-static void _hprose_writer_write_list(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
+static void _hprose_writer_write_iterator(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
     zval count;
     int32_t i;
     if (refer) {
@@ -514,10 +514,38 @@ static void _hprose_writer_write_list(hprose_writer *_this, hprose_writer_refer 
     hprose_bytes_io_putc(stream, HPROSE_TAG_CLOSEBRACE);
 }
 
+#define hprose_writer_write_iterator(_this, val) _hprose_writer_write_iterator((_this), (_this)->refer, (_this)->stream, (val) TSRMLS_CC)
+
+static zend_always_inline void _hprose_writer_write_iterator_with_ref(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
+    if (refer == NULL || !hprose_writer_refer_write(refer, stream, val)) _hprose_writer_write_iterator(_this, refer, stream, val TSRMLS_CC);
+}
+
+#define hprose_writer_write_iterator_with_ref(_this, val) _hprose_writer_write_iterator_with_ref((_this), (_this)->refer, (_this)->stream, (val) TSRMLS_CC)
+
+static void _hprose_writer_write_list(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
+    zend_class_entry *ce = Z_OBJCE_P(val);
+    if (instanceof_function(ce, zend_ce_aggregate TSRMLS_CC)) {
+        zval iterator;
+        method_invoke_no_args(val, getIterator, &iterator);
+        _hprose_writer_write_list(_this, refer, stream, &iterator TSRMLS_CC);
+    }
+    else {
+        _hprose_writer_write_iterator(_this, refer, stream, val TSRMLS_CC);
+    }
+}
+
 #define hprose_writer_write_list(_this, val) _hprose_writer_write_list((_this), (_this)->refer, (_this)->stream, (val) TSRMLS_CC)
 
-static zend_always_inline void _hprose_writer_write_list_with_ref(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
-    if (refer == NULL || !hprose_writer_refer_write(refer, stream, val)) _hprose_writer_write_list(_this, refer, stream, val TSRMLS_CC);
+static void _hprose_writer_write_list_with_ref(hprose_writer *_this, hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val TSRMLS_DC) {
+    zend_class_entry *ce = Z_OBJCE_P(val);
+    if (instanceof_function(ce, zend_ce_aggregate TSRMLS_CC)) {
+        zval iterator;
+        method_invoke_no_args(val, getIterator, &iterator);
+        _hprose_writer_write_list_with_ref(_this, refer, stream, &iterator TSRMLS_CC);
+    }
+    else {
+        _hprose_writer_write_iterator_with_ref(_this, refer, stream, val TSRMLS_CC);
+    }
 }
 
 #define hprose_writer_write_list_with_ref(_this, val) _hprose_writer_write_list_with_ref((_this), (_this)->refer, (_this)->stream, (val) TSRMLS_CC)
