@@ -30,7 +30,7 @@
 #if PHP_MAJOR_VERSION < 7
 #define zend_exception_ce zend_exception_get_default(TSRMLS_C)
 #else
-#define zend_exception_ce zend_exception_get_base()
+#define zend_exception_ce zend_ce_throwable
 #endif
 
 static zend_bool is_magic_method(char *name, int32_t len) {
