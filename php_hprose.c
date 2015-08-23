@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl source file.                           *
  *                                                        *
- * LastModified: May 2, 2015                              *
+ * LastModified: Aug 23, 2015                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -30,11 +30,6 @@
 #include "hprose_raw_reader.h"
 #include "hprose_reader.h"
 #include "hprose_formatter.h"
-#include "hprose_result_mode.h"
-#include "hprose_filter.h"
-#include "hprose_future.h"
-#include "hprose_client.h"
-#include "hprose_service.h"
 
 #include "ext/standard/info.h" /* for phpinfo() functions */
 
@@ -46,15 +41,6 @@ ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(raw_reader);
     HPROSE_STARTUP(reader);
     HPROSE_STARTUP(formatter);
-    HPROSE_STARTUP(result_mode);
-    HPROSE_STARTUP(filter);
-    HPROSE_STARTUP(completer);
-    HPROSE_STARTUP(future);
-    HPROSE_STARTUP(proxy);
-    HPROSE_STARTUP(client);
-    HPROSE_STARTUP(service);
-    HPROSE_STARTUP(async_callback);
-    HPROSE_STARTUP(after_invoke_callback);
     return SUCCESS;
 }
 

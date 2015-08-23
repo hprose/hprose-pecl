@@ -30,7 +30,7 @@ zend_module_entry hprose_module_entry;
 
 #define PHP_HPROSE_MODULE_NAME        "hprose"
 #define PHP_HPROSE_BUILD_DATE         __DATE__ " " __TIME__
-#define PHP_HPROSE_VERSION            "1.5.5"
+#define PHP_HPROSE_VERSION            "1.6.0"
 #define PHP_HPROSE_AUTHOR             "Ma Bingyao"
 #define PHP_HPROSE_HOMEPAGE           "https://github.com/hprose/hprose-pecl"
 

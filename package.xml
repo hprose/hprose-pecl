@@ -46,18 +46,18 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <email>mabingyao@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2015-06-25</date>
-    <time>18:04:11</time>
+    <date>2015-08-23</date>
+    <time>12:29:18</time>
     <version>
-        <release>1.5.5</release>
-        <api>1.5.5</api>
+        <release>1.6.0</release>
+        <api>1.6.0</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Use zend_ce_throwable introduce in 7.0.0alpha2.
+    <notes>Removed future, client and server implementations.
     </notes>
     <contents>
         <dir name="/">
@@ -85,16 +85,6 @@ http://pear.php.net/dtd/package-2.0.xsd">
             <file role="src" name="hprose_reader.c" />
             <file role="src" name="hprose_formatter.h" />
             <file role="src" name="hprose_formatter.c" />
-            <file role="src" name="hprose_result_mode.h" />
-            <file role="src" name="hprose_result_mode.c" />
-            <file role="src" name="hprose_filter.h" />
-            <file role="src" name="hprose_filter.c" />
-            <file role="src" name="hprose_future.h" />
-            <file role="src" name="hprose_future.c" />
-            <file role="src" name="hprose_client.h" />
-            <file role="src" name="hprose_client.c" />
-            <file role="src" name="hprose_service.h" />
-            <file role="src" name="hprose_service.c" />
             <dir name="tests">
                 <file role="test" name="tags.phpt" />
                 <file role="test" name="bytes_io.phpt" />
@@ -103,8 +93,6 @@ http://pear.php.net/dtd/package-2.0.xsd">
                 <file role="test" name="raw_reader.phpt" />
                 <file role="test" name="reader.phpt" />
                 <file role="test" name="formatter.phpt" />
-                <file role="test" name="result_mode.phpt" />
-                <file role="test" name="future.phpt" />
             </dir>
         </dir>
     </contents>
@@ -123,6 +111,20 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.6.0</release>
+                <api>1.6.0</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2015-08-23</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Removed future, client and server implementations.
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.5.5</release>
