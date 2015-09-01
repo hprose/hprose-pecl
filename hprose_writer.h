@@ -419,7 +419,7 @@ static void _hprose_writer_write_hashtable(hprose_writer *_this, hprose_writer_r
             if (zend_hash_get_current_key_ex(ht, &str, &len, &index, 0, position) == HASH_KEY_IS_STRING) {
                 zval key;
                 ZVAL_STRINGL(&key, str, len - 1, 0);
-                _hprose_writer_write_string_with_ref(refer, stream, &key);
+                _hprose_writer_serialize(_this, refer, stream, &key TSRMLS_CC);
             }
             else {
                 _hprose_writer_write_ulong(stream, (uint64_t)index);
@@ -680,11 +680,12 @@ static void _hprose_writer_write_object(hprose_writer *_this, hprose_writer_refe
             zval **e, *value;
             zend_hash_get_current_data(props_ht, (void **)&e);
             value = zend_hash_str_find_ptr(ht, Z_STRVAL_PP(e), Z_STRLEN_PP(e));
+            _hprose_writer_serialize(_this, refer, stream, value TSRMLS_CC);
 #else
             zval *e = zend_hash_get_current_data(props_ht);
             zval *value = zend_hash_str_find_ptr(ht, Z_STRVAL_P(e), Z_STRLEN_P(e));
-#endif
             _hprose_writer_serialize(_this, refer, stream, value TSRMLS_CC);
+#endif
             zend_hash_move_forward(props_ht);
         }
     }

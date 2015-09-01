@@ -13,7 +13,7 @@
  *                                                        *
  * hprose formatter for pecl source file.                 *
  *                                                        *
- * LastModified: May 10, 2015                             *
+ * LastModified: Sep 1, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -64,69 +64,62 @@ static void hprose_serialize(hprose_bytes_io *stream, zval *val, zend_bool simpl
     hprose_writer_destroy(&writer);
 }
 
-static zend_always_inline void hprose_fast_serialize(zval *val, zend_bool simple, zval *return_value TSRMLS_DC) {
-    hprose_bytes_io stream;
-    hprose_bytes_io_init(&stream, NULL, 0);
+static zend_always_inline void hprose_fast_serialize(hprose_bytes_io *stream, zval *val, zend_bool simple TSRMLS_DC) {
     if (!val) {
-        _hprose_writer_write_null(&stream); return;
+        _hprose_writer_write_null(stream); return;
     }
     switch (Z_TYPE_P(val)) {
         case IS_NULL:
-            _hprose_writer_write_null(&stream); break;
+            _hprose_writer_write_null(stream); break;
         case IS_LONG:
-            _hprose_writer_write_long(&stream, Z_LVAL_P(val)); break;
+            _hprose_writer_write_long(stream, Z_LVAL_P(val)); break;
         case IS_DOUBLE:
-            _hprose_writer_write_double(&stream, Z_DVAL_P(val)); break;
+            _hprose_writer_write_double(stream, Z_DVAL_P(val)); break;
 #if PHP_MAJOR_VERSION < 7
         case IS_BOOL:
-            _hprose_writer_write_bool(&stream, Z_BVAL_P(val)); break;
+            _hprose_writer_write_bool(stream, Z_BVAL_P(val)); break;
 #else /* PHP_MAJOR_VERSION < 7 */
         case IS_UNDEF:
-            _hprose_writer_write_null(&stream); break;
+            _hprose_writer_write_null(stream); break;
         case IS_TRUE:
-            _hprose_writer_write_true(&stream); break;
+            _hprose_writer_write_true(stream); break;
         case IS_FALSE:
-            _hprose_writer_write_false(&stream); break;
+            _hprose_writer_write_false(stream); break;
 #endif
         case IS_STRING: {
             char * s = Z_STRVAL_P(val);
             int32_t l = Z_STRLEN_P(val);
             if (l == 0) {
-                _hprose_writer_write_empty(&stream);
+                _hprose_writer_write_empty(stream);
             }
             else if (is_utf8(s, l)) {
                 if (l < 4 && ustrlen(s, l) == 1) {
-                    _hprose_writer_write_utf8char(&stream, val);
+                    _hprose_writer_write_utf8char(stream, val);
                 }
                 else {
-                    _hprose_writer_write_string_with_ref(NULL, &stream, val);
+                    _hprose_writer_write_string_with_ref(NULL, stream, val);
                 }
             }
             else {
-                _hprose_writer_write_bytes_with_ref(NULL, &stream, val);
+                _hprose_writer_write_bytes_with_ref(NULL, stream, val);
             }
             break;
         }
         case IS_OBJECT: {
             zend_class_entry *ce = Z_OBJCE_P(val);
             if (instanceof_function(ce, get_hprose_bytes_io_ce() TSRMLS_CC)) {
-                _hprose_writer_write_bytes_io_with_ref(NULL, &stream, val TSRMLS_CC);
+                _hprose_writer_write_bytes_io_with_ref(NULL, stream, val TSRMLS_CC);
             }
             else if (instanceof_function(ce, php_date_get_date_ce() TSRMLS_CC)) {
-                _hprose_writer_write_datetime_with_ref(NULL, &stream, val TSRMLS_CC);
+                _hprose_writer_write_datetime_with_ref(NULL, stream, val TSRMLS_CC);
             }
             else {
-                hprose_serialize(&stream, val, simple TSRMLS_CC); break;
+                hprose_serialize(stream, val, simple TSRMLS_CC); break;
             }
         }
         default:
-            hprose_serialize(&stream, val, simple TSRMLS_CC); break;
+            hprose_serialize(stream, val, simple TSRMLS_CC); break;
     }
-#if PHP_MAJOR_VERSION < 7
-    RETVAL_STRINGL_0(HB_BUF(stream), HB_LEN(stream));
-#else
-    RETVAL_STR(HB_STR(stream));
-#endif
 }
 
 static void hprose_reader_fast_unserialize(hprose_reader *_this, char tag, zval *return_value TSRMLS_DC) {
@@ -235,15 +228,108 @@ static zend_always_inline void hprose_fast_unserialize(hprose_bytes_io *stream, 
     }
 }
 
+#if HAVE_PHP_SESSION
+PS_SERIALIZER_ENCODE_FUNC(hprose) {
+    hprose_bytes_io stream;
+    hprose_bytes_io_init(&stream, NULL, 0);
+#if PHP_MAJOR_VERSION < 7
+    hprose_fast_serialize(&stream, PS(http_session_vars), 0 TSRMLS_CC);
+    if (newlen) {
+        *newlen = HB_LEN(stream);
+    }
+    *newstr = HB_BUF(stream);
+    return SUCCESS;
+#else
+    hprose_fast_serialize(&stream, &PS(http_session_vars), 0 TSRMLS_CC);
+    return stream.s;
+#endif
+}
+
+PS_SERIALIZER_DECODE_FUNC(hprose) {
+#if PHP_MAJOR_VERSION < 7
+    int ret;
+    HashPosition tmp_hash_pos;
+    char *key_str;
+    ulong key_long;
+    uint key_len;
+    zval *tmp;
+    zval **value;
+#else
+    zend_string *str, *key_str;
+    zval tmp, *value;
+#endif
+    HashTable *tmp_hash;
+    hprose_bytes_io stream;
+    if (vallen > 0) {
+#if PHP_MAJOR_VERSION < 7
+        hprose_bytes_io_init_readonly(&stream, val, vallen);
+        MAKE_STD_ZVAL(tmp);
+        hprose_fast_unserialize(&stream, 0, tmp TSRMLS_CC);
+        tmp_hash = HASH_OF(tmp);
+        if (tmp_hash) {
+            zend_hash_internal_pointer_reset_ex(tmp_hash, &tmp_hash_pos);
+            while (zend_hash_get_current_data_ex(
+                       tmp_hash, (void *)&value, &tmp_hash_pos) == SUCCESS) {
+                ret = zend_hash_get_current_key_ex(
+                    tmp_hash, &key_str, &key_len, &key_long, 0, &tmp_hash_pos);
+                switch (ret) {
+                case HASH_KEY_IS_LONG:
+                    /* ??? */
+                    break;
+                case HASH_KEY_IS_STRING:
+                    php_set_session_var(
+                        key_str, key_len - 1, *value, NULL TSRMLS_CC);
+                    php_add_session_var(key_str, key_len - 1 TSRMLS_CC);
+                    break;
+                }
+                zend_hash_move_forward_ex(tmp_hash, &tmp_hash_pos);
+            }
+        }
+#else
+        str = zend_string_init(val, vallen, 0);
+        hprose_bytes_io_init_readonly(&stream, str);
+        hprose_fast_unserialize(&stream, 0, &tmp TSRMLS_CC);
+        tmp_hash = HASH_OF(&tmp);
+        if (tmp_hash) {
+            ZEND_HASH_FOREACH_STR_KEY_VAL(tmp_hash, key_str, value) {
+                if (key_str) {
+                    php_set_session_var(key_str, value, NULL);
+                    php_add_session_var(key_str);
+                    ZVAL_UNDEF(value);
+                }
+            } ZEND_HASH_FOREACH_END();
+        }
+        zend_string_release(str);
+#endif
+        zval_ptr_dtor(&tmp);
+    }
+    if (EG(exception)) {
+#if PHP_MAJOR_VERSION < 7
+        zend_clear_exception(TSRMLS_C);
+#else
+        zend_clear_exception();
+#endif
+    }
+    return SUCCESS;
+}
+#endif
+
 /* {{{ proto string hprose_serialize(mixed $val, bool $simple = false)
    serialize php value to hprose format data  */
 ZEND_FUNCTION(hprose_serialize) {
     zval *val;
     zend_bool simple = 0;
+    hprose_bytes_io stream;
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!|b", &val, &simple) == FAILURE) {
         return;
     }
-    hprose_fast_serialize(val, simple, return_value TSRMLS_CC);
+    hprose_bytes_io_init(&stream, NULL, 0);
+    hprose_fast_serialize(&stream, val, simple TSRMLS_CC);
+#if PHP_MAJOR_VERSION < 7
+    RETVAL_STRINGL_0(HB_BUF(stream), HB_LEN(stream));
+#else
+    RETVAL_STR(HB_STR(stream));
+#endif
 }
 /* }}} */
 

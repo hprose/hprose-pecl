@@ -56,6 +56,7 @@ ZEND_TSRMLS_CACHE_EXTERN();
 ZEND_BEGIN_MODULE_GLOBALS(hprose)
     HashTable *cache1;
     HashTable *cache2;
+    zend_bool active;
 ZEND_END_MODULE_GLOBALS(hprose)
 
 #ifdef ZTS

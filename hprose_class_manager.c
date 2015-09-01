@@ -54,7 +54,9 @@ char * _hprose_class_manager_get_alias(char *name, int32_t len, int32_t* len_ptr
         alias = estrndup(name, len);
         *len_ptr = len;
         str_replace('\\', '_', alias, len);
-        hprose_class_manager_register(name, len, alias, len);
+        if (HPROSE_G(active)) {
+            hprose_class_manager_register(name, len, alias, len);
+        }
     }
     else {
         alias = estrndup(HB_BUF_P(_alias), HB_LEN_P(_alias));
@@ -69,7 +71,9 @@ zend_string *_hprose_class_manager_get_alias(char *name, int32_t len TSRMLS_DC) 
     if (!HPROSE_G(cache1) || (_alias = zend_hash_str_find_ptr(HPROSE_G(cache1), name, len)) == NULL) {
         alias = zend_string_init(name, len, 0);
         str_replace('\\', '_', alias->val, len);
-        hprose_class_manager_register(name, len, alias->val, len);
+        if (HPROSE_G(active)) {
+            hprose_class_manager_register(name, len, alias->val, len);
+        }
     }
     else {
         alias = zend_string_copy(HB_STR_P(_alias));
@@ -88,7 +92,9 @@ char * _hprose_class_manager_get_class(char *alias, int32_t len, int32_t* len_pt
         if (!class_exists(alias, len, 0) && !class_exists(alias, len, 1)) {
             str_replace('_', '\\', name, len);
             if (class_exists(name, len, 0) || class_exists(name, len, 1)) {
-                hprose_class_manager_register(name, len, alias, len);
+                if (HPROSE_G(active)) {
+                    hprose_class_manager_register(name, len, alias, len);
+                }
             }
             else {
                 efree(name);
@@ -112,7 +118,9 @@ zend_string *_hprose_class_manager_get_class(char *alias, int32_t len TSRMLS_DC)
         if (!class_exists(alias, len, 0) && !class_exists(alias, len, 1)) {
             str_replace('_', '\\', name->val, len);
             if (_class_exists(name, 0) || _class_exists(name, 1)) {
-                hprose_class_manager_register(name->val, len, alias, len);
+                if (HPROSE_G(active)) {
+                    hprose_class_manager_register(name->val, len, alias, len);
+                }
             }
             else {
                 zend_string_release(name);
@@ -208,10 +216,12 @@ HPROSE_STARTUP_FUNCTION(class_manager) {
 HPROSE_ACTIVATE_FUNCTION(class_manager) {
     HPROSE_G(cache1) = NULL;
     HPROSE_G(cache2) = NULL;
+    HPROSE_G(active) = 1;
     return SUCCESS;
 }
 
 HPROSE_DEACTIVATE_FUNCTION(class_manager) {
+    HPROSE_G(active) = 0;
     if (HPROSE_G(cache1)) {
         zend_hash_destroy(HPROSE_G(cache1));
         FREE_HASHTABLE(HPROSE_G(cache1));

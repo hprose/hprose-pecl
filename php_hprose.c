@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl source file.                           *
  *                                                        *
- * LastModified: Aug 23, 2015                             *
+ * LastModified: Sep 1, 2015                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -41,6 +41,11 @@ ZEND_MINIT_FUNCTION(hprose) {
     HPROSE_STARTUP(raw_reader);
     HPROSE_STARTUP(reader);
     HPROSE_STARTUP(formatter);
+#if HAVE_PHP_SESSION
+    php_session_register_serializer("hprose",
+                                    PS_SERIALIZER_ENCODE_NAME(hprose),
+                                    PS_SERIALIZER_DECODE_NAME(hprose));
+#endif
     return SUCCESS;
 }
 
@@ -64,6 +69,9 @@ ZEND_RSHUTDOWN_FUNCTION(hprose) {
 ZEND_MINFO_FUNCTION(hprose) {
     php_info_print_table_start();
     php_info_print_table_row(2, "hprose support", "enabled");
+#if HAVE_PHP_SESSION
+    php_info_print_table_row(2, "session support", "enabled");
+#endif
     php_info_print_table_row(2, "hprose version", PHP_HPROSE_VERSION);
     php_info_print_table_row(2, "hprose author", PHP_HPROSE_AUTHOR);
     php_info_print_table_row(2, "hprose homepage", PHP_HPROSE_HOMEPAGE);
