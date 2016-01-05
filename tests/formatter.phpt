@@ -5,7 +5,7 @@ Test that the Hprose\Formatter class works.
 --FILE--
 <?php
 class Test {
-    private $id = 1;
+    private $Id = 1;
     protected $foo = "foo";
     public $bar = array('b', 'a', 'r');
 }
@@ -40,7 +40,7 @@ print_r($myData2);
 c1"t"3{s2"id"s3"foo"s3"bar"}o0{1r1;a3{ubuaur}}
 Test Object
 (
-    [id:Test:private] => 1
+    [Id:Test:private] => 1
     [foo:protected] => foo
     [bar] => Array
         (

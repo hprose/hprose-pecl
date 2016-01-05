@@ -13,7 +13,7 @@
  *                                                        *
  * hprose writer for pecl header file.                    *
  *                                                        *
- * LastModified: May 10, 2015                             *
+ * LastModified: Jan 5, 2016                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -358,7 +358,11 @@ static zend_always_inline void _hprose_writer_write_datetime(hprose_writer_refer
         method_invoke(val, format, &result, "s", ZEND_STRL("\\DYmd\\THis.u;"));
     }
     hprose_bytes_io_write(stream, Z_STRVAL(result), Z_STRLEN(result));
+#if PHP_MAJOR_VERSION < 7
     zval_dtor(&result);
+#else
+    zval_ptr_dtor(&result);
+#endif
 }
 
 #define hprose_writer_write_datetime(_this, val) _hprose_writer_write_datetime((_this)->refer, (_this)->stream, (val) TSRMLS_CC)
@@ -472,8 +476,13 @@ static void _hprose_writer_write_map(hprose_writer *_this, hprose_writer_refer *
             method_invoke(val, offsetGet, &value, "z", &key);
             _hprose_writer_serialize(_this, refer, stream, &key TSRMLS_CC);
             _hprose_writer_serialize(_this, refer, stream, &value TSRMLS_CC);
+#if PHP_MAJOR_VERSION < 7
             zval_dtor(&key);
             zval_dtor(&value);
+#else
+            zval_ptr_dtor(&key);
+            zval_ptr_dtor(&value);
+#endif
             method_invoke_no_args(val, next, NULL);
         }
     }
@@ -507,7 +516,11 @@ static void _hprose_writer_write_iterator(hprose_writer *_this, hprose_writer_re
             zval e;
             method_invoke_no_args(val, current, &e);
             _hprose_writer_serialize(_this, refer, stream, &e TSRMLS_CC);
+#if PHP_MAJOR_VERSION < 7
             zval_dtor(&e);
+#else
+            zval_ptr_dtor(&e);
+#endif
             method_invoke_no_args(val, next, NULL);
         }
     }
@@ -542,6 +555,11 @@ static void _hprose_writer_write_list_with_ref(hprose_writer *_this, hprose_writ
         zval iterator;
         method_invoke_no_args(val, getIterator, &iterator);
         _hprose_writer_write_list_with_ref(_this, refer, stream, &iterator TSRMLS_CC);
+#if PHP_MAJOR_VERSION < 7
+        zval_dtor(&iterator);
+#else
+        zval_ptr_dtor(&iterator);
+#endif
     }
     else {
         _hprose_writer_write_iterator_with_ref(_this, refer, stream, val TSRMLS_CC);
@@ -594,31 +612,36 @@ static int32_t _hprose_writer_write_class(hprose_writer *_this, hprose_writer_re
             ulong index;
             if (zend_hash_get_current_key_ex(ht, &str, &len, &index, 0, position) == HASH_KEY_IS_STRING) {
                 zval prop;
+                size_t pos = 0;
                 add_next_index_stringl(props, str, len, 1);
-                if (str[0]) {
-                    ZVAL_STRINGL(&prop, str, len - 1, 0);
+                if (str[0] == 0) {
+                    pos = strlen(str + 1) + 2;
                 }
-                else {
-                    size_t pos = strlen(str + 1) + 2;
-                    ZVAL_STRINGL(&prop, str + pos, len - pos - 1, 0);
+                ZVAL_STRINGL(&prop, str + pos, len - pos - 1, 1);
+                str = Z_STRVAL(prop);
+                if ((str[0] >= 'A') && (str[0] <= 'Z')) {
+                    str[0] = str[0] + 32;
                 }
                 _hprose_writer_write_string_with_ref(refer, stream, &prop);
+                zval_dtor(&prop);
             }
 #else
             zval prop;
             char *str;
             uint len;
+            size_t pos = 0;
             zend_hash_get_current_key_zval_ex(ht, &prop, position);
             assert(Z_TYPE(prop) == IS_STRING);
             add_next_index_zval(&props, &prop);
             str = Z_STRVAL(prop);
             len = Z_STRLEN(prop);
-            if (str[0]) {
-                ZVAL_STRINGL(&prop, str, len);
+            if (str[0] == 0) {
+                pos = strlen(str + 1) + 2;
             }
-            else {
-                size_t pos = strlen(str + 1) + 2;
-                ZVAL_STRINGL(&prop, str + pos, len - pos);
+            ZVAL_STRINGL(&prop, str + pos, len - pos);
+            str = Z_STRVAL(prop);
+            if ((str[0] >= 'A') && (str[0] <= 'Z')) {
+                str[0] = str[0] + 32;
             }
             _hprose_writer_write_string_with_ref(refer, stream, &prop);
             zval_ptr_dtor(&prop);

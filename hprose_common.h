@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl header file.                           *
  *                                                        *
- * LastModified: May 10, 2015                             *
+ * LastModified: Jan 5, 2016                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -567,6 +567,63 @@ static zend_always_inline zend_bool hprose_class_exists(char *classname, size_t 
 #endif /* PHP_MAJOR_VERSION < 7 */
 
 #define class_exists(classname, len, autoload) hprose_class_exists((classname), (len), (autoload) TSRMLS_CC)
+
+static zend_always_inline zend_bool hprose_has_property(zend_class_entry *ce, zval *obj, zval *prop TSRMLS_DC) {
+    zend_property_info *property_info;
+#if PHP_API_VERSION < 20100412
+    char *name = Z_STRVAL_P(prop);
+    int name_len = Z_STRLEN_P(prop);
+    if (zend_hash_find(&ce->properties_info, name, name_len+1, (void **) &property_info) == SUCCESS) {
+        if (property_info->flags & ZEND_ACC_SHADOW) {
+            return 0;
+        }
+        return 1;
+    }
+    else {
+        if (obj && Z_OBJ_HANDLER_P(obj, has_property)) {
+            if (Z_OBJ_HANDLER_P(obj, has_property)(obj, prop, 2 TSRMLS_CC)) {
+                return 1;
+            }
+        }
+        return 0;
+    }
+#elif PHP_MAJOR_VERSION < 7
+    char *name = Z_STRVAL_P(prop);
+    int name_len = Z_STRLEN_P(prop);
+    if (zend_hash_find(&ce->properties_info, name, name_len+1, (void **) &property_info) == SUCCESS) {
+        if (property_info->flags & ZEND_ACC_SHADOW) {
+            return 0;
+        }
+        return 1;
+    }
+    else {
+        if (obj && Z_OBJ_HANDLER_P(obj, has_property)) {
+            if (Z_OBJ_HANDLER_P(obj, has_property)(obj, prop, 2, NULL TSRMLS_CC)) {
+                return 1;
+            }
+        }
+        return 0;
+    }
+#else
+    zend_string *name = Z_STR_P(prop);
+    if ((property_info = zend_hash_find_ptr(&ce->properties_info, name)) != NULL) {
+        if (property_info->flags & ZEND_ACC_SHADOW) {
+            return 0;
+        }
+        return 1;
+    }
+    else {
+        if (Z_TYPE_P(obj) != IS_UNDEF && Z_OBJ_HANDLER_P(obj, has_property)) {
+            if (Z_OBJ_HANDLER_P(obj, has_property)(obj, prop, 2, NULL)) {
+                return 1;
+            }
+        }
+        return 0;
+    }
+#endif
+}
+
+#define has_property(ce, obj, prop) hprose_has_property((ce), (obj), (prop) TSRMLS_CC)
 
 static zend_always_inline zend_bool is_utf8(char *str, int32_t len) {
     uint8_t * s = (uint8_t *)str;

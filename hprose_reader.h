@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl header file.                    *
  *                                                        *
- * LastModified: May 9, 2015                              *
+ * LastModified: Jan 5, 2016                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -330,6 +330,11 @@ static zend_always_inline void _hprose_reader_read_datetime_without_tag(hprose_b
         function_invoke(timezone_open, &timezone, "s", ZEND_STRL("UTC"));
         php_date_instantiate(php_date_get_date_ce(), return_value TSRMLS_CC);
         php_date_initialize(Z_PHPDATE_P(return_value), HB_BUF_P(tmp), HB_LEN_P(tmp), NULL, &timezone, 0 TSRMLS_CC);
+#if PHP_MAJOR_VERSION < 7
+        zval_dtor(&timezone);
+#else
+        zval_ptr_dtor(&timezone);
+#endif
     }
     else {
         php_date_instantiate(php_date_get_date_ce(), return_value TSRMLS_CC);
@@ -384,6 +389,11 @@ static zend_always_inline void _hprose_reader_read_time_without_tag(hprose_bytes
         function_invoke(timezone_open, &timezone, "s", ZEND_STRL("UTC"));
         php_date_instantiate(php_date_get_date_ce(), return_value TSRMLS_CC);
         php_date_initialize(Z_PHPDATE_P(return_value), HB_BUF_P(tmp), HB_LEN_P(tmp), NULL, &timezone, 0 TSRMLS_CC);
+#if PHP_MAJOR_VERSION < 7
+        zval_dtor(&timezone);
+#else
+        zval_ptr_dtor(&timezone);
+#endif
     }
     else {
         php_date_instantiate(php_date_get_date_ce(), return_value TSRMLS_CC);
@@ -644,25 +654,61 @@ static zend_always_inline void hprose_reader_read_object_without_tag(hprose_read
     zval *props = php_array_get(_this->propsref, index);
     HashTable *props_ht = Z_ARRVAL_P(props);
     int32_t i = zend_hash_num_elements(props_ht);
-    zend_class_entry *entry = __create_php_object(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), return_value TSRMLS_CC, "");
+    zend_class_entry *scope = __create_php_object(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), return_value TSRMLS_CC, "");
     hprose_reader_refer_set(_this->refer, return_value);
     if (i) {
         zend_hash_internal_pointer_reset(props_ht);
+
+	zend_class_entry *old_scope = EG(scope);
+	EG(scope) = scope;
+	if (!Z_OBJ_HT_P(return_value)->write_property) {
+            zend_error_noreturn(E_CORE_ERROR, "Properties of class %s cannot be updated", Z_STRVAL_P(class_name));
+	}
+
         for (; i > 0; --i) {
+            char *name;
 #if PHP_MAJOR_VERSION < 7
             zval **e, *val;
             zend_hash_get_current_data(props_ht, (void **)&e);
             MAKE_STD_ZVAL(val);
             hprose_reader_unserialize(_this, val TSRMLS_CC);
-            zend_update_property(entry, return_value, Z_STRVAL_PP(e), Z_STRLEN_PP(e), val TSRMLS_CC);
+            name = Z_STRVAL_PP(e);
+            name[0] = name[0] - 32;
+            if (has_property(scope, return_value, *e)) {
+#if PHP_API_VERSION < 20100412
+                Z_OBJ_HT_P(return_value)->write_property(return_value, *e, val TSRMLS_CC);
 #else
-            zval *e = zend_hash_get_current_data(props_ht), val;
+                Z_OBJ_HT_P(return_value)->write_property(return_value, *e, val, NULL TSRMLS_CC);
+#endif
+                name[0] = name[0] + 32;
+            }
+            else {
+                name[0] = name[0] + 32;
+#if PHP_API_VERSION < 20100412
+                Z_OBJ_HT_P(return_value)->write_property(return_value, *e, val TSRMLS_CC);
+#else
+                Z_OBJ_HT_P(return_value)->write_property(return_value, *e, val, NULL TSRMLS_CC);
+#endif
+            }
+#else
+            zval *e = zend_hash_get_current_data(props_ht), val, prop;
             hprose_reader_unserialize(_this, &val TSRMLS_CC);
-            zend_update_property(entry, return_value, Z_STRVAL_P(e), Z_STRLEN_P(e), &val TSRMLS_CC);
+            name = Z_STRVAL_P(e);
+            name[0] = name[0] - 32;
+            ZVAL_STRINGL(&prop, name, Z_STRLEN_P(e));
+            name[0] = name[0] + 32;
+            if (has_property(scope, return_value, &prop)) {
+                Z_OBJ_HT_P(return_value)->write_property(return_value, &prop, &val, NULL);
+            }
+            else {
+                Z_OBJ_HT_P(return_value)->write_property(return_value, e, &val, NULL);
+            }
+            zval_ptr_dtor(&prop);
 #endif
             zval_ptr_dtor(&val);
             zend_hash_move_forward(props_ht);
         }
+	EG(scope) = old_scope;
     }
     hprose_bytes_io_skip(_this->stream, 1);
 }

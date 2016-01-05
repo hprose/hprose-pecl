@@ -5,11 +5,11 @@ Test that the Hprose\Writer class works.
 --FILE--
 <?php
 class User {
-    private $id;
+    private $Id;
     public $name;
     public $age;
     public function __construct() {
-        $this->id = 1;
+        $this->Id = 1;
         $this->name = "默认用户";
         $this->age = 12;
     }

@@ -6,11 +6,11 @@ Test that the Hprose\Reader class works.
 <?php
 class User {
     private $id;
-    public $name;
+    public $Name;
     public $age;
     public function __construct($name = "默认用户", $age = 12) {
         $this->id = 1;
-        $this->name = $name;
+        $this->Name = $name;
         $this->age = $age;
     }
 }
@@ -198,19 +198,19 @@ array(2) {
 User Object
 (
     [id:User:private] => 1
-    [name] => 默认用户
+    [Name] => 默认用户
     [age] => 12
 )
 User Object
 (
     [id:User:private] => 1
-    [name] => 默认用户
+    [Name] => 默认用户
     [age] => 12
 )
 User Object
 (
     [id:User:private] => 1
-    [name] => 张三
+    [Name] => 张三
     [age] => 18
 )
 NoCtor Object
