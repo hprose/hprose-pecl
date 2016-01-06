@@ -47,17 +47,17 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <active>yes</active>
     </lead>
     <date>2016-01-06</date>
-    <time>10:08:11</time>
+    <time>21:32:27</time>
     <version>
-        <release>1.6.3</release>
-        <api>1.6.3</api>
+        <release>1.6.4</release>
+        <api>1.6.4</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Fixed windows compile error.
+    <notes>Changed zend_error_noreturn(php 7.x only) to zend_error.
     </notes>
     <contents>
         <dir name="/">
@@ -112,6 +112,20 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.6.4</release>
+                <api>1.6.4</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2016-01-06</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Changed zend_error_noreturn(php 7.x only) to zend_error.
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.6.3</release>
