@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl header file.                    *
  *                                                        *
- * LastModified: Jan 5, 2016                              *
+ * LastModified: Jan 6, 2016                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -657,10 +657,11 @@ static zend_always_inline void hprose_reader_read_object_without_tag(hprose_read
     zend_class_entry *scope = __create_php_object(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), return_value TSRMLS_CC, "");
     hprose_reader_refer_set(_this->refer, return_value);
     if (i) {
-        zend_hash_internal_pointer_reset(props_ht);
-
 	zend_class_entry *old_scope = EG(scope);
 	EG(scope) = scope;
+
+        zend_hash_internal_pointer_reset(props_ht);
+
 	if (!Z_OBJ_HT_P(return_value)->write_property) {
             zend_error_noreturn(E_CORE_ERROR, "Properties of class %s cannot be updated", Z_STRVAL_P(class_name));
 	}

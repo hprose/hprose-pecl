@@ -46,19 +46,18 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <email>mabingyao@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2016-01-05</date>
-    <time>23:04:44</time>
+    <date>2016-01-06</date>
+    <time>10:08:11</time>
     <version>
-        <release>1.6.2</release>
-        <api>1.6.2</api>
+        <release>1.6.3</release>
+        <api>1.6.3</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Fixed some memory leaks.
-           Fixed properties serialization with first capital letter.
+    <notes>Fixed windows compile error.
     </notes>
     <contents>
         <dir name="/">
@@ -113,6 +112,20 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.6.3</release>
+                <api>1.6.3</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2016-01-06</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Fixed windows compile error.
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.6.2</release>
