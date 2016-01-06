@@ -663,7 +663,7 @@ static zend_always_inline void hprose_reader_read_object_without_tag(hprose_read
         zend_hash_internal_pointer_reset(props_ht);
 
 	if (!Z_OBJ_HT_P(return_value)->write_property) {
-            zend_error_noreturn(E_CORE_ERROR, "Properties of class %s cannot be updated", Z_STRVAL_P(class_name));
+            zend_error(E_CORE_ERROR, "Properties of class %s cannot be updated", Z_STRVAL_P(class_name));
 	}
 
         for (; i > 0; --i) {
