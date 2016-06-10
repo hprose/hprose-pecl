@@ -13,7 +13,7 @@
  *                                                        *
  * hprose common for pecl source file.                    *
  *                                                        *
- * LastModified: May 10, 2015                             *
+ * LastModified: Jun 10, 2016                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -42,6 +42,11 @@ zend_fcall_info_cache __get_fcall_info_cache(zval *obj, char *name, int32_t len 
     zend_fcall_info_cache fcc = {0};
     char *fname, *lcname = NULL;
     zend_function *fptr;
+#if PHP_VERSION_ID < 70100
+    zend_class_entry *scope = EG(scope);
+#else
+    zend_class_entry *scope = EG(fake_scope) ? EG(fake_scope) : zend_get_executed_scope();
+#endif
 
     if (obj == NULL && (fname = strstr(name, "::")) == NULL) {
         char *nsname;
@@ -62,7 +67,7 @@ zend_fcall_info_cache __get_fcall_info_cache(zval *obj, char *name, int32_t len 
             return fcc;
         }
         fcc.function_handler = fptr;
-        fcc.calling_scope = EG(scope);
+        fcc.calling_scope = scope;
 #if PHP_MAJOR_VERSION < 7
 #if PHP_API_VERSION < 20090626
         fcc.object_pp = NULL;
@@ -80,7 +85,7 @@ zend_fcall_info_cache __get_fcall_info_cache(zval *obj, char *name, int32_t len 
              instanceof_function(Z_OBJCE_P(obj), zend_ce_closure TSRMLS_CC) &&
              (fptr = (zend_function*)zend_get_closure_method_def(obj TSRMLS_CC)) != NULL) {
         fcc.function_handler = fptr;
-        fcc.calling_scope = EG(scope);
+        fcc.calling_scope = scope;
 #if PHP_MAJOR_VERSION < 7
         fcc.called_scope = NULL;
         fcc.object_ptr = NULL;
@@ -229,7 +234,10 @@ void __function_invoke_args(zend_fcall_info_cache fcc, zval *obj, zval *return_v
     }
 
     fci.size = sizeof(fci);
+#if PHP_VERSION_ID < 70100
     fci.function_table = NULL;
+    fci.symbol_table = NULL;
+#endif
 #if PHP_MAJOR_VERSION < 7
     fci.function_name = NULL;
     fci.retval_ptr_ptr = &retval_ptr;
@@ -237,7 +245,6 @@ void __function_invoke_args(zend_fcall_info_cache fcc, zval *obj, zval *return_v
     ZVAL_UNDEF(&fci.function_name);
     fci.retval = &retval;
 #endif
-    fci.symbol_table = NULL;
     fci.param_count = argc;
     fci.params = params;
     fci.no_separation = 1;
@@ -443,7 +450,10 @@ void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return_value,
     }
 
     fci.size = sizeof(fci);
+#if PHP_VERSION_ID < 70100
     fci.function_table = NULL;
+    fci.symbol_table = NULL;
+#endif
 #if PHP_MAJOR_VERSION < 7
     fci.function_name = NULL;
     fci.retval_ptr_ptr = &retval_ptr;
@@ -451,7 +461,6 @@ void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return_value,
     ZVAL_UNDEF(&fci.function_name);
     fci.retval = &retval;
 #endif
-    fci.symbol_table = NULL;
     fci.param_count = argc;
     fci.params = params;
     fci.no_separation = 1;
@@ -564,6 +573,11 @@ zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *retur
     uint32_t i, argc;
     zend_fcall_info fci;
     zend_fcall_info_cache fcc;
+#if PHP_VERSION_ID < 70100
+    zend_class_entry *scope = EG(scope);
+#else
+    zend_class_entry *scope = EG(fake_scope) ? EG(fake_scope) : zend_get_executed_scope();
+#endif
 
     argc = strlen(params_format);
 
@@ -736,9 +750,11 @@ zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *retur
         argc >= constructor->common.required_num_args) {
 
         fci.size = sizeof(fci);
-        fci.function_table = EG(function_table);
         ZVAL_UNDEF(&fci.function_name);
+#if PHP_VERSION_ID < 70100
+        fci.function_table = EG(function_table);
         fci.symbol_table = NULL;
+#endif
         fci.object = Z_OBJ_P(return_value);
         fci.retval = &retval;
         fci.param_count = argc;
@@ -747,7 +763,7 @@ zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *retur
 
         fcc.initialized = 1;
         fcc.function_handler = constructor;
-        fcc.calling_scope = EG(scope);
+        fcc.calling_scope = scope;
         fcc.called_scope = Z_OBJCE_P(return_value);
         fcc.object = Z_OBJ_P(return_value);
 

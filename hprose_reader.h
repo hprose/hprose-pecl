@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl header file.                    *
  *                                                        *
- * LastModified: Jan 6, 2016                              *
+ * LastModified: Jun 10, 2016                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -657,8 +657,13 @@ static zend_always_inline void hprose_reader_read_object_without_tag(hprose_read
     zend_class_entry *scope = __create_php_object(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), return_value TSRMLS_CC, "");
     hprose_reader_refer_set(_this->refer, return_value);
     if (i) {
+#if PHP_VERSION_ID < 70100
 	zend_class_entry *old_scope = EG(scope);
 	EG(scope) = scope;
+#else
+	zend_class_entry *old_scope = EG(fake_scope);
+	EG(fake_scope) = scope;
+#endif
 
         zend_hash_internal_pointer_reset(props_ht);
 
@@ -709,7 +714,11 @@ static zend_always_inline void hprose_reader_read_object_without_tag(hprose_read
             zval_ptr_dtor(&val);
             zend_hash_move_forward(props_ht);
         }
+#if PHP_VERSION_ID < 70100
 	EG(scope) = old_scope;
+#else
+	EG(fake_scope) = old_scope;
+#endif
     }
     hprose_bytes_io_skip(_this->stream, 1);
 }
