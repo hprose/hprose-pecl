@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl source file.                  *
  *                                                        *
- * LastModified: Apr 9, 2015                              *
+ * LastModified: Jun 10, 2016                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -128,8 +128,6 @@ ZEND_METHOD(hprose_bytes_io, readString) {
 #if PHP_MAJOR_VERSION < 7
     char *s;
     int32_t l;
-#else
-    zend_string *s;
 #endif
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &n) == FAILURE) {
         RETURN_NULL();
