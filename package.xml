@@ -46,18 +46,18 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <email>mabingyao@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2016-06-10</date>
-    <time>20:28:11</time>
+    <date>2017-03-19</date>
+    <time>18:18:09</time>
     <version>
-        <release>1.6.5</release>
-        <api>1.6.5</api>
+        <release>1.6.6</release>
+        <api>1.6.6</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Fixed PHP 7.1 build.
+    <notes>Fixed object unserialize on PHP 7.1.
     </notes>
     <contents>
         <dir name="/">
@@ -108,10 +108,21 @@ http://pear.php.net/dtd/package-2.0.xsd">
         </required>
     </dependencies>
     <providesextension>hprose</providesextension>
-    <extsrcrelease>
-        <configureoption default="yes" name="enable-hprose" prompt="whether to enable hprose support" />
-    </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.6.6</release>
+                <api>1.6.6</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2017-03-19</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Fixed object unserialize on PHP 7.1.
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.6.5</release>

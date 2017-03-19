@@ -1,7 +1,7 @@
 // $Id$
 // vim:ft=javascript
 
-ARG_ENABLE("hprose", "enable hprose support", "no");
+ARG_ENABLE("hprose", "enable hprose support", "yes");
 
 if (PHP_HPROSE != "no") {
     EXTENSION("hprose", "php_hprose.c hprose_common.c hprose_tags.c hprose_bytes_io.c hprose_class_manager.c hprose_writer.c hprose_raw_reader.c hprose_reader.c hprose_formatter.c");

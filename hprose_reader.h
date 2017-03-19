@@ -13,7 +13,7 @@
  *                                                        *
  * hprose reader for pecl header file.                    *
  *                                                        *
- * LastModified: Jun 10, 2016                             *
+ * LastModified: Mar 19, 2017                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -641,7 +641,6 @@ static zend_always_inline void hprose_reader_read_class(hprose_reader *_this TSR
             add_next_index_zval(&props, &prop);
         }
         add_next_index_str(_this->classref, name);
-        zend_string_release(name);
         add_next_index_zval(_this->propsref, &props);
 #endif
     } while(0);
