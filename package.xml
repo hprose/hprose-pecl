@@ -108,6 +108,8 @@ http://pear.php.net/dtd/package-2.0.xsd">
         </required>
     </dependencies>
     <providesextension>hprose</providesextension>
+    <extsrcrelease>
+    </extsrcrelease>
     <changelog>
         <release>
             <version>
