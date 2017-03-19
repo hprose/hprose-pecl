@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl header file.                           *
  *                                                        *
- * LastModified: Jun 10, 2016                             *
+ * LastModified: Mar 19, 2019                             *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -30,7 +30,7 @@ zend_module_entry hprose_module_entry;
 
 #define PHP_HPROSE_MODULE_NAME        "hprose"
 #define PHP_HPROSE_BUILD_DATE         __DATE__ " " __TIME__
-#define PHP_HPROSE_VERSION            "1.6.5"
+#define PHP_HPROSE_VERSION            "1.6.6"
 #define PHP_HPROSE_AUTHOR             "Ma Bingyao"
 #define PHP_HPROSE_HOMEPAGE           "https://github.com/hprose/hprose-pecl"
 
