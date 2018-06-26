@@ -158,12 +158,15 @@ zend_fcall_info_cache __get_fcall_info_cache(zval *obj, char *name, int32_t len 
         lcname = zend_str_tolower_dup(fname, flen);
 #if PHP_MAJOR_VERSION < 7
         if (zend_hash_find(&ce->function_table, lcname, flen + 1, (void **) &fptr) == FAILURE) {
-#else
-        if ((fptr = zend_hash_str_find_ptr(&ce->function_table, lcname, flen)) == NULL) {
-#endif
             efree(lcname);
             zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
                                     "Method %s::%s() does not exist", ce->name, fname);
+#else
+        if ((fptr = zend_hash_str_find_ptr(&ce->function_table, lcname, flen)) == NULL) {
+            efree(lcname);
+            zend_throw_exception_ex(NULL, 0 TSRMLS_CC,
+                                    "Method %s::%s() does not exist", ZSTR_VAL(ce->name), fname);
+#endif
             return fcc;
         }
         fcc.function_handler = fptr;
@@ -199,7 +202,9 @@ zend_fcall_info_cache __get_fcall_info_cache(zval *obj, char *name, int32_t len 
     if (lcname) {
         efree(lcname);
     }
+#if PHP_VERSION_ID < 70300
     fcc.initialized = 1;
+#endif
     return fcc;
 }
 
@@ -761,7 +766,9 @@ zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *retur
         fci.params = params;
         fci.no_separation = 1;
 
+#if PHP_VERSION_ID < 70300
         fcc.initialized = 1;
+#endif
         fcc.function_handler = constructor;
         fcc.calling_scope = scope;
         fcc.called_scope = Z_OBJCE_P(return_value);
