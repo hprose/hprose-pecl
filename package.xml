@@ -46,19 +46,18 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <email>mabingyao@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2019-06-05</date>
-    <time>21:21:21</time>
+    <date>2019-06-06</date>
+    <time>00:02:34</time>
     <version>
-        <release>1.6.7</release>
-        <api>1.6.7</api>
+        <release>1.6.8</release>
+        <api>1.6.8</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Fixed hprose on PHP 7.3.
-            Fixed array serialize.
+    <notes>Fixed for PHP 7.4.
     </notes>
     <contents>
         <dir name="/">
@@ -112,6 +111,20 @@ http://pear.php.net/dtd/package-2.0.xsd">
     <extsrcrelease>
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.6.8</release>
+                <api>1.6.8</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2019-06-06</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Fixed for PHP 7.4.
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.6.7</release>
