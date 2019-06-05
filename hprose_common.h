@@ -13,7 +13,7 @@
  *                                                        *
  * hprose for pecl header file.                           *
  *                                                        *
- * LastModified: Jan 5, 2016                              *
+ * LastModified: Jun 5, 2019                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -689,20 +689,62 @@ static zend_always_inline int32_t ustrlen(char *str, int32_t len) {
     return l;
 }
 
-static zend_always_inline zend_bool is_list(zval *val) {
-    HashTable *ht = Z_ARRVAL_P(val);
-    int32_t count = zend_hash_num_elements(ht);
-    /* zero length array */
-    if (count == 0) return 1;
-    if (zend_hash_index_exists(ht, 0)) {
-        /* count == 1 and a[0] exists */
-        if (count == 1) return 1;
-        /* a[0] exists, a[count - 1] exists and the next index is count */
-        return zend_hash_index_exists(ht, count - 1) &&
-               zend_hash_next_free_element(ht) == count;
+#if PHP_MAJOR_VERSION < 7
+static zend_bool is_list(zval *val) {
+    int i;
+    HashTable *myht = HASH_OF(val);
+    i = myht ? zend_hash_num_elements(myht) : 0;
+    if (i > 0) {
+        char *key;
+        ulong index, idx;
+        uint key_len;
+        HashPosition pos;
+        zend_hash_internal_pointer_reset_ex(myht, &pos);
+        idx = 0;
+        for (;; zend_hash_move_forward_ex(myht, &pos)) {
+            i = zend_hash_get_current_key_ex(myht, &key, &key_len, &index, 0, &pos);
+            if (i == HASH_KEY_NON_EXISTANT)
+                break;
+            if (i == HASH_KEY_IS_STRING) {
+                return 0;
+            } else {
+                if (index != idx) {
+                    return 0;
+                }
+            }
+            idx++;
+        }
     }
-    return 0;
+    return 1;
 }
+#else
+static zend_bool is_list(zval *val) {
+	int i;
+	HashTable *myht = Z_ARRVAL_P(val);
+	i = myht ? zend_hash_num_elements(myht) : 0;
+	if (i > 0) {
+		zend_string *key;
+		zend_ulong index, idx;
+#if PHP_VERSION_ID >= 70100
+		if (HT_IS_PACKED(myht) && HT_IS_WITHOUT_HOLES(myht)) {
+			return 1;
+		}
+#endif
+		idx = 0;
+		ZEND_HASH_FOREACH_KEY(myht, index, key) {
+			if (key) {
+				return 0;
+			} else {
+				if (index != idx) {
+					return 0;
+				}
+			}
+			idx++;
+		} ZEND_HASH_FOREACH_END();
+	}
+	return 1;
+}
+#endif
 
 #define is_string_p(v) ((v) && Z_TYPE_P(v) == IS_STRING)
 #define is_array_p(v) ((v) && Z_TYPE_P(v) == IS_ARRAY)
