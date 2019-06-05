@@ -13,7 +13,7 @@
  *                                                        *
  * hprose bytes io for pecl source file.                  *
  *                                                        *
- * LastModified: Jun 10, 2016                             *
+ * LastModified: Jun 5, 2019                              *
  * Author: Ma Bingyao <andot@hprose.com>                  *
  *                                                        *
 \**********************************************************/
@@ -262,7 +262,7 @@ ZEND_METHOD(hprose_bytes_io, save) {
     if (HB_INITED_P(_this) && HB_LEN_P(_this)) {
         numbytes = php_stream_write(stream, HB_BUF_P(_this), HB_LEN_P(_this));
         if (numbytes != HB_LEN_P(_this)) {
-            php_error_docref(NULL TSRMLS_CC, E_WARNING, "Only %d of %d bytes written, possibly out of free disk space", numbytes, HB_LEN_P(_this));
+            php_error_docref(NULL TSRMLS_CC, E_WARNING, "Only %d of %d bytes written, possibly out of free disk space", numbytes, (int)HB_LEN_P(_this));
             numbytes = -1;
         }
     }
