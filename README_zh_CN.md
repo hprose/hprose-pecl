@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/hprose/hprose-pecl](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/hprose/hprose-pecl?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/hprose/hprose-pecl.svg)](https://travis-ci.org/hprose/hprose-pecl)
-![Supported PHP versions: 5.2 .. 7.0](https://img.shields.io/badge/php-5.2~7.0-blue.svg)
+![Supported PHP versions: 5.2 .. 7.3](https://img.shields.io/badge/php-5.2~7.3-blue.svg)
 [![GitHub release](https://img.shields.io/github/release/hprose/hprose-pecl.svg)](https://github.com/hprose/hprose-pecl/releases)
 [![License](https://img.shields.io/github/license/hprose/hprose-pecl.svg)](http://opensource.org/licenses/MIT)
 
