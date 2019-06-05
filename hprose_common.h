@@ -607,9 +607,11 @@ static zend_always_inline zend_bool hprose_has_property(zend_class_entry *ce, zv
 #else
     zend_string *name = Z_STR_P(prop);
     if ((property_info = zend_hash_find_ptr(&ce->properties_info, name)) != NULL) {
+#if PHP_VERSION_ID < 70400
         if (property_info->flags & ZEND_ACC_SHADOW) {
             return 0;
         }
+#endif
         return 1;
     }
     else {
