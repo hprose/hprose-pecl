@@ -45,3 +45,7 @@ tests/*.sh
 tmp-php.ini
 
 *.tgz
+config.h.in~
+configure.ac
+
+.vscode
