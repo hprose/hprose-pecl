@@ -692,7 +692,7 @@ static zend_always_inline int32_t ustrlen(char *str, int32_t len) {
 #if PHP_MAJOR_VERSION < 7
 static zend_bool is_list(zval *val) {
     int i;
-    HashTable *myht = HASH_OF(val);
+    HashTable *myht = Z_ARRVAL_P(val);
     i = myht ? zend_hash_num_elements(myht) : 0;
     if (i > 0) {
         char *key;
