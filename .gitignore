@@ -49,3 +49,4 @@ config.h.in~
 configure.ac
 
 .vscode
+.DS_Store
