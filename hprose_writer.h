@@ -56,16 +56,16 @@ static void hprose_writer_refer_set(hprose_writer_refer *refer, zval *val) {
             add_assoc_long_ex(refer->sref, Z_STRVAL_P(val), Z_STRLEN_P(val), refer->refcount);
             break;
         case IS_OBJECT: {
-            ulong h;
+            zend_ulong h;
 #if PHP_MAJOR_VERSION < 7
             Z_ADDREF_P(val);
             SEPARATE_ZVAL(&val);
             zend_llist_add_element(refer->ref, &val);
-            h = (ulong)Z_OBJ_HANDLE_P(val);
+            h = (zend_ulong)Z_OBJ_HANDLE_P(val);
 #else
             Z_ADDREF_P(val);
             zend_llist_add_element(refer->ref, &(Z_OBJ_P(val)));
-            h = (ulong)Z_OBJ_P(val);
+            h = (zend_ulong)Z_OBJ_P(val);
 #endif
             add_index_long(refer->oref, h, refer->refcount);
             break;
@@ -84,9 +84,9 @@ static zend_bool hprose_writer_refer_write(hprose_writer_refer *refer, hprose_by
             break;
         case IS_OBJECT: {
 #if PHP_MAJOR_VERSION < 7
-            ulong h = (ulong)Z_OBJ_HANDLE_P(val);
+            zend_ulong h = (zend_ulong)Z_OBJ_HANDLE_P(val);
 #else
-            ulong h = (ulong)Z_OBJ_P(val);
+            zend_ulong h = (zend_ulong)Z_OBJ_P(val);
 #endif
             if (php_array_get_long(refer->oref, h, &index)) {
                 hprose_writer_refer_write_ref(stream, (int32_t)index);
@@ -417,8 +417,8 @@ static void _hprose_writer_write_hashtable(hprose_writer *_this, hprose_writer_r
         for (; i > 0; --i) {
 #if PHP_MAJOR_VERSION < 7
             char *str;
-            uint len;
-            ulong index;
+            uint32_t len;
+            zend_ulong index;
             zval **value;
             if (zend_hash_get_current_key_ex(ht, &str, &len, &index, 0, position) == HASH_KEY_IS_STRING) {
                 zval key;
@@ -608,8 +608,8 @@ static int32_t _hprose_writer_write_class(hprose_writer *_this, hprose_writer_re
         for (; i > 0; --i) {
 #if PHP_MAJOR_VERSION < 7
             char *str;
-            uint len;
-            ulong index;
+            uint32_t len;
+            zend_ulong index;
             if (zend_hash_get_current_key_ex(ht, &str, &len, &index, 0, position) == HASH_KEY_IS_STRING) {
                 zval prop;
                 size_t pos = 0;
@@ -628,7 +628,7 @@ static int32_t _hprose_writer_write_class(hprose_writer *_this, hprose_writer_re
 #else
             zval prop;
             char *str;
-            uint len;
+            uint32_t len;
             size_t pos = 0;
             zend_hash_get_current_key_zval_ex(ht, &prop, position);
             assert(Z_TYPE(prop) == IS_STRING);

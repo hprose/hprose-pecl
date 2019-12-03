@@ -429,7 +429,7 @@ static zend_always_inline void * zend_hash_str_find_ptr(HashTable *ht, char *key
     void **ppData;
     return (zend_hash_find(ht, key, len, (void **)&ppData) == FAILURE) ? NULL : *ppData;
 }
-static zend_always_inline void * zend_hash_index_find_ptr(HashTable *ht, ulong h) {
+static zend_always_inline void * zend_hash_index_find_ptr(HashTable *ht, zend_ulong h) {
     void **ppData;
     return (zend_hash_index_find(ht, h, (void **)&ppData) == FAILURE) ? NULL : *ppData;
 }
@@ -446,7 +446,7 @@ static zend_always_inline void * zend_hash_index_find_ptr(HashTable *ht, ulong h
 
 #if PHP_MAJOR_VERSION < 7
 
-static zend_always_inline zval *php_array_get(zval *val, ulong h) {
+static zend_always_inline zval *php_array_get(zval *val, zend_ulong h) {
     zval **result;
     if (zend_hash_index_find(Z_ARRVAL_P(val), h, (void **)&result) == FAILURE) return NULL;
     return *result;
@@ -460,7 +460,7 @@ static zend_always_inline zval *php_assoc_array_get(zval *val, char *key, int le
 
 #else /* PHP_MAJOR_VERSION < 7 */
 
-static zend_always_inline zval *php_array_get(zval *val, ulong h) {
+static zend_always_inline zval *php_array_get(zval *val, zend_ulong h) {
     return zend_hash_index_find(Z_ARRVAL_P(val), h);
 }
 
@@ -470,7 +470,7 @@ static zend_always_inline zval *php_assoc_array_get(zval *val, char *key, int le
 
 #endif /* PHP_MAJOR_VERSION < 7 */
 
-static zend_always_inline zend_bool php_array_get_long(zval *val, ulong h, long *rval) {
+static zend_always_inline zend_bool php_array_get_long(zval *val, zend_ulong h, long *rval) {
     zval *result = php_array_get(val, h);
     if (result == NULL || Z_TYPE_P(result) != IS_LONG) {
         return 0;
@@ -698,8 +698,8 @@ static zend_bool is_list(zval *val) {
     i = myht ? zend_hash_num_elements(myht) : 0;
     if (i > 0) {
         char *key;
-        ulong index, idx;
-        uint key_len;
+        zend_ulong index, idx;
+        uint32_t key_len;
         HashPosition pos;
         zend_hash_internal_pointer_reset_ex(myht, &pos);
         idx = 0;
