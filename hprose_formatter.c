@@ -250,8 +250,8 @@ PS_SERIALIZER_DECODE_FUNC(hprose) {
     int ret;
     HashPosition tmp_hash_pos;
     char *key_str;
-    ulong key_long;
-    uint key_len;
+    zend_ulong key_long;
+    uint32_t key_len;
     zval *tmp;
     zval **value;
 #else
