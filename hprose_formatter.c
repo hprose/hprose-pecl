@@ -89,11 +89,12 @@ static zend_always_inline void hprose_fast_serialize(hprose_bytes_io *stream, zv
         case IS_STRING: {
             char * s = Z_STRVAL_P(val);
             int32_t l = Z_STRLEN_P(val);
+            int32_t ul = utf16_length(s, l);
             if (l == 0) {
                 _hprose_writer_write_empty(stream);
             }
-            else if (is_utf8(s, l)) {
-                if (l < 4 && ustrlen(s, l) == 1) {
+            else if (ul > 0) {
+                if (ul == 1) {
                     _hprose_writer_write_utf8char(stream, val);
                 }
                 else {

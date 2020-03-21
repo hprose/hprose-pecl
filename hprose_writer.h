@@ -270,13 +270,18 @@ static zend_always_inline void _hprose_writer_write_utf8char(hprose_bytes_io *st
 #define hprose_writer_write_utf8char(_this, val) _hprose_writer_write_utf8char((_this)->stream, (val))
 
 static zend_always_inline void _hprose_writer_write_string(hprose_writer_refer *refer, hprose_bytes_io *stream, zval *val) {
-    int32_t len = ustrlen(Z_STRVAL_P(val), Z_STRLEN_P(val));
+    int32_t len = utf16_length(Z_STRVAL_P(val), Z_STRLEN_P(val));
     if (refer) {
         hprose_writer_refer_set(refer, val);
     }
-    hprose_bytes_io_putc(stream, HPROSE_TAG_STRING);
-    if (len) {
-        hprose_bytes_io_write_int(stream, len);
+    if (len >= 0) {
+        hprose_bytes_io_putc(stream, HPROSE_TAG_STRING);
+        if (len) {
+            hprose_bytes_io_write_int(stream, len);
+        }
+    } else {
+        hprose_bytes_io_putc(stream, HPROSE_TAG_BYTES);
+        hprose_bytes_io_write_int(stream, Z_STRLEN_P(val));
     }
     hprose_bytes_io_putc(stream, HPROSE_TAG_QUOTE);
     hprose_bytes_io_write(stream, Z_STRVAL_P(val), Z_STRLEN_P(val));

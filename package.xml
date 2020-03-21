@@ -46,18 +46,18 @@ http://pear.php.net/dtd/package-2.0.xsd">
         <email>mabingyao@gmail.com</email>
         <active>yes</active>
     </lead>
-    <date>2020-01-23</date>
-    <time>13:04:34</time>
+    <date>2020-03-21</date>
+    <time>22:17:20</time>
     <version>
-        <release>1.7.0</release>
-        <api>1.7.0</api>
+        <release>1.8.0</release>
+        <api>1.8.0</api>
     </version>
     <stability>
         <release>stable</release>
         <api>stable</api>
     </stability>
     <license uri="http://mit-license.org/">MIT</license>
-    <notes>Add TagHeader for Hprose 3.0.
+    <notes>Fixed utf8 encoding detection.
     </notes>
     <contents>
         <dir name="/">
@@ -111,6 +111,20 @@ http://pear.php.net/dtd/package-2.0.xsd">
     <extsrcrelease>
     </extsrcrelease>
     <changelog>
+        <release>
+            <version>
+                <release>1.8.0</release>
+                <api>1.8.0</api>
+            </version>
+            <stability>
+                <release>stable</release>
+                <api>stable</api>
+            </stability>
+            <date>2020-03-21</date>
+            <license uri="http://mit-license.org/">MIT</license>
+            <notes>Fixed utf8 encoding detection.
+            </notes>
+        </release>
         <release>
             <version>
                 <release>1.7.0</release>

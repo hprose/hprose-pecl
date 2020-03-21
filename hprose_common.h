@@ -627,68 +627,40 @@ static zend_always_inline zend_bool hprose_has_property(zend_class_entry *ce, zv
 
 #define has_property(ce, obj, prop) hprose_has_property((ce), (obj), (prop) TSRMLS_CC)
 
-static zend_always_inline zend_bool is_utf8(char *str, int32_t len) {
-    uint8_t * s = (uint8_t *)str;
-    int32_t i;
-    for (i = 0; i < len; ++i) {
-        uint8_t c = s[i];
-        switch (c >> 4) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-                break;
-            case 12:
-            case 13:
-                if ((s[++i] >> 6) != 0x2) return 0;
-                break;
-            case 14:
-                if ((s[++i] >> 6) != 0x2) return 0;
-                if ((s[++i] >> 6) != 0x2) return 0;
-                break;
-            case 15: {
-                uint8_t b = s[++i];
-                if ((s[++i] >> 6) != 0x2) return 0;
-                if ((s[++i] >> 6) != 0x2) return 0;
-                if ((((c & 0xf) << 2) | ((b >> 4) & 0x3)) > 0x10) return 0;
-                break;
-            }
-            default:
-                return 0;
-        }
-    }
-    return 1;
-}
-
-static zend_always_inline int32_t ustrlen(char *str, int32_t len) {
+static zend_always_inline int32_t utf16_length(char *str, int32_t len) {
     uint8_t *s = (uint8_t *)str;
-    int32_t l = len, p = 0;
-    while (p < len) {
-        uint8_t a = s[p];
-        if (a < 0x80) {
-            ++p;
-        }
-        else if ((a & 0xE0) == 0xC0) {
-            p += 2;
-            --l;
-        }
-        else if ((a & 0xF0) == 0xE0) {
-            p += 3;
-            l -= 2;
-        }
-        else if ((a & 0xF8) == 0xF0) {
-            p += 4;
-            l -= 2;
+    uint8_t c = 0, a;
+    int32_t n = len, i;
+    for (i = 0; i < len; i++) {
+        a = s[i];
+        if (c == 0) {
+            if ((a & 0xe0) == 0xc0) {
+                c = 1;
+                n--;
+            }
+            else if ((a & 0xf0) == 0xe0) {
+                c = 2;
+                n -= 2;
+            }
+            else if ((a & 0xf8) == 0xf0) {
+                c = 3;
+                n -= 2;
+            }
+            else if ((a & 0x80) == 0x80) {
+                return -1;
+            }
         }
         else {
-            return -1;
+            if ((a & 0xc0) != 0x80) {
+                return -1;
+            }
+            c--;
         }
     }
-    return l;
+    if (c != 0) {
+        return -1;
+    }
+    return n;
 }
 
 #if PHP_MAJOR_VERSION < 7
