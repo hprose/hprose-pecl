@@ -252,7 +252,9 @@ void __function_invoke_args(zend_fcall_info_cache fcc, zval *obj, zval *return_v
 #endif
     fci.param_count = argc;
     fci.params = params;
+#if PHP_VERSION_ID < 80000
     fci.no_separation = 1;
+#endif
 
     if (obj != NULL && Z_TYPE_P(obj) == IS_OBJECT) {
 #if PHP_API_VERSION < 20090626
@@ -468,7 +470,9 @@ void __function_invoke(zend_fcall_info_cache fcc, zval *obj, zval *return_value,
 #endif
     fci.param_count = argc;
     fci.params = params;
+#if PHP_VERSION_ID < 80000
     fci.no_separation = 1;
+#endif
 
     if (obj != NULL && Z_TYPE_P(obj) == IS_OBJECT) {
 #if PHP_API_VERSION < 20090626
@@ -717,7 +721,9 @@ zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *retur
         fci.retval_ptr_ptr = &retval_ptr;
         fci.param_count = argc;
         fci.params = params;
+#if PHP_VERSION_ID < 80000
         fci.no_separation = 1;
+#endif
 
         fcc.initialized = 1;
         fcc.function_handler = constructor;
@@ -764,7 +770,9 @@ zend_class_entry *__create_php_object(char *class_name, int32_t len, zval *retur
         fci.retval = &retval;
         fci.param_count = argc;
         fci.params = params;
+#if PHP_VERSION_ID < 80000
         fci.no_separation = 1;
+#endif
 
 #if PHP_VERSION_ID < 70300
         fcc.initialized = 1;
